@@ -12,9 +12,12 @@ namespace AccessManager.Data
 
         public DbSet<InformationSystem> InformationSystems { get; set; } = null!;
         public DbSet<Access> Accesses { get; set; } = null!;
-        public DbSet<Admin> Admins { get; set; } = null!;
-        public DbSet<Employee> Employees { get; set; } = null!;
-        public DbSet<EmployeeAccess> EmployeeAccesses { get; set; } = null!;
+        public DbSet<User> Users { get; set; } = null!;
+        public DbSet<UserAccess> UserAccesses { get; set; } = null!;
+        public DbSet<Department> Departments { get; set; } = null!;
+        public DbSet<Unit> Units { get; set; } = null!;
+        public DbSet<Log> Logs { get; set; } = null!;
+        public DbSet<UnitUser> UnitUser { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -22,14 +25,93 @@ namespace AccessManager.Data
 
             ConfigureInformationSystem(modelBuilder);
             ConfigureAccess(modelBuilder);
-            ConfigureAdmin(modelBuilder);
-            ConfigureEmployee(modelBuilder);
-            ConfigureEmployeeAccess(modelBuilder);
+            ConfigureUsers(modelBuilder);
+            ConfigureUserAccess(modelBuilder);
+            ConfigureDepartment(modelBuilder);
+            ConfigureUserUnit(modelBuilder);
+            ConfigureUnit(modelBuilder);
+            ConfigureLog(modelBuilder);
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseLazyLoadingProxies();
         }
+
+        private void ConfigureUserUnit(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<UnitUser>(entity =>
+            {
+                entity.HasKey(e => new { e.UnitId, e.UserId });
+
+                entity.HasOne(e => e.Unit)
+                      .WithMany(u => u.UsersWithAccess)
+                      .HasForeignKey(e => e.UnitId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.AccessibleUnits)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.NoAction);
+            });
+        }
+
+        private void ConfigureLog(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Log>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Description)
+                    .IsRequired();
+
+                entity.Property(e => e.CreatedOn)
+                    .IsRequired();
+            });
+        }
+
+        private void ConfigureDepartment(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Department>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Description)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.HasMany(e => e.Units)
+                      .WithOne(a => a.Department)
+                      .HasForeignKey(a => a.DepartmentId)
+                      .IsRequired();
+            });
+        }
+
+        private void ConfigureUnit(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Unit>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Description)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.HasOne(e => e.Department)
+                      .WithMany(s => s.Units)
+                      .HasForeignKey(s => s.DepartmentId)
+                      .IsRequired();
+
+                entity.HasMany(e => e.UsersFromUnit)
+                    .WithOne(u => u.Unit)
+                    .HasForeignKey(u => u.UnitId);
+
+                entity.HasMany(e => e.UsersWithAccess)
+                    .WithOne(uu => uu.Unit)
+                    .HasForeignKey(uu => uu.UnitId)
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
+        }
+
         private void ConfigureInformationSystem(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<InformationSystem>(entity =>
@@ -53,11 +135,11 @@ namespace AccessManager.Data
             {
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.UserName)
+                entity.Property(e => e.Description)
                     .IsRequired()
                     .HasMaxLength(50);
 
-                entity.HasIndex(e => e.UserName)
+                entity.HasIndex(e => e.Description)
                       .IsUnique();
 
                 entity.HasOne(e => e.System)
@@ -65,15 +147,15 @@ namespace AccessManager.Data
                       .HasForeignKey(e => e.SystemId)
                       .IsRequired();
 
-                entity.HasMany(e => e.EmployeeAccesses)
+                entity.HasMany(e => e.UserAccesses)
                       .WithOne(ea => ea.Access)
                       .HasForeignKey(ea => ea.AccessId);
             });
         }
 
-        private void ConfigureAdmin(ModelBuilder modelBuilder)
+        private void ConfigureUsers(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Admin>(entity =>
+            modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
@@ -96,83 +178,54 @@ namespace AccessManager.Data
                     .IsRequired()
                     .HasMaxLength(50);
 
-                entity.Property(e => e.Phone)
+                entity.Property(e => e.WritingAccess)
                     .IsRequired();
 
-                entity.HasIndex(e => e.Phone)
-                    .IsUnique();
-
-                entity.Property(e => e.Role)
-                    .IsRequired();
-            });
-        }
-
-        private void ConfigureEmployee(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<Employee>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-
-                entity.Property(e => e.UserName)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.HasIndex(e => e.UserName)
-                      .IsUnique();
-
-                entity.Property(e => e.FirstName)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.Property(e => e.MiddleName)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.Property(e => e.LastName)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.Property(e => e.Department)
-                    .IsRequired();
-
-                entity.Property(e => e.EGN)
+                entity.Property(e => e.ReadingAccess)
                     .IsRequired();
 
                 entity.HasIndex(e => e.EGN)
                     .IsUnique();
 
-                entity.Property(e => e.Phone)
-                    .IsRequired();
-
                 entity.HasIndex(e => e.Phone)
                     .IsUnique();
 
-                entity.HasMany(e => e.EmployeeAccesses)
-                      .WithOne(ea => ea.Employee)
-                      .HasForeignKey(ea => ea.EmployeeId);
+                entity.HasMany(e => e.UserAccesses)
+                      .WithOne(ea => ea.User)
+                      .HasForeignKey(ea => ea.UserId);
+
+                entity.HasMany(e => e.AccessibleUnits)
+                    .WithOne(ea => ea.User)
+                    .HasForeignKey(ea => ea.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(e => e.Unit)
+                    .WithMany(s => s.UsersFromUnit)
+                    .HasForeignKey(s => s.UnitId)
+                    .IsRequired();
             });
         }
 
-        private void ConfigureEmployeeAccess(ModelBuilder modelBuilder)
+        private void ConfigureUserAccess(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<EmployeeAccess>(entity =>
+            modelBuilder.Entity<UserAccess>(entity =>
             {
-                entity.HasKey(ea => new { ea.EmployeeId, ea.AccessId });
+                entity.HasKey(ua => new { ua.UserId, ua.AccessId });
 
-                entity.HasOne(ea => ea.Employee)
-                    .WithMany(e => e.EmployeeAccesses)
-                    .HasForeignKey(ea => ea.EmployeeId)
+                entity.HasOne(ua => ua.User)
+                    .WithMany(e => e.UserAccesses)
+                    .HasForeignKey(ea => ea.UserId)
                     .IsRequired();
 
                 entity.HasOne(ea => ea.Access)
-                    .WithMany(a => a.EmployeeAccesses)
+                    .WithMany(a => a.UserAccesses)
                     .HasForeignKey(ea => ea.AccessId)
                     .IsRequired();
 
                 entity.Property(ea => ea.Directive)
                     .IsRequired();
 
-                entity.Property(ea => ea.AccessGrantedDate)
+                entity.Property(ea => ea.GrantedOn)
                     .IsRequired();
             });
         }
