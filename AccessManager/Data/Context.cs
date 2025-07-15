@@ -75,6 +75,9 @@ namespace AccessManager.Data
             {
                 entity.HasKey(e => e.Id);
 
+                entity.HasIndex(e => e.Description)
+                      .IsUnique();
+
                 entity.Property(e => e.Description)
                     .IsRequired()
                     .HasMaxLength(50);
@@ -95,6 +98,9 @@ namespace AccessManager.Data
                 entity.Property(e => e.Description)
                     .IsRequired()
                     .HasMaxLength(50);
+
+                entity.HasIndex(e => new { e.Description, e.DepartmentId })
+                    .IsUnique();
 
                 entity.HasOne(e => e.Department)
                       .WithMany(s => s.Units)

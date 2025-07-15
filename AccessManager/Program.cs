@@ -1,4 +1,5 @@
 using AccessManager.Data;
+using AccessManager.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager
@@ -12,11 +13,22 @@ namespace AccessManager
             builder.Services.AddDbContext<Context>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            builder.Services.AddSingleton<PasswordService>();
+
             // Add services to the container.
             builder.Services.AddSession();
             builder.Services.AddControllersWithViews();
 
             var app = builder.Build();
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                var context = services.GetRequiredService<Context>();
+                var config = services.GetRequiredService<IConfiguration>();
+                var passwordService = services.GetRequiredService<PasswordService>();
+
+                SeedData.Seed(context, config, passwordService);
+            }
 
             if (!app.Environment.IsDevelopment())
             {
