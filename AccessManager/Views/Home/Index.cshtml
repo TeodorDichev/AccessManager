@@ -1,8 +1,69 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model AccessManager.ViewModels.LoggedAccountViewModel
+
+@{
+    ViewData["Title"] = "Начална страница";
+    bool isLoggedIn = Model != null;
+    string errorMsg = "Моля, влезте в системата, за да достъпите тази страница.";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container" style="margin-top: 10vh; max-width: 900px;">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-4 mb-4">
+            @if (isLoggedIn)
+            {
+                <a href="/Page1" class="text-decoration-none w-100">
+                    <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen;">
+                        <img src="~/images/page1.png" alt="Page 1" class="mb-3 img-fluid" />
+                        <h3 class="mb-0">Служители</h3>
+                    </div>
+                </a>
+            }
+            else
+            {
+                <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen; cursor: not-allowed;">
+                    <img src="~/images/page1.png" alt="Page 1" class="mb-3 img-fluid" />
+                    <h3 class="mb-0">Служители</h3>
+                    <div class="mt-2 text-danger">@errorMsg</div>
+                </div>
+            }
+        </div>
+        <div class="col-12 col-md-4 mb-4">
+            @if (isLoggedIn)
+            {
+                <a href="/Page2" class="text-decoration-none w-100">
+                    <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen;">
+                        <img src="~/images/page2.png" alt="Page 1" class="mb-3 img-fluid" />
+                        <h3 class="mb-0">Достъпи</h3>
+                    </div>
+                </a>
+            }
+            else
+            {
+                <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen; cursor: not-allowed;">
+                    <img src="~/images/page2.png" alt="Page 2" class="mb-3 img-fluid" />
+                    <h3 class="mb-0">Достъпи</h3>
+                    <div class="mt-2 text-danger">@errorMsg</div>
+                </div>
+            }
+        </div>
+        <div class="col-12 col-md-4 mb-4">
+            @if (isLoggedIn)
+            {
+                <a href="/Page3" class="text-decoration-none w-100">
+                    <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen;">
+                        <img src="~/images/page3.png" alt="Page 3" class="mb-3 img-fluid" />
+                        <h3 class="mb-0">Одит</h3>
+                    </div>
+                </a>
+            }
+            else
+            {
+                <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen; cursor: not-allowed;">
+                    <img src="~/images/page3.png" alt="Page 3" class="mb-3 img-fluid" />
+                    <h3 class="mb-0">Одит</h3>
+                    <div class="mt-2 text-danger">@errorMsg</div>
+                </div>
+            }
+        </div>
+    </div>
 </div>

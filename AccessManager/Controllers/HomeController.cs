@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using AccessManager.Models;
+using AccessManager.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccessManager.Controllers
@@ -15,7 +16,21 @@ namespace AccessManager.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            var username = HttpContext.Session.GetString("Username");
+
+            if (!string.IsNullOrEmpty(username))
+            {
+                ViewData["Username"] = username;
+
+                var loggedAccountViewModel = new LoggedAccountViewModel
+                {
+                    Username = username
+                };
+
+                return View(loggedAccountViewModel);
+            }
+
+            return View(); // will return null model if no username in session
         }
 
         public IActionResult Privacy()
@@ -27,6 +42,10 @@ namespace AccessManager.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+        private string? GetLoggedUser()
+        {
+            return HttpContext.Session.GetString("Username");
         }
     }
 }

@@ -1,0 +1,44 @@
+﻿@model AccessManager.ViewModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Вход";
+}
+
+<section class="vh-90">
+    <div class="container h-100 d-flex justify-content-center align-items-center">
+        <div class="row w-100 justify-content-center">
+            <div class="col-12 col-md-6 col-lg-5 col-xl-4">
+                <div class="card bg-dark text-white rounded">
+                    <div class="card-body p-4 text-center">
+                        <h2 class="fw-bold mb-3 text-uppercase">Вход</h2>
+                        <p class="text-white-50 mb-4">Въведете данните си за вход в системата</p>
+
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                        <form asp-action="Login" asp-controller="Account" method="post">
+                            <div class="form-outline form-white mb-3">
+                                <input asp-for="Username" class="form-control" />
+                                <label asp-for="Username" class="form-label">Потребителско име</label>
+                                <span asp-validation-for="Username" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-outline form-white mb-3">
+                                <input asp-for="Password" class="form-control" />
+                                <label asp-for="Password" class="form-label">Парола</label>
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                            </div>
+
+                            <button class="btn btn-outline-light btn px-4" type="submit">Влез</button>
+                        </form>
+
+                        <p class="text-danger mt-3">@ViewData["Error"]</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
