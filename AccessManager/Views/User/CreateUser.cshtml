@@ -1,0 +1,144 @@
+﻿@model AccessManager.ViewModels.CreateUserViewModel
+@using AccessManager.Data.Enums
+@{
+    ViewData["Title"] = "Добави потребител";
+}
+
+<h2 class="mb-4">Добави потребител</h2>
+
+<form asp-action="CreateUser" method="post">
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label asp-for="UserName" class="form-label">Потребителско име</label>
+            <input asp-for="UserName" class="form-control" />
+            <span asp-validation-for="UserName" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="FirstName" class="form-label">Име</label>
+            <input asp-for="FirstName" class="form-control" />
+            <span asp-validation-for="FirstName" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="MiddleName" class="form-label">Презиме</label>
+            <input asp-for="MiddleName" class="form-control" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label asp-for="LastName" class="form-label">Фамилия</label>
+            <input asp-for="LastName" class="form-control" />
+            <span asp-validation-for="LastName" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="EGN" class="form-label">ЕГН</label>
+            <input asp-for="EGN" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Phone" class="form-label">Телефон</label>
+            <input asp-for="Phone" class="form-control" />
+        </div>
+    </div>
+
+    <hr />
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label asp-for="SelectedDepartmentId" class="form-label">Департамент</label>
+            <select asp-for="SelectedDepartmentId" asp-items="Model.Departments" class="form-select" id="SelectedDepartmentId">
+                <option value="">-- Изберете --</option>
+            </select>
+            <span asp-validation-for="SelectedDepartmentId" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="SelectedUnitId" class="form-label">Звено</label>
+            <select asp-for="SelectedUnitId" asp-items="Model.Units" class="form-select" id="SelectedUnitId">
+                <option value="">-- Изберете --</option>
+            </select>
+            <span asp-validation-for="SelectedUnitId" class="text-danger"></span>
+        </div>
+    </div>
+
+    <hr />
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label asp-for="SelectedReadingAccess" class="form-label">Достъп за четене</label>
+            <select asp-for="SelectedReadingAccess" class="form-select">
+                @foreach (ReadingAccess level in Enum.GetValues(typeof(ReadingAccess)))
+                {
+                    <option value="@((int)level)">@level</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="SelectedWritingAccess" class="form-label">Достъп за писане</label>
+            <select asp-for="SelectedWritingAccess" class="form-select">
+                @foreach (WritingAccess level in Enum.GetValues(typeof(WritingAccess)))
+                {
+                    <option value="@((int)level)">@level</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    @if (Model.SelectedReadingAccess != ReadingAccess.None || Model.SelectedWritingAccess != WritingAccess.None)
+    {
+        <div class="mb-3">
+            <label asp-for="Password" class="form-label">Парола</label>
+            <input asp-for="Password" type="password" class="form-control" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+    }
+
+    @if (Model.SelectedReadingAccess == ReadingAccess.Partial || Model.SelectedWritingAccess == WritingAccess.Partial)
+    {
+        <div class="mb-3">
+            <label class="form-label">Звена с достъп</label>
+            <select asp-for="SelectedAccessibleUnitIds" asp-items="Model.AvailableUnits" multiple class="form-select"></select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Системи с достъп</label>
+            <select asp-for="SelectedUserAccessIds" asp-items="Model.AvailableAccesses" multiple class="form-select"></select>
+        </div>
+    }
+
+    <div class="text-center mt-4">
+        <button type="submit" class="btn btn-primary px-5">Създай потребител</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.getElementById("SelectedDepartmentId").addEventListener("change", function () {
+            const departmentId = this.value;
+            const unitSelect = document.getElementById("SelectedUnitId");
+
+            if (!departmentId) {
+                unitSelect.innerHTML = "<option value=''>-- Изберете звено --</option>";
+                return;
+            }
+
+            fetch(`/User/GetUnitsForDepartment?departmentId=${departmentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    unitSelect.innerHTML = "";
+                    const defaultOption = document.createElement("option");
+                    defaultOption.value = "";
+                    defaultOption.text = "-- Изберете --";
+                    unitSelect.appendChild(defaultOption);
+
+                    data.forEach(unit => {
+                        const option = document.createElement("option");
+                        option.value = unit.id;
+                        option.text = unit.description;
+                        unitSelect.appendChild(option);
+                    });
+                });
+        });
+    </script>
+}

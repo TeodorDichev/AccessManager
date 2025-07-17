@@ -29,7 +29,7 @@
         <div class="col-12 col-md-4 mb-4">
             @if (isLoggedIn)
             {
-                <a href="/Page2" class="text-decoration-none w-100">
+                <a asp-controller="Access" asp-action="AccessList" class="text-decoration-none w-100">
                     <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen;">
                         <img src="~/images/page2.png" alt="Page 1" class="mb-3 img-fluid" />
                         <h3 class="mb-0">Достъпи</h3>
@@ -48,10 +48,10 @@
         <div class="col-12 col-md-4 mb-4">
             @if (isLoggedIn)
             {
-                <a href="/Page3" class="text-decoration-none w-100">
+                <a asp-controller="Log" asp-action="LogList" class="text-decoration-none w-100">
                     <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen;">
-                        <img src="~/images/page3.png" alt="Page 3" class="mb-3 img-fluid" />
-                        <h3 class="mb-0">Одит</h3>
+                        <img src="~/images/page3.png" alt="Page 1" class="mb-3 img-fluid" />
+                        <h3 class="mb-0">Одити</h3>
                     </div>
                 </a>
             }
@@ -59,7 +59,7 @@
             {
                 <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen; cursor: not-allowed;">
                     <img src="~/images/page3.png" alt="Page 3" class="mb-3 img-fluid" />
-                    <h3 class="mb-0">Одит</h3>
+                    <h3 class="mb-0">Одити</h3>
                     <div class="mt-2 text-danger">@errorMsg</div>
                 </div>
             }

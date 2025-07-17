@@ -32,6 +32,19 @@
         </select>
     </div>
 
+    <div>
+        <label for="filterDepartment" class="form-label">Филтър по департамент:</label>
+        <select name="filterDepartment" id="filterDepartment" class="form-select">
+            <option value="">Всички</option>
+            @foreach (var department in Model.FilterDepartments)
+            {
+                <option value="@department" selected="@(department == Model.SelectedFilterDepartment ? "selected" : null)">
+                    @department
+                </option>
+            }
+        </select>
+    </div>
+
     <div class="align-self-end">
         <button type="submit" class="btn btn-primary">Приложи</button>
     </div>
@@ -39,13 +52,13 @@
     <div class="ms-auto">
         @if (Model.CanAddUser)
         {
-            <a asp-controller="Account" asp-action="CreateUser" class="btn btn-success">
+            <a asp-controller="User" asp-action="CreateUser" class="btn btn-success">
                 Добави потребител
             </a>
         }
         else
         {
-            <a asp-controller="Account" asp-action="CreateUser" class="btn btn-success disabled" aria-disabled="true" tabindex="-1">
+            <a asp-controller="User" asp-action="CreateUser" class="btn btn-success disabled" aria-disabled="true" tabindex="-1">
                 Добави потребител
             </a>
         }

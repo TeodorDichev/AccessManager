@@ -20,10 +20,9 @@
     }
 </style>
 
-<form asp-action="Profile" method="post">
+<form asp-action="MyProfile" method="post">
     <div class="row">
         <div class="col-md-6">
-            <!-- Лява колона -->
             <div class="mb-3">
                 <label asp-for="FirstName" class="form-label">Първо име</label>
                 <input asp-for="FirstName" class="form-control" />
@@ -76,8 +75,6 @@
         </div>
 
         <div class="col-md-6">
-            <!-- Дясна колона -->
-
             <div class="mb-3">
                 <label asp-for="UserName" class="form-label">Потребителско име</label>
                 <input asp-for="UserName" class="form-control" />
