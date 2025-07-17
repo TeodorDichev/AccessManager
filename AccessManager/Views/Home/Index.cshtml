@@ -10,10 +10,10 @@
         <div class="col-12 col-md-4 mb-4">
             @if (isLoggedIn)
             {
-                <a href="/Page1" class="text-decoration-none w-100">
+                <a asp-controller="User" asp-action="UserList" class="text-decoration-none w-100">
                     <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen;">
                         <img src="~/images/page1.png" alt="Page 1" class="mb-3 img-fluid" />
-                        <h3 class="mb-0">Служители</h3>
+                        <h3 class="mb-0">Потребители</h3>
                     </div>
                 </a>
             }
@@ -21,7 +21,7 @@
             {
                 <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen; cursor: not-allowed;">
                     <img src="~/images/page1.png" alt="Page 1" class="mb-3 img-fluid" />
-                    <h3 class="mb-0">Служители</h3>
+                    <h3 class="mb-0">Потребители</h3>
                     <div class="mt-2 text-danger">@errorMsg</div>
                 </div>
             }

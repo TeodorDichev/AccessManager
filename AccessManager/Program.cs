@@ -14,6 +14,7 @@ namespace AccessManager
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             builder.Services.AddSingleton<PasswordService>();
+            builder.Services.AddSingleton<UserService>();
 
             // Add services to the container.
             builder.Services.AddSession();

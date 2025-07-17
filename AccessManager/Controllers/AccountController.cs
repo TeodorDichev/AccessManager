@@ -47,7 +47,7 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult Profile()
+        public IActionResult MyProfile()
         {
             var username = HttpContext.Session.GetString("Username");
 
@@ -61,17 +61,15 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        public IActionResult Profile(LoggedAccountViewModel model, string? OldPassword, string? NewPassword)
+        public IActionResult MyProfile(LoggedAccountViewModel model, string? OldPassword, string? NewPassword)
         {
             if (!ModelState.IsValid)
                 return View(model);
 
-            // Find user by UserName (we need actual entity to validate and update)
             var user = context.Users.FirstOrDefault(u => u.UserName == model.UserName);
             if (user == null)
                 return NotFound();
 
-            // Password check (only if new password is requested)
             if (!string.IsNullOrWhiteSpace(NewPassword))
             {
                 if (string.IsNullOrWhiteSpace(OldPassword) || !passwordService.VerifyPassword(OldPassword, user.Password))
@@ -83,38 +81,19 @@ namespace AccessManager.Controllers
                 user.Password = passwordService.HashPassword(NewPassword);
             }
 
-            // Update fields
             user.FirstName = model.FirstName;
             user.MiddleName = model.MiddleName;
             user.LastName = model.LastName;
             user.EGN = model.EGN;
             user.Phone = model.Phone;
 
-            // Update username only if WritingAccess is full (in Bulgarian: "Пълен")
-            if (model.WritingAccess == "Пълен")
+            if (user.WritingAccess == Data.Enums.WritingAccess.Full)
                 user.UserName = model.UserName;
 
             context.SaveChanges();
 
-            // Rebuild the view model (in case the database has changed, or to preserve dependent fields)
-            var updatedModel = new LoggedAccountViewModel
-            {
-                UserName = user.UserName,
-                FirstName = user.FirstName,
-                MiddleName = user.MiddleName,
-                LastName = user.LastName,
-                EGN = user.EGN ?? "",
-                Phone = user.Phone ?? "",
-                ReadingAccess = user.ReadingAccess.GetType().Name,
-                WritingAccess = user.WritingAccess.GetType().Name,
-                UnitDescription = user.Unit.Description,
-                DepartmentDescription = user.Unit.Department.Description,
-                AccessibleUnits = user.AccessibleUnits.Select(u => u.Unit.Description).ToList(),
-                UserAccesses = user.UserAccesses.Select(a => a.Access.Description).ToList()
-            };
-
             ViewBag.Success = true;
-            return View(updatedModel);
+            return View(BuildLoggedAccountViewModel(user.UserName));
         }
 
         private LoggedAccountViewModel BuildLoggedAccountViewModel(string username)
@@ -137,7 +116,7 @@ namespace AccessManager.Controllers
                 Phone = user.Phone ?? string.Empty,
                 AccessibleUnits = user.AccessibleUnits.Select(u => u.Unit.Description).ToList(),
                 UserAccesses = user.UserAccesses.Select(ua => ua.Access.Description).ToList(), // To be modified for tree structure
-                canEditUserName = user.ReadingAccess == Data.Enums.ReadingAccess.Full
+                canEdit = (user.WritingAccess != Data.Enums.WritingAccess.None && user.WritingAccess != Data.Enums.WritingAccess.Unspecified)
             };
         }
     }

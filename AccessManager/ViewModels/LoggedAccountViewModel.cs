@@ -23,5 +23,6 @@ namespace AccessManager.ViewModels
         public List<string> AccessibleUnits { get; set; } = [];
         public List<string> UserAccesses { get; set; } = [];
         public bool canEditUserName { get; set; }
+        public bool canEdit { get; set; }
     }
 }

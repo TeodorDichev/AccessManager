@@ -1,0 +1,93 @@
+﻿@model AccessManager.ViewModels.UserListViewModel
+
+@{
+    ViewData["Title"] = "Потребители";
+}
+
+<h2>Потребители</h2>
+
+<form method="get" class="mb-3 d-flex align-items-center gap-3">
+    <div>
+        <label for="sortBy" class="form-label">Сортиране по:</label>
+        <select name="sortBy" id="sortBy" class="form-select">
+            @foreach (var option in Model.SortOptions)
+            {
+                <option value="@option" selected="@(option == Model.SelectedSortOption ? "selected" : null)">
+                    @option
+                </option>
+            }
+        </select>
+    </div>
+
+    <div>
+        <label for="filterUnit" class="form-label">Филтър по звено:</label>
+        <select name="filterUnit" id="filterUnit" class="form-select">
+            <option value="">Всички</option>
+            @foreach (var unit in Model.FilterUnits)
+            {
+                <option value="@unit" selected="@(unit == Model.SelectedFilterUnit ? "selected" : null)">
+                    @unit
+                </option>
+            }
+        </select>
+    </div>
+
+    <div class="align-self-end">
+        <button type="submit" class="btn btn-primary">Приложи</button>
+    </div>
+
+    <div class="ms-auto">
+        @if (Model.CanAddUser)
+        {
+            <a asp-controller="Account" asp-action="CreateUser" class="btn btn-success">
+                Добави потребител
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Account" asp-action="CreateUser" class="btn btn-success disabled" aria-disabled="true" tabindex="-1">
+                Добави потребител
+            </a>
+        }
+    </div>
+</form>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>Потребителско име</th>
+            <th>Собствено име</th>
+            <th>Фамилия</th>
+            <th>Департамент</th>
+            <th>Звено</th>
+            <th>Достъп за писане</th>
+            <th>Достъп за четене</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach(var user in Model.Users)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@user.FirstName</td>
+                <td>@user.LastName</td>
+                <td>@user.Department</td>
+                <td>@user.Unit</td>
+                <td>@user.WriteAccess</td>
+                <td>@user.ReadAccess</td>
+                <td>
+                    <a asp-controller="Account" asp-action="EditUser" asp-route-username="@user.UserName" class="btn btn-sm btn-primary">
+                        Редактирай
+                    </a>
+                </td>
+                <td>
+                    <form asp-controller="Account" asp-action="DeleteUser" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Сигурни ли сте?');">
+                        <button type="submit" class="btn btn-sm btn-danger">Изтрий</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

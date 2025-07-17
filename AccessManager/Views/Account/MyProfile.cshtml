@@ -28,30 +28,50 @@
                 <label asp-for="FirstName" class="form-label">Първо име</label>
                 <input asp-for="FirstName" class="form-control" />
                 <span asp-validation-for="FirstName" class="text-danger"></span>
+                @if (!Model.canEdit)
+                {
+                    <input type="hidden" asp-for="FirstName" />
+                }
             </div>
 
             <div class="mb-3">
                 <label asp-for="MiddleName" class="form-label">Второ име</label>
                 <input asp-for="MiddleName" class="form-control" />
                 <span asp-validation-for="MiddleName" class="text-danger"></span>
+                @if (!Model.canEdit)
+                {
+                    <input type="hidden" asp-for="MiddleName" />
+                }
             </div>
 
             <div class="mb-3">
                 <label asp-for="LastName" class="form-label">Фамилия</label>
                 <input asp-for="LastName" class="form-control" />
                 <span asp-validation-for="LastName" class="text-danger"></span>
+                @if (!Model.canEdit)
+                {
+                    <input type="hidden" asp-for="LastName" />
+                }
             </div>
 
             <div class="mb-3">
                 <label asp-for="EGN" class="form-label">ЕГН</label>
                 <input asp-for="EGN" class="form-control" />
                 <span asp-validation-for="EGN" class="text-danger"></span>
+                @if (!Model.canEdit)
+                {
+                    <input type="hidden" asp-for="EGN" />
+                }
             </div>
 
             <div class="mb-3">
                 <label asp-for="Phone" class="form-label">Телефонен номер</label>
                 <input asp-for="Phone" class="form-control" />
                 <span asp-validation-for="Phone" class="text-danger"></span>
+                @if (!Model.canEdit)
+                {
+                    <input type="hidden" asp-for="Phone" />
+                }
             </div>
         </div>
 
@@ -62,7 +82,7 @@
                 <label asp-for="UserName" class="form-label">Потребителско име</label>
                 <input asp-for="UserName" class="form-control" />
                 <span asp-validation-for="UserName" class="text-danger"></span>
-                @if(!Model.canEditUserName)
+                @if(!Model.canEdit)
                 {
                     <input type="hidden" asp-for="UserName" />
                 }
