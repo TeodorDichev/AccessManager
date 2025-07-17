@@ -1,34 +1,20 @@
-using System.Diagnostics;
+using AccessManager.Data;
+using AccessManager.Data.Entities;
 using AccessManager.Models;
 using AccessManager.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 
 namespace AccessManager.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController : BaseController
     {
-        private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
-
         public IActionResult Index()
         {
             var username = HttpContext.Session.GetString("Username");
 
             if (!string.IsNullOrEmpty(username))
-            {
                 ViewData["Username"] = username;
-
-                var loggedAccountViewModel = new LoggedAccountViewModel
-                {
-                    Username = username
-                };
-
-                return View(loggedAccountViewModel);
-            }
 
             return View();
         }

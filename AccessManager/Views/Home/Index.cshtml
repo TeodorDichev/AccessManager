@@ -1,8 +1,7 @@
-﻿@model AccessManager.ViewModels.LoggedAccountViewModel
-
-@{
+﻿@{
     ViewData["Title"] = "Начална страница";
-    bool isLoggedIn = Model != null;
+    var username = ViewData["Username"] as string;
+    bool isLoggedIn = !string.IsNullOrEmpty(username);
     string errorMsg = "Моля, влезте в системата, за да достъпите тази страница.";
 }
 

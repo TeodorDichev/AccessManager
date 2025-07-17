@@ -1,0 +1,161 @@
+﻿@model AccessManager.ViewModels.LoggedAccountViewModel
+
+@{
+    ViewData["Title"] = "Моят профил";
+}
+
+<h2 class="text-center fw-bold">Моят профил</h2>
+
+@if (ViewBag.Success != null && (bool)ViewBag.Success)
+{
+    <div class="alert alert-success">Профилът е обновен успешно.</div>
+}
+
+<style>
+    input[readonly] {
+        background-color: #e9ecef;
+        color: #6c757d;
+        border-color: #ced4da;
+        cursor: not-allowed;
+    }
+</style>
+
+<form asp-action="Profile" method="post">
+    <div class="row">
+        <div class="col-md-6">
+            <!-- Лява колона -->
+            <div class="mb-3">
+                <label asp-for="FirstName" class="form-label">Първо име</label>
+                <input asp-for="FirstName" class="form-control" />
+                <span asp-validation-for="FirstName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="MiddleName" class="form-label">Второ име</label>
+                <input asp-for="MiddleName" class="form-control" />
+                <span asp-validation-for="MiddleName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="LastName" class="form-label">Фамилия</label>
+                <input asp-for="LastName" class="form-control" />
+                <span asp-validation-for="LastName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="EGN" class="form-label">ЕГН</label>
+                <input asp-for="EGN" class="form-control" />
+                <span asp-validation-for="EGN" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Phone" class="form-label">Телефонен номер</label>
+                <input asp-for="Phone" class="form-control" />
+                <span asp-validation-for="Phone" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <!-- Дясна колона -->
+
+            <div class="mb-3">
+                <label asp-for="UserName" class="form-label">Потребителско име</label>
+                <input asp-for="UserName" class="form-control" />
+                <span asp-validation-for="UserName" class="text-danger"></span>
+                @if(!Model.canEditUserName)
+                {
+                    <input type="hidden" asp-for="UserName" />
+                }
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Звено</label>
+                <input class="form-control" value="@Model.UnitDescription" readonly />
+                <input type="hidden" asp-for="UnitDescription" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Департамент</label>
+                <input class="form-control" value="@Model.DepartmentDescription" readonly />
+                <input type="hidden" asp-for="DepartmentDescription" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Достъп за четене</label>
+                <input class="form-control" value="@Model.ReadingAccess" readonly />
+                <input type="hidden" asp-for="ReadingAccess" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Достъп за писане</label>
+                <input class="form-control" value="@Model.WritingAccess" readonly />
+                <input type="hidden" asp-for="WritingAccess" />
+            </div>
+        </div>
+    </div>
+    <hr />
+
+    <h4>Смяна на парола</h4>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Стара парола</label>
+            <input name="OldPassword" type="password" class="form-control" />
+            @if (ViewData.ModelState["Password"]?.Errors.Count > 0)
+            {
+                <span class="text-danger">@ViewData.ModelState["Password"].Errors[0].ErrorMessage</span>
+            }
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Нова парола</label>
+            <input name="NewPassword" type="password" class="form-control" />
+        </div>
+    </div>
+
+    <div class="d-grid mb-4">
+        <button type="submit" class="btn btn-primary btn-lg">Запази</button>
+    </div>
+</form>
+
+<hr />
+
+<h4>Видими звена</h4>
+<div style="max-height: 200px; overflow-y: auto;">
+    <table class="table table-sm table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Звено</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.AccessibleUnits.Count; i++)
+            {
+                <tr>
+                    <td>@(i + 1)</td>
+                    <td>@Model.AccessibleUnits[i]</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<h4>Достъпи</h4>
+<div style="max-height: 200px; overflow-y: auto;">
+    <table class="table table-sm table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Достъп</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.UserAccesses.Count; i++)
+            {
+                <tr>
+                    <td>@(i + 1)</td>
+                    <td>@Model.UserAccesses[i]</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
