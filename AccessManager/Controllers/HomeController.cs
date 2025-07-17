@@ -30,7 +30,7 @@ namespace AccessManager.Controllers
                 return View(loggedAccountViewModel);
             }
 
-            return View(); // will return null model if no username in session
+            return View();
         }
 
         public IActionResult Privacy()
@@ -42,10 +42,6 @@ namespace AccessManager.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
-        private string? GetLoggedUser()
-        {
-            return HttpContext.Session.GetString("Username");
         }
     }
 }

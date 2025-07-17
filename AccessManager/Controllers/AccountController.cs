@@ -1,10 +1,21 @@
-﻿using AccessManager.ViewModels;
+﻿using AccessManager.Data;
+using AccessManager.Data.Entities;
+using AccessManager.Services;
+using AccessManager.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccessManager.Controllers
 {
     public class AccountController : Controller
     {
+        private readonly Context context;
+        private readonly PasswordService passwordService;
+        public AccountController(Context context, PasswordService passwordService)
+        {
+            this.context = context;
+            this.passwordService = passwordService;
+        }
+
         [HttpGet]
         public IActionResult Login()
         {
@@ -17,19 +28,23 @@ namespace AccessManager.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // TODO: Authenticate user (e.g., check from database)
-
-            if (model.Username == "admin" && model.Password == "pass")
+            User? user = context.Users.FirstOrDefault(u => u.UserName == model.Username);
+            if (user != null && user.Password != null && passwordService.VerifyPassword(model.Password, user.Password))
             {
-                // Login success — redirect to dashboard/home
                 HttpContext.Session.SetString("Username", model.Username);
 
-                // Then redirect
                 return RedirectToAction("Index", "Home");
             }
 
             ModelState.AddModelError("", "Невалиден опит за вход!");
             return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult Logout()
+        {
+            HttpContext.Session.SetString("Username", "");
+            return RedirectToAction("Index", "Home");
         }
     }
 }
