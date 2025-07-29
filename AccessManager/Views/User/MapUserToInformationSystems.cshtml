@@ -1,5 +1,94 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model AccessManager.ViewModels.User.MapUserToSystemsViewModel
 @{
+    ViewData["Title"] = "Свържи потребител с АИС";
+}
+
+<form asp-action="MapUserToInformationSystems" method="post">
+    <input type="hidden" asp-for="UserName" />
+
+    @foreach (var system in Model.Systems)
+    {
+        <div class="border rounded p-3 mb-3">
+            <div class="form-check mb-2">
+                <input class="form-check-input system-checkbox" type="checkbox"
+                       name="Systems[@Model.Systems.IndexOf(system)].IsSelected"
+                       value="true"
+                       id="sys-@system.Id" data-id="@system.Id" />
+                <label class="form-check-label fw-bold" for="sys-@system.Id">@system.Name</label>
+            </div>
+            <input type="hidden" name="Systems[@Model.Systems.IndexOf(system)].Id" value="@system.Id" />
+            <input type="text" class="form-control mb-3 system-directive" placeholder="Директива" style="display:none"
+                   name="Systems[@Model.Systems.IndexOf(system)].Directive" />
+
+            @for (int i = 0; i < system.Accesses.Count; i++)
+            {
+                var access = system.Accesses[i];
+                <div class="ms-4">
+                    <div class="form-check mb-1">
+                        <input class="form-check-input access-checkbox" type="checkbox"
+                               name="Systems[@Model.Systems.IndexOf(system)].Accesses[@i].IsSelected"
+                               value="true" id="acc-@access.Id"
+                               data-parent-id="@system.Id" />
+                        <label class="form-check-label" for="acc-@access.Id">@access.Description</label>
+                    </div>
+                    <input type="hidden" name="Systems[@Model.Systems.IndexOf(system)].Accesses[@i].Id" value="@access.Id" />
+                    <input type="text" class="form-control mb-2 access-directive ms-4" placeholder="Директива" style="display:none"
+                           name="Systems[@Model.Systems.IndexOf(system)].Accesses[@i].Directive" />
+
+                    @for (int j = 0; j < access.SubAccesses.Count; j++)
+                    {
+                        var sub = access.SubAccesses[j];
+                        <div class="ms-5">
+                            <div class="form-check mb-1">
+                                <input class="form-check-input subaccess-checkbox" type="checkbox"
+                                       name="Systems[@Model.Systems.IndexOf(system)].Accesses[@i].SubAccesses[@j].IsSelected"
+                                       value="true" id="sub-@sub.Id"
+                                       data-parent-id="@access.Id" />
+                                <label class="form-check-label" for="sub-@sub.Id">@sub.Description</label>
+                            </div>
+                            <input type="hidden" name="Systems[@Model.Systems.IndexOf(system)].Accesses[@i].SubAccesses[@j].Id" value="@sub.Id" />
+                            <input type="text" class="form-control mb-2 subaccess-directive ms-5" placeholder="Директива" style="display:none"
+                                   name="Systems[@Model.Systems.IndexOf(system)].Accesses[@i].SubAccesses[@j].Directive" />
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    <div class="text-center mt-4">
+        <button type="submit" class="btn btn-primary">Запази</button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll(".system-checkbox").forEach(sys => {
+            sys.addEventListener("change", function () {
+                const container = this.closest(".border");
+                const inputs = container.querySelectorAll("input[type='checkbox']");
+                const directive = container.querySelector(".system-directive");
+                inputs.forEach(cb => cb.checked = this.checked);
+                directive.style.display = this.checked ? "block" : "none";
+            });
+        });
+
+        document.querySelectorAll(".access-checkbox").forEach(acc => {
+            acc.addEventListener("change", function () {
+                const directive = this.closest(".ms-4").querySelector(".access-directive");
+                const subs = this.closest(".ms-4").querySelectorAll(".subaccess-checkbox");
+                const subDirectives = this.closest(".ms-4").querySelectorAll(".subaccess-directive");
+                subs.forEach(cb => cb.checked = this.checked);
+                subDirectives.forEach(txt => txt.style.display = "none");
+                directive.style.display = this.checked ? "block" : "none";
+            });
+        });
+
+        document.querySelectorAll(".subaccess-checkbox").forEach(sub => {
+            sub.addEventListener("change", function () {
+                const directive = this.closest(".ms-5").querySelector(".subaccess-directive");
+                directive.style.display = this.checked ? "block" : "none";
+            });
+        });
+    </script>
 }

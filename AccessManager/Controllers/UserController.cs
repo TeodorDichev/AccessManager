@@ -2,7 +2,7 @@
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
-using AccessManager.ViewModels;
+using AccessManager.ViewModels.InformationSystem;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -119,21 +119,12 @@ namespace AccessManager.Controllers
             if (string.IsNullOrEmpty(username)) return RedirectToAction("Login");
 
             var loggedUser = context.Users.FirstOrDefault(u => u.UserName == username);
+
             if (loggedUser == null) return NotFound();
 
-            if (!string.IsNullOrEmpty(SelectedAccessibleUnitIds))
+            if(context.Users.Any(u => u.UserName == model.UserName))
             {
-                model.SelectedAccessibleUnitIds = SelectedAccessibleUnitIds
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(Guid.Parse)
-                    .ToList();
-            }
-
-            if (model.SelectedReadingAccess == ReadingAccess.None && model.SelectedWritingAccess == WritingAccess.None)
-            {
-
-                ModelState["SelectedAccessibleUnitIds"]?.Errors.Clear();
-                ModelState["SelectedAccessibleUnitIds"].ValidationState = Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Valid;
+                ModelState.AddModelError("UserName", "Невалидно потребителско име!");
             }
 
             if (!ModelState.IsValid)
@@ -155,16 +146,89 @@ namespace AccessManager.Controllers
                 Password = model.Password
             };
 
-            if (model.SelectedAccessibleUnitIds.Any())
+            if (!string.IsNullOrEmpty(SelectedAccessibleUnitIds))
             {
-                user.AccessibleUnits = model.SelectedAccessibleUnitIds
-                    .Select(uid => new UnitUser { UnitId = uid, UserId = user.Id })
+                user.AccessibleUnits = SelectedAccessibleUnitIds
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(uid => new UnitUser { UnitId = Guid.Parse(uid), UserId = user.Id })
                     .ToList();
             }
 
             context.Users.Add(user);
             context.SaveChanges();
 
+            return RedirectToAction("MapUserToInformationSystems", new { userName = model.UserName });
+        }
+
+        [HttpGet]
+        public IActionResult MapUserToInformationSystems(string userName)
+        {
+            var user = context.Users.FirstOrDefault(u => u.UserName == userName);
+            if (user == null) return NotFound();
+
+            var systems = context.InformationSystems
+                .Where(s => s.DeletedOn == null)
+                .ToList();
+
+            var model = new MapUserToSystemsViewModel
+            {
+                UserName = userName,
+                Systems = systems.Select(s => new InformationSystemViewModel
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Accesses = s.Accesses
+                        .Where(a => a.DeletedOn == null)
+                        .Select(a => new AccessViewModel
+                        {
+                            Id = a.Id,
+                            Description = a.Description,
+                            SubAccesses = a.SubAccesses
+                                .Where(sa => sa.DeletedOn == null)
+                                .Select(sa => new AccessViewModel
+                                {
+                                    Id = sa.Id,
+                                    Description = sa.Description
+                                }).ToList()
+                        }).ToList()
+                }).ToList()
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public IActionResult MapUserToInformationSystems(MapUserToSystemsViewModel model)
+        {
+            var user = context.Users.FirstOrDefault(u => u.UserName == model.UserName);
+            if (user == null) return NotFound();
+
+            foreach (var system in model.Systems.Where(s => s.IsSelected))
+            {
+                foreach (var access in system.Accesses.Where(a => a.IsSelected))
+                {
+                    context.UserAccesses.Add(new UserAccess
+                    {
+                        UserId = user.Id,
+                        AccessId = access.Id,
+                        Directive = access.Directive ?? system.Directive ?? string.Empty,
+                        GrantedOn = DateTime.UtcNow
+                    });
+
+                    foreach (var sub in access.SubAccesses.Where(s => s.IsSelected))
+                    {
+                        context.UserAccesses.Add(new UserAccess
+                        {
+                            UserId = user.Id,
+                            AccessId = sub.Id,
+                            Directive = sub.Directive ?? access.Directive ?? system.Directive ?? string.Empty,
+                            GrantedOn = DateTime.UtcNow
+                        });
+                    }
+                }
+            }
+
+            context.SaveChanges();
             return RedirectToAction("UserList");
         }
 

@@ -22,8 +22,6 @@ namespace AccessManager.ViewModels.User
 
         public string? Password { get; set; }
 
-        public List<Guid> SelectedAccessibleUnitIds { get; set; } = [];
-
         // Dropdown data
         public List<DepartmentUnitViewModel> DepartmentUnits { get; set; } = [];
         public List<SelectListItem> Departments { get; set; } = [];
