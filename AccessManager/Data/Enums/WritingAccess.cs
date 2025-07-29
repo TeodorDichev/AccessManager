@@ -2,9 +2,8 @@
 {
     public enum WritingAccess
     {
-        Unspecified = 0,
-        None = 1,
-        Partial = 2,
-        Full = 3,
+        None = 0,
+        Partial = 1,
+        Full = 2,
     }
 }

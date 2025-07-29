@@ -1,4 +1,5 @@
-﻿@model AccessManager.ViewModels.UserListViewModel
+﻿@using AccessManager.ViewModels.User
+@model UserListViewModel
 
 @{
     ViewData["Title"] = "Потребители";
@@ -20,7 +21,7 @@
     </div>
 
     <div>
-        <label for="filterUnit" class="form-label">Филтър по звено:</label>
+        <label for="filterUnit" class="form-label">Филтър по служба:</label>
         <select name="filterUnit" id="filterUnit" class="form-select">
             <option value="">Всички</option>
             @foreach (var unit in Model.FilterUnits)
@@ -33,7 +34,7 @@
     </div>
 
     <div>
-        <label for="filterDepartment" class="form-label">Филтър по департамент:</label>
+        <label for="filterDepartment" class="form-label">Филтър по звено:</label>
         <select name="filterDepartment" id="filterDepartment" class="form-select">
             <option value="">Всички</option>
             @foreach (var department in Model.FilterDepartments)
@@ -71,8 +72,8 @@
             <th>Потребителско име</th>
             <th>Собствено име</th>
             <th>Фамилия</th>
-            <th>Департамент</th>
             <th>Звено</th>
+            <th>Служба</th>
             <th>Достъп за писане</th>
             <th>Достъп за четене</th>
             <th></th>

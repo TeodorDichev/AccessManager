@@ -7,8 +7,8 @@ namespace AccessManager.Data.Entities
     public class User
     {
         public Guid Id { get; set; }
-        public ReadingAccess ReadingAccess { get; set; } = ReadingAccess.Unspecified;
-        public WritingAccess WritingAccess { get; set; } = WritingAccess.Unspecified;
+        public ReadingAccess ReadingAccess { get; set; } = ReadingAccess.None;
+        public WritingAccess WritingAccess { get; set; } = WritingAccess.None;
         public string UserName { get; set; } = string.Empty;
         public string? Password { get; set; } = string.Empty; // Nullable to allow adding users with no reading and writing access
         public string FirstName { get; set; } = string.Empty;
@@ -17,7 +17,6 @@ namespace AccessManager.Data.Entities
 
         public Guid UnitId { get; set; }
         public virtual Unit Unit { get; set; } = null!; // Means that the user also has a department
-
 
         [RegularExpression(@"^\d{10}$", ErrorMessage = ExceptionMessages.InvalidEGN)]
         public string? EGN { get; set; } = string.Empty;

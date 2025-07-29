@@ -1,4 +1,4 @@
-﻿@model AccessManager.ViewModels.CreateUserViewModel
+﻿@model AccessManager.ViewModels.User.CreateUserViewModel
 @using AccessManager.Data.Enums
 @{
     ViewData["Title"] = "Добави потребител";
@@ -41,18 +41,16 @@
         </div>
     </div>
 
-    <hr />
-
     <div class="row mb-3">
         <div class="col-md-6">
-            <label asp-for="SelectedDepartmentId" class="form-label">Департамент</label>
+            <label asp-for="SelectedDepartmentId" class="form-label">Звено</label>
             <select asp-for="SelectedDepartmentId" asp-items="Model.Departments" class="form-select" id="SelectedDepartmentId">
                 <option value="">-- Изберете --</option>
             </select>
             <span asp-validation-for="SelectedDepartmentId" class="text-danger"></span>
         </div>
         <div class="col-md-6">
-            <label asp-for="SelectedUnitId" class="form-label">Звено</label>
+            <label asp-for="SelectedUnitId" class="form-label">Служба</label>
             <select asp-for="SelectedUnitId" asp-items="Model.Units" class="form-select" id="SelectedUnitId">
                 <option value="">-- Изберете --</option>
             </select>
@@ -60,12 +58,10 @@
         </div>
     </div>
 
-    <hr />
-
     <div class="row mb-3">
         <div class="col-md-6">
             <label asp-for="SelectedReadingAccess" class="form-label">Достъп за четене</label>
-            <select asp-for="SelectedReadingAccess" class="form-select">
+            <select asp-for="SelectedReadingAccess" class="form-select" id="SelectedReadingAccess">
                 @foreach (ReadingAccess level in Enum.GetValues(typeof(ReadingAccess)))
                 {
                     <option value="@((int)level)">@level</option>
@@ -74,7 +70,7 @@
         </div>
         <div class="col-md-6">
             <label asp-for="SelectedWritingAccess" class="form-label">Достъп за писане</label>
-            <select asp-for="SelectedWritingAccess" class="form-select">
+            <select asp-for="SelectedWritingAccess" class="form-select" id="SelectedWritingAccess">
                 @foreach (WritingAccess level in Enum.GetValues(typeof(WritingAccess)))
                 {
                     <option value="@((int)level)">@level</option>
@@ -83,27 +79,24 @@
         </div>
     </div>
 
-    @if (Model.SelectedReadingAccess != ReadingAccess.None || Model.SelectedWritingAccess != WritingAccess.None)
-    {
-        <div class="mb-3">
-            <label asp-for="Password" class="form-label">Парола</label>
-            <input asp-for="Password" type="password" class="form-control" />
-            <span asp-validation-for="Password" class="text-danger"></span>
-        </div>
-    }
+    <div class="mb-3" id="password-container" style="display: none;">
+         <label asp-for="Password" class="form-label">Парола</label>
+         <input asp-for="Password" type="password" class="form-control" />
+         <span asp-validation-for="Password" class="text-danger"></span>
+     </div>
 
-    @if (Model.SelectedReadingAccess == ReadingAccess.Partial || Model.SelectedWritingAccess == WritingAccess.Partial)
-    {
-        <div class="mb-3">
-            <label class="form-label">Звена с достъп</label>
-            <select asp-for="SelectedAccessibleUnitIds" asp-items="Model.AvailableUnits" multiple class="form-select"></select>
+    <div class="mb-3" id="unit-access-container" style="display: none;">
+        <label class="form-label">Звена с достъп</label>
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                Избери звена
+            </button>
+            <ul class="dropdown-menu p-3" style="max-height: 300px; overflow-y: auto;" id="units-dropdown">
+                <!-- Populated via JS -->
+            </ul>
         </div>
-
-        <div class="mb-3">
-            <label class="form-label">Системи с достъп</label>
-            <select asp-for="SelectedUserAccessIds" asp-items="Model.AvailableAccesses" multiple class="form-select"></select>
-        </div>
-    }
+        <input type="hidden" name="SelectedAccessibleUnitIds" id="SelectedAccessibleUnitIds" />
+    </div>
 
     <div class="text-center mt-4">
         <button type="submit" class="btn btn-primary px-5">Създай потребител</button>
@@ -112,6 +105,27 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        const readSelect = document.getElementById("SelectedReadingAccess");
+        const writeSelect = document.getElementById("SelectedWritingAccess");
+        const passwordContainer = document.getElementById("password-container");
+        const unitAccessContainer = document.getElementById("unit-access-container");
+
+        function updateVisibility() {
+            const readVal = parseInt(readSelect.value);
+            const writeVal = parseInt(writeSelect.value);
+
+            const showPassword = readVal === 0 && writeVal === 0;
+            const showUnitAccess = readVal === 1 || writeVal === 1;
+
+            passwordContainer.style.display = showPassword ? "none" : "block";
+            unitAccessContainer.style.display = showUnitAccess ? "block" : "none";
+        }
+
+        readSelect.addEventListener("change", updateVisibility);
+        writeSelect.addEventListener("change", updateVisibility);
+        updateVisibility();
+    </script>
 
     <script>
         document.getElementById("SelectedDepartmentId").addEventListener("change", function () {
@@ -123,7 +137,7 @@
                 return;
             }
 
-            fetch(`/User/GetUnitsForDepartment?departmentId=${departmentId}`)
+            fetch(`/UnitDepartment/GetUnitsForDepartment?departmentId=${departmentId}`)
                 .then(response => response.json())
                 .then(data => {
                     unitSelect.innerHTML = "";
@@ -140,5 +154,74 @@
                     });
                 });
         });
+    </script>
+
+    <script>
+        const selectedUnitIdsInput = document.getElementById("SelectedAccessibleUnitIds");
+        let selectedUnitIds = [];
+
+        function updateHiddenInput() {
+            selectedUnitIdsInput.value = selectedUnitIds.join(',');
+        }
+
+        function toggleUnit(unitId, checked) {
+            if (checked) {
+                if (!selectedUnitIds.includes(unitId)) selectedUnitIds.push(unitId);
+            } else {
+                selectedUnitIds = selectedUnitIds.filter(id => id !== unitId);
+            }
+            updateHiddenInput();
+        }
+
+        function toggleDepartment(deptCheckbox, unitCheckboxes) {
+            unitCheckboxes.forEach(chk => {
+                chk.checked = deptCheckbox.checked;
+                toggleUnit(chk.value, chk.checked);
+            });
+        }
+
+        fetch('/UnitDepartment/GetDepartmentUnits') 
+            .then(res => res.json())
+            .then(data => {
+                const dropdown = document.getElementById("units-dropdown");
+
+                data.forEach(dept => {
+                    const deptId = dept.departmentId;
+                    const deptName = dept.departmentName;
+                    const units = dept.units;
+
+                    const deptItem = document.createElement("li");
+                    deptItem.innerHTML = `
+                        <div class="form-check mb-1">
+                            <input class="form-check-input dept-checkbox" type="checkbox" id="dept-${deptId}" />
+                            <label class="form-check-label fw-bold" for="dept-${deptId}">${deptName}</label>
+                        </div>
+                        <ul class="list-unstyled ms-3">
+                            ${units.map(u => `
+                                <li>
+                                    <div class="form-check">
+                                        <input class="form-check-input unit-checkbox" type="checkbox" id="unit-${u.unitId}" value="${u.unitId}" />
+                                        <label class="form-check-label" for="unit-${u.unitId}">${u.unitName}</label>
+                                    </div>
+                                </li>`).join("")}
+                        </ul>
+                    `;
+                    dropdown.appendChild(deptItem);
+
+                    // Event listeners
+                    const deptCheckbox = deptItem.querySelector(".dept-checkbox");
+                    const unitCheckboxes = Array.from(deptItem.querySelectorAll(".unit-checkbox"));
+
+                    deptCheckbox.addEventListener("change", () => {
+                        toggleDepartment(deptCheckbox, unitCheckboxes);
+                    });
+
+                    unitCheckboxes.forEach(chk => {
+                        chk.addEventListener("change", () => {
+                            toggleUnit(chk.value, chk.checked);
+                        });
+                    });
+                });
+            });
     </script>
 }

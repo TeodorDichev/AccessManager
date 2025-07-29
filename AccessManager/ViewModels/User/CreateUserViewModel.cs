@@ -1,7 +1,8 @@
 ﻿using AccessManager.Data.Enums;
+using AccessManager.ViewModels.UnitDepartment;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace AccessManager.ViewModels
+namespace AccessManager.ViewModels.User
 {
     public class CreateUserViewModel
     {
@@ -21,14 +22,14 @@ namespace AccessManager.ViewModels
 
         public string? Password { get; set; }
 
-        public List<Guid> SelectedAccessibleUnitIds { get; set; } = new();
-        public List<Guid> SelectedUserAccessIds { get; set; } = new();
+        public List<Guid> SelectedAccessibleUnitIds { get; set; } = [];
 
         // Dropdown data
+        public List<DepartmentUnitViewModel> DepartmentUnits { get; set; } = [];
         public List<SelectListItem> Departments { get; set; } = [];
         public List<SelectListItem> Units { get; set; } = [];
+
         public List<SelectListItem> AvailableUnits { get; set; } = [];
-        public List<SelectListItem> AvailableAccesses { get; set; } = [];
 
         // For checking permissions
         public bool CanAddToAllDepartments { get; set; } = false;

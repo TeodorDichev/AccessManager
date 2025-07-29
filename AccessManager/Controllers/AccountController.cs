@@ -116,7 +116,7 @@ namespace AccessManager.Controllers
                 Phone = user.Phone ?? string.Empty,
                 AccessibleUnits = user.AccessibleUnits.Select(u => u.Unit.Description).ToList(),
                 UserAccesses = user.UserAccesses.Select(ua => ua.Access.Description).ToList(), // To be modified for tree structure
-                canEdit = (user.WritingAccess != Data.Enums.WritingAccess.None && user.WritingAccess != Data.Enums.WritingAccess.Unspecified)
+                canEdit = (user.WritingAccess != Data.Enums.WritingAccess.None && user.WritingAccess != Data.Enums.WritingAccess.None)
             };
         }
     }

@@ -1,4 +1,4 @@
-﻿namespace AccessManager.ViewModels
+﻿namespace AccessManager.ViewModels.User
 {
     public class UserListViewModel
     {

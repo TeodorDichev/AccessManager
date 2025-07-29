@@ -3,6 +3,7 @@ using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.ViewModels;
+using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +30,7 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return NotFound();
 
             bool canAddUser = (loggedUser.WritingAccess != Data.Enums.WritingAccess.None 
-                && loggedUser.WritingAccess != Data.Enums.WritingAccess.Unspecified);
+                && loggedUser.WritingAccess != Data.Enums.WritingAccess.None);
 
             IEnumerable<User> query = [];
             
@@ -46,12 +47,12 @@ namespace AccessManager.Controllers
             switch (sortBy)
             {
                 case "WriteAccess":
-                    query = query.OrderBy(u => u.WritingAccess)
+                    query = query.OrderByDescending(u => u.WritingAccess)
                                  .ThenBy(u => u.ReadingAccess)
                                  .ThenBy(u => u.UserName);
                     break;
                 case "ReadAccess":
-                    query = query.OrderBy(u => u.ReadingAccess)
+                    query = query.OrderByDescending(u => u.ReadingAccess)
                                  .ThenBy(u => u.UserName);
                     break;
                 case "UserName":
@@ -106,16 +107,13 @@ namespace AccessManager.Controllers
             {
                 Departments = GetAllowedDepartments(loggedUser),
                 CanAddToAllDepartments = loggedUser.WritingAccess == WritingAccess.Full,
-                AvailableAccesses = context.Accesses
-                    .Select(a => new SelectListItem { Value = a.Id.ToString(), Text = a.Description })
-                    .ToList()
             };
 
             return View(viewModel);
         }
 
         [HttpPost]
-        public IActionResult CreateUser(CreateUserViewModel model)
+        public IActionResult CreateUser(CreateUserViewModel model, string? SelectedAccessibleUnitIds)
         {
             var username = HttpContext.Session.GetString("Username");
             if (string.IsNullOrEmpty(username)) return RedirectToAction("Login");
@@ -123,22 +121,23 @@ namespace AccessManager.Controllers
             var loggedUser = context.Users.FirstOrDefault(u => u.UserName == username);
             if (loggedUser == null) return NotFound();
 
+            if (!string.IsNullOrEmpty(SelectedAccessibleUnitIds))
+            {
+                model.SelectedAccessibleUnitIds = SelectedAccessibleUnitIds
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(Guid.Parse)
+                    .ToList();
+            }
+
+            if (model.SelectedReadingAccess == ReadingAccess.None && model.SelectedWritingAccess == WritingAccess.None)
+            {
+
+                ModelState["SelectedAccessibleUnitIds"]?.Errors.Clear();
+                ModelState["SelectedAccessibleUnitIds"].ValidationState = Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Valid;
+            }
 
             if (!ModelState.IsValid)
             {
-                model.Departments = GetAllowedDepartments(loggedUser);
-                model.AvailableAccesses = context.Accesses
-                    .Select(a => new SelectListItem { Value = a.Id.ToString(), Text = a.Description })
-                    .ToList();
-
-                if (model.SelectedDepartmentId.HasValue)
-                {
-                    model.Units = context.Units
-                        .Where(u => u.DepartmentId == model.SelectedDepartmentId.Value)
-                        .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description })
-                        .ToList();
-                }
-
                 return View(model);
             }
 
@@ -153,7 +152,7 @@ namespace AccessManager.Controllers
                 UnitId = model.SelectedUnitId.Value,
                 ReadingAccess = model.SelectedReadingAccess,
                 WritingAccess = model.SelectedWritingAccess,
-                Password = model.Password // hash if needed
+                Password = model.Password
             };
 
             if (model.SelectedAccessibleUnitIds.Any())
@@ -163,29 +162,12 @@ namespace AccessManager.Controllers
                     .ToList();
             }
 
-            if (model.SelectedUserAccessIds.Any())
-            {
-                user.UserAccesses = model.SelectedUserAccessIds
-                    .Select(aid => new UserAccess { AccessId = aid, UserId = user.Id })
-                    .ToList();
-            }
-
             context.Users.Add(user);
             context.SaveChanges();
 
             return RedirectToAction("UserList");
         }
 
-        [HttpGet]
-        public IActionResult GetUnitsForDepartment(Guid departmentId)
-        {
-            var units = context.Units
-                .Where(u => u.DepartmentId == departmentId)
-                .Select(u => new { u.Id, u.Description })
-                .ToList();
-
-            return Json(units);
-        }
         private List<SelectListItem> GetAllowedDepartments(User user)
         {
             if (user.WritingAccess == WritingAccess.Full)
