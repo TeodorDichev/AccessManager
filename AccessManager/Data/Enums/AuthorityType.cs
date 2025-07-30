@@ -1,9 +1,10 @@
 ﻿namespace AccessManager.Data.Enums
 {
-    public enum WritingAccess
+    public enum AuthorityType
     {
         None = 0,
-        Partial = 1,
+        Restricted = 1,
         Full = 2,
+        SuperAdmin = 3
     }
 }

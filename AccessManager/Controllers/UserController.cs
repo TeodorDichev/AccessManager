@@ -6,93 +6,58 @@ using AccessManager.ViewModels.InformationSystem;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Controllers
 {
     public class UserController : BaseController
     {
-        private readonly Context context;
-        private readonly PasswordService passwordService;
-        public UserController(Context context, PasswordService passwordService)
+        private readonly Context _context;
+        private readonly PasswordService _passwordService;
+        private readonly UserService _userService;
+        public UserController(Context context, PasswordService passwordService, UserService userService)
         {
-            this.context = context;
-            this.passwordService = passwordService;
+            _context = context;
+            _passwordService = passwordService;
+            _userService = userService;
         }
 
         [HttpGet]
-        public IActionResult UserList(string sortBy = "WriteAccess", string filterUnit = "")
+        public IActionResult UserList(string sortBy, string filterUnit, string filterDepartment, int page = 1)
         {
             var username = HttpContext.Session.GetString("Username");
             if (string.IsNullOrEmpty(username)) return RedirectToAction("Login");
 
-            var loggedUser = context.Users.FirstOrDefault(u => u.UserName == username);
+            var loggedUser = _context.Users.FirstOrDefault(u => u.UserName == username);
             if (loggedUser == null) return NotFound();
 
-            bool canAddUser = (loggedUser.WritingAccess != Data.Enums.WritingAccess.None 
-                && loggedUser.WritingAccess != Data.Enums.WritingAccess.None);
+            int pageSize = 20;
 
-            IEnumerable<User> query = [];
-            
-            if (loggedUser.ReadingAccess == Data.Enums.ReadingAccess.Full)
-            {
-                query = context.Users.ToList();
-            }
-            if (loggedUser.ReadingAccess == Data.Enums.ReadingAccess.Partial)
-            {
-                query = context.Users.Where(u => loggedUser.AccessibleUnits.Select(au => au.Unit).Contains(u.Unit));
-            }
+            List<UserListItemViewModel> allUsers = _userService.GetFilteredUsers(_context, sortBy, filterUnit, filterDepartment, loggedUser);
+            int totalUsers = allUsers.Count();
 
-            // Sorting
-            switch (sortBy)
-            {
-                case "WriteAccess":
-                    query = query.OrderByDescending(u => u.WritingAccess)
-                                 .ThenBy(u => u.ReadingAccess)
-                                 .ThenBy(u => u.UserName);
-                    break;
-                case "ReadAccess":
-                    query = query.OrderByDescending(u => u.ReadingAccess)
-                                 .ThenBy(u => u.UserName);
-                    break;
-                case "UserName":
-                    query = query.OrderBy(u => u.UserName);
-                    break;
-                default:
-                    query = query.OrderBy(u => u.UserName);
-                    break;
-            }
+            List<UserListItemViewModel> users = allUsers
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
 
-            if (!string.IsNullOrEmpty(filterUnit))
-            {
-                query = query.Where(u => u.Unit.Description == filterUnit);
-            }
-
-            var users = query.Select(u => new UserListItemViewModel
-            {
-                UserName = u.UserName,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                Department = u.Unit.Department.Description,
-                Unit = u.Unit.Description,
-                ReadAccess = AccessLocalization.GetBulgarianReadingAccess(u.ReadingAccess),
-                WriteAccess = AccessLocalization.GetBulgarianWritingAccess(u.WritingAccess),
-            }).ToList();
-
-            var vm = new UserListViewModel
+            var model = new UserListViewModel
             {
                 Users = users,
-                SortOptions = new List<string> { "WriteAccess", "ReadAccess", "UserName" },
+                SortOptions = _userService.GetSortOptions(),
                 SelectedSortOption = sortBy,
-                FilterUnits = context.Units.Select(x => x.Description).ToList(),
-                FilterDepartments = context.Departments.Select(x => x.Description).ToList(),
+                FilterUnits = _userService.GetUnits(loggedUser),
                 SelectedFilterUnit = filterUnit,
-                SelectedFilterDepartment = filterUnit,
-                CanAddUser = canAddUser
+                FilterDepartments = _userService.GetDepartments(loggedUser),
+                SelectedFilterDepartment = filterDepartment,
+                CanAddUser = (loggedUser.WritingAccess != AuthorityType.None),
+                IsSuperAdmin = loggedUser.WritingAccess == AuthorityType.SuperAdmin,
+                CurrentPage = page,
+                TotalPages = (int)Math.Ceiling((double)totalUsers / pageSize)
             };
 
-            return View(vm);
+            return View(model);
         }
+
 
         [HttpGet]
         public IActionResult CreateUser()
@@ -100,13 +65,13 @@ namespace AccessManager.Controllers
             var username = HttpContext.Session.GetString("Username");
             if (string.IsNullOrEmpty(username)) return RedirectToAction("Login");
 
-            var loggedUser = context.Users.FirstOrDefault(u => u.UserName == username);
+            var loggedUser = _context.Users.FirstOrDefault(u => u.UserName == username);
             if (loggedUser == null) return NotFound();
 
             var viewModel = new CreateUserViewModel
             {
                 Departments = GetAllowedDepartments(loggedUser),
-                CanAddToAllDepartments = loggedUser.WritingAccess == WritingAccess.Full,
+                CanAddToAllDepartments = loggedUser.WritingAccess == AuthorityType.Full,
             };
 
             return View(viewModel);
@@ -118,11 +83,11 @@ namespace AccessManager.Controllers
             var username = HttpContext.Session.GetString("Username");
             if (string.IsNullOrEmpty(username)) return RedirectToAction("Login");
 
-            var loggedUser = context.Users.FirstOrDefault(u => u.UserName == username);
+            var loggedUser = _context.Users.FirstOrDefault(u => u.UserName == username);
 
             if (loggedUser == null) return NotFound();
 
-            if(context.Users.Any(u => u.UserName == model.UserName))
+            if (_context.Users.Any(u => u.UserName == model.UserName))
             {
                 ModelState.AddModelError("UserName", "Невалидно потребителско име!");
             }
@@ -143,7 +108,7 @@ namespace AccessManager.Controllers
                 UnitId = model.SelectedUnitId.Value,
                 ReadingAccess = model.SelectedReadingAccess,
                 WritingAccess = model.SelectedWritingAccess,
-                Password = model.Password
+                Password = _passwordService.HashPassword(model.Password)
             };
 
             if (!string.IsNullOrEmpty(SelectedAccessibleUnitIds))
@@ -154,8 +119,8 @@ namespace AccessManager.Controllers
                     .ToList();
             }
 
-            context.Users.Add(user);
-            context.SaveChanges();
+            _context.Users.Add(user);
+            _context.SaveChanges();
 
             return RedirectToAction("MapUserToInformationSystems", new { userName = model.UserName });
         }
@@ -163,10 +128,10 @@ namespace AccessManager.Controllers
         [HttpGet]
         public IActionResult MapUserToInformationSystems(string userName)
         {
-            var user = context.Users.FirstOrDefault(u => u.UserName == userName);
+            var user = _context.Users.FirstOrDefault(u => u.UserName == userName);
             if (user == null) return NotFound();
 
-            var systems = context.InformationSystems
+            var systems = _context.InformationSystems
                 .Where(s => s.DeletedOn == null)
                 .ToList();
 
@@ -200,14 +165,14 @@ namespace AccessManager.Controllers
         [HttpPost]
         public IActionResult MapUserToInformationSystems(MapUserToSystemsViewModel model)
         {
-            var user = context.Users.FirstOrDefault(u => u.UserName == model.UserName);
+            var user = _context.Users.FirstOrDefault(u => u.UserName == model.UserName);
             if (user == null) return NotFound();
 
             foreach (var system in model.Systems.Where(s => s.IsSelected))
             {
                 foreach (var access in system.Accesses.Where(a => a.IsSelected))
                 {
-                    context.UserAccesses.Add(new UserAccess
+                    _context.UserAccesses.Add(new UserAccess
                     {
                         UserId = user.Id,
                         AccessId = access.Id,
@@ -217,7 +182,7 @@ namespace AccessManager.Controllers
 
                     foreach (var sub in access.SubAccesses.Where(s => s.IsSelected))
                     {
-                        context.UserAccesses.Add(new UserAccess
+                        _context.UserAccesses.Add(new UserAccess
                         {
                             UserId = user.Id,
                             AccessId = sub.Id,
@@ -228,27 +193,32 @@ namespace AccessManager.Controllers
                 }
             }
 
-            context.SaveChanges();
+            _context.SaveChanges();
             return RedirectToAction("UserList");
         }
 
         private List<SelectListItem> GetAllowedDepartments(User user)
         {
-            if (user.WritingAccess == WritingAccess.Full)
+            if (user.WritingAccess == AuthorityType.None)
             {
-                return context.Departments
+                return [];
+            }
+            else if (user.WritingAccess == AuthorityType.Restricted)
+            {
+                var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
+                return _context.Units
+                    .Where(u => allowedUnitIds.Contains(u.Id))
+                    .Select(u => u.Department)
+                    .Distinct()
                     .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description })
                     .ToList();
             }
-
-            var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
-            return context.Units
-                .Where(u => allowedUnitIds.Contains(u.Id))
-                .Select(u => u.Department)
-                .Distinct()
-                .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description })
-                .ToList();
+            else
+            {
+                return _context.Departments
+                    .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description })
+                    .ToList();
+            }
         }
-
     }
 }

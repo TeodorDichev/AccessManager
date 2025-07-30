@@ -17,8 +17,8 @@ namespace AccessManager.ViewModels.User
         public Guid? SelectedDepartmentId { get; set; }
         public Guid? SelectedUnitId { get; set; }
 
-        public ReadingAccess SelectedReadingAccess { get; set; } = ReadingAccess.None;
-        public WritingAccess SelectedWritingAccess { get; set; } = WritingAccess.None;
+        public AuthorityType SelectedReadingAccess { get; set; } = AuthorityType.None;
+        public AuthorityType SelectedWritingAccess { get; set; } = AuthorityType.None;
 
         public string? Password { get; set; }
 

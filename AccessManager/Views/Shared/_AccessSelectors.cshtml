@@ -1,0 +1,23 @@
+﻿@model AccessManager.ViewModels.User.CreateUserViewModel
+@using AccessManager.Data.Enums
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label asp-for="SelectedReadingAccess" class="form-label">Достъп за четене</label>
+        <select asp-for="SelectedReadingAccess" class="form-select" id="SelectedReadingAccess">
+            @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
+            {
+                <option value="@((int)level)">@level</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="SelectedWritingAccess" class="form-label">Достъп за писане</label>
+        <select asp-for="SelectedWritingAccess" class="form-select" id="SelectedWritingAccess">
+            @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
+            {
+                <option value="@((int)level)">@level</option>
+            }
+        </select>
+    </div>
+</div>

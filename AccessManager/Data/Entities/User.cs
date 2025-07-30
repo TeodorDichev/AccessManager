@@ -7,8 +7,8 @@ namespace AccessManager.Data.Entities
     public class User
     {
         public Guid Id { get; set; }
-        public ReadingAccess ReadingAccess { get; set; } = ReadingAccess.None;
-        public WritingAccess WritingAccess { get; set; } = WritingAccess.None;
+        public AuthorityType ReadingAccess { get; set; } = AuthorityType.None;
+        public AuthorityType WritingAccess { get; set; } = AuthorityType.None;
         public string UserName { get; set; } = string.Empty;
         public string? Password { get; set; } = string.Empty; // Nullable to allow adding users with no reading and writing access
         public string FirstName { get; set; } = string.Empty;

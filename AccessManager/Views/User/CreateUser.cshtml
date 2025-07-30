@@ -43,14 +43,14 @@
 
     <div class="row mb-3">
         <div class="col-md-6">
-            <label asp-for="SelectedDepartmentId" class="form-label">Звено</label>
+            <label asp-for="SelectedDepartmentId" class="form-label">Дирекция</label>
             <select asp-for="SelectedDepartmentId" asp-items="Model.Departments" class="form-select" id="SelectedDepartmentId">
                 <option value="">-- Изберете --</option>
             </select>
             <span asp-validation-for="SelectedDepartmentId" class="text-danger"></span>
         </div>
         <div class="col-md-6">
-            <label asp-for="SelectedUnitId" class="form-label">Служба</label>
+            <label asp-for="SelectedUnitId" class="form-label">Отдел</label>
             <select asp-for="SelectedUnitId" asp-items="Model.Units" class="form-select" id="SelectedUnitId">
                 <option value="">-- Изберете --</option>
             </select>
@@ -62,7 +62,7 @@
         <div class="col-md-6">
             <label asp-for="SelectedReadingAccess" class="form-label">Достъп за четене</label>
             <select asp-for="SelectedReadingAccess" class="form-select" id="SelectedReadingAccess">
-                @foreach (ReadingAccess level in Enum.GetValues(typeof(ReadingAccess)))
+                @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
                 {
                     <option value="@((int)level)">@level</option>
                 }
@@ -71,7 +71,7 @@
         <div class="col-md-6">
             <label asp-for="SelectedWritingAccess" class="form-label">Достъп за писане</label>
             <select asp-for="SelectedWritingAccess" class="form-select" id="SelectedWritingAccess">
-                @foreach (WritingAccess level in Enum.GetValues(typeof(WritingAccess)))
+                @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
                 {
                     <option value="@((int)level)">@level</option>
                 }
@@ -79,17 +79,26 @@
         </div>
     </div>
 
-    <div class="mb-3" id="password-container" style="display: none;">
-         <label asp-for="Password" class="form-label">Парола</label>
-         <input asp-for="Password" type="password" class="form-control" />
-         <span asp-validation-for="Password" class="text-danger"></span>
-     </div>
+
+    <div class="form-outline form-white mb-3" id="password-container" style="display:none">
+        <label asp-for="Password" class="form-label">Парола</label>
+        <div class="position-relative d-flex align-items-center">
+            <input asp-for="Password" type="password" class="form-control pe-5" id="PasswordInput" />
+            <button type="button"
+                    class="btn btn-link p-0 border-0 position-absolute end-0 me-3 d-flex align-items-center"
+                    onclick="togglePasswordVisibility('PasswordInput', this)"
+                    style="top: 50%; transform: translateY(-50%); box-shadow: none;">
+                <i class="bi bi-eye fs-5" id="PasswordIcon"></i>
+            </button>
+        </div>
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
 
     <div class="mb-3" id="unit-access-container" style="display: none;">
-        <label class="form-label">Звена с достъп</label>
+        <label class="form-label">Отдели с достъп</label>
         <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                Избери звена
+                Избери отдели
             </button>
             <ul class="dropdown-menu p-3" style="max-height: 300px; overflow-y: auto;" id="units-dropdown">
                 <!-- Populated via JS -->
@@ -133,7 +142,7 @@
             const unitSelect = document.getElementById("SelectedUnitId");
 
             if (!departmentId) {
-                unitSelect.innerHTML = "<option value=''>-- Изберете звено --</option>";
+                unitSelect.innerHTML = "<option value=''>-- Изберете Дирекция --</option>";
                 return;
             }
 
@@ -223,5 +232,38 @@
                     });
                 });
             });
+    </script>
+    <script>
+        function syncReadingWithWriting() {
+            const readSelect = document.getElementById("SelectedReadingAccess");
+            const writeSelect = document.getElementById("SelectedWritingAccess");
+
+            writeSelect.addEventListener("change", () => {
+                const writeVal = parseInt(writeSelect.value);
+                const readVal = parseInt(readSelect.value);
+
+                if (writeVal > readVal) {
+                    readSelect.value = writeVal;
+                    updateVisibility(); // optional if visibility depends on read/write
+                }
+            });
+        }
+
+        syncReadingWithWriting();
+    </script>
+    <script>
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById("PasswordIcon");
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove("bi-eye");
+                icon.classList.add("bi-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.remove("bi-eye-slash");
+                icon.classList.add("bi-eye");
+            }
+        }
     </script>
 }

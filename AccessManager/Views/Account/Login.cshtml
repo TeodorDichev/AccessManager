@@ -17,16 +17,25 @@
 
                         <form asp-action="Login" asp-controller="Account" method="post">
                             <div class="form-outline form-white mb-3">
-                                <input asp-for="Username" class="form-control" />
                                 <label asp-for="Username" class="form-label">Потребителско име</label>
+                                <input asp-for="Username" class="form-control" />
                                 <span asp-validation-for="Username" class="text-danger"></span>
                             </div>
 
                             <div class="form-outline form-white mb-3">
-                                <input asp-for="Password" class="form-control" />
                                 <label asp-for="Password" class="form-label">Парола</label>
+                                <div class="position-relative d-flex align-items-center">
+                                    <input asp-for="Password" type="password" class="form-control pe-5" id="PasswordInput" />
+                                    <button type="button"
+                                            class="btn btn-link p-0 border-0 position-absolute end-0 me-3 d-flex align-items-center"
+                                            onclick="togglePasswordVisibility('PasswordInput', this)"
+                                            style="top: 50%; transform: translateY(-50%); box-shadow: none;">
+                                        <i class="bi bi-eye fs-5" id="PasswordIcon"></i>
+                                    </button>
+                                </div>
                                 <span asp-validation-for="Password" class="text-danger"></span>
                             </div>
+
 
                             <button class="btn btn-outline-light btn px-4" type="submit">Влез</button>
                         </form>
@@ -41,4 +50,19 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById("PasswordIcon");
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove("bi-eye");
+                icon.classList.add("bi-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.remove("bi-eye-slash");
+                icon.classList.add("bi-eye");
+            }
+        }
+    </script>
 }

@@ -1,4 +1,5 @@
 ﻿using AccessManager.Data.Entities;
+using AccessManager.Data.Enums;
 using AccessManager.Services;
 using Microsoft.AspNetCore.Identity;
 
@@ -10,16 +11,7 @@ namespace AccessManager.Data
         {
             if (context.Users.FirstOrDefault(d => d.UserName == "adichev") == null)
             {
-                var user = new User
-                {
-                    UserName = "adichev",
-                    FirstName = "Ангел",
-                    MiddleName = "Тодоров",
-                    LastName = "Дичев",
-                    ReadingAccess = Data.Enums.ReadingAccess.Full,
-                    WritingAccess = Data.Enums.WritingAccess.Full,
-                    Password = passwordService.HashPassword(config["SuperAdmin:Password"]),
-                };
+                var user = new User { UserName = "adichev", FirstName = "Ангел", MiddleName = "Тодоров", LastName = "Дичев", ReadingAccess = AuthorityType.Full, WritingAccess = AuthorityType.Full, Password = passwordService.HashPassword(config["SuperAdmin:Password"]), };
 
                 if (context.Departments.FirstOrDefault(d => d.Description == "ДКИС") == null)
                 {

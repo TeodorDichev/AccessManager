@@ -1,14 +1,19 @@
-﻿namespace AccessManager.ViewModels.User
+﻿using AccessManager.ViewModels.User;
+
+public class UserListViewModel
 {
-    public class UserListViewModel
-    {
-        public List<UserListItemViewModel> Users { get; set; } = new List<UserListItemViewModel>();
-        public List<string> SortOptions { get; set; } = new List<string> { "WriteAccess", "ReadAccess", "UserName" };
-        public string SelectedSortOption { get; set; } = "WriteAccess";
-        public List<string> FilterUnits { get; set; } = new List<string>();
-        public List<string> FilterDepartments { get; set; } = new List<string>();
-        public string SelectedFilterUnit { get; set; } = "";
-        public string SelectedFilterDepartment { get; set; } = "";
-        public bool CanAddUser { get; set; } = false;
-    }
+    public List<UserListItemViewModel> Users { get; set; }
+    public List<string> SortOptions { get; set; }
+    public string SelectedSortOption { get; set; }
+    public List<string> FilterUnits { get; set; }
+    public string SelectedFilterUnit { get; set; }
+    public List<string> FilterDepartments { get; set; }
+    public string SelectedFilterDepartment { get; set; }
+
+    public bool CanAddUser { get; set; }
+    public bool IsSuperAdmin { get; set; }
+
+    // Pagination
+    public int CurrentPage { get; set; }
+    public int TotalPages { get; set; }
 }

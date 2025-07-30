@@ -8,6 +8,11 @@ namespace AccessManager.Services
 
         public string HashPassword(string password)
         {
+            if(string.IsNullOrEmpty(password))
+            {
+                return string.Empty;
+            }
+
             return _hasher.HashPassword(null, password);
         }
 

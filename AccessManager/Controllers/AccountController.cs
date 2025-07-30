@@ -1,5 +1,6 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
+using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -87,7 +88,7 @@ namespace AccessManager.Controllers
             user.EGN = model.EGN;
             user.Phone = model.Phone;
 
-            if (user.WritingAccess == Data.Enums.WritingAccess.Full)
+            if (user.WritingAccess >= AuthorityType.Full)
                 user.UserName = model.UserName;
 
             context.SaveChanges();
@@ -108,15 +109,15 @@ namespace AccessManager.Controllers
                 FirstName = user.FirstName,
                 MiddleName = user.MiddleName,
                 LastName = user.LastName,
-                ReadingAccess = AccessLocalization.GetBulgarianReadingAccess(user.ReadingAccess),
-                WritingAccess = AccessLocalization.GetBulgarianWritingAccess(user.WritingAccess),
+                ReadingAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(user.ReadingAccess),
+                WritingAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(user.WritingAccess),
                 UnitDescription = user.Unit.Description,
                 DepartmentDescription = user.Unit.Department.Description,
                 EGN = user.EGN ?? string.Empty,
                 Phone = user.Phone ?? string.Empty,
                 AccessibleUnits = user.AccessibleUnits.Select(u => u.Unit.Description).ToList(),
                 UserAccesses = user.UserAccesses.Select(ua => ua.Access.Description).ToList(), // To be modified for tree structure
-                canEdit = (user.WritingAccess != Data.Enums.WritingAccess.None && user.WritingAccess != Data.Enums.WritingAccess.None)
+                canEdit = (user.WritingAccess != AuthorityType.None && user.WritingAccess != AuthorityType.None)
             };
         }
     }
