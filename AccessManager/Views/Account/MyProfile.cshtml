@@ -116,7 +116,15 @@
     <div class="row">
         <div class="col-md-6 mb-3">
             <label class="form-label">Стара парола</label>
-            <input name="OldPassword" type="password" class="form-control" />
+            <div class="position-relative d-flex align-items-center">
+                <input id="OldPasswordInput" name="OldPassword" type="password" class="form-control pe-5" />
+                <button type="button"
+                        class="btn btn-link p-0 border-0 position-absolute end-0 me-3 d-flex align-items-center"
+                        onclick="togglePasswordVisibility('OldPasswordInput', this)"
+                        style="top: 50%; transform: translateY(-50%); box-shadow: none;">
+                    <i class="bi bi-eye fs-5" id="PasswordIcon"></i>
+                </button>
+            </div>
             @if (ViewData.ModelState["Password"]?.Errors.Count > 0)
             {
                 <span class="text-danger">@ViewData.ModelState["Password"].Errors[0].ErrorMessage</span>
@@ -124,7 +132,15 @@
         </div>
         <div class="col-md-6 mb-3">
             <label class="form-label">Нова парола</label>
-            <input name="NewPassword" type="password" class="form-control" />
+            <div class="position-relative d-flex align-items-center">
+                <input id="NewPasswordInput" name="NewPassword" type="password" class="form-control pe-5" />
+                <button type="button"
+                        class="btn btn-link p-0 border-0 position-absolute end-0 me-3 d-flex align-items-center"
+                        onclick="togglePasswordVisibility('NewPasswordInput', this)"
+                        style="top: 50%; transform: translateY(-50%); box-shadow: none;">
+                    <i class="bi bi-eye fs-5" id="PasswordIcon"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -176,3 +192,8 @@
         </tbody>
     </table>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/password-visibility-toggle.js"></script>
+}

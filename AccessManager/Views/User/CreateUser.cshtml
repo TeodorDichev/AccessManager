@@ -80,7 +80,7 @@
     </div>
 
 
-    <div class="form-outline form-white mb-3" id="password-container" style="display:none">
+    <div class="form-outline form-white mb-3" id="password-container">
         <label asp-for="Password" class="form-label">Парола</label>
         <div class="position-relative d-flex align-items-center">
             <input asp-for="Password" type="password" class="form-control pe-5" id="PasswordInput" />
@@ -100,9 +100,7 @@
             <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                 Избери отдели
             </button>
-            <ul class="dropdown-menu p-3" style="max-height: 300px; overflow-y: auto;" id="units-dropdown">
-                <!-- Populated via JS -->
-            </ul>
+            <ul class="dropdown-menu p-3" style="max-height: 300px; overflow-y: auto;" id="units-dropdown"/>
         </div>
         <input type="hidden" name="SelectedAccessibleUnitIds" id="SelectedAccessibleUnitIds" />
     </div>
@@ -114,156 +112,9 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        const readSelect = document.getElementById("SelectedReadingAccess");
-        const writeSelect = document.getElementById("SelectedWritingAccess");
-        const passwordContainer = document.getElementById("password-container");
-        const unitAccessContainer = document.getElementById("unit-access-container");
-
-        function updateVisibility() {
-            const readVal = parseInt(readSelect.value);
-            const writeVal = parseInt(writeSelect.value);
-
-            const showPassword = readVal === 0 && writeVal === 0;
-            const showUnitAccess = readVal === 1 || writeVal === 1;
-
-            passwordContainer.style.display = showPassword ? "none" : "block";
-            unitAccessContainer.style.display = showUnitAccess ? "block" : "none";
-        }
-
-        readSelect.addEventListener("change", updateVisibility);
-        writeSelect.addEventListener("change", updateVisibility);
-        updateVisibility();
-    </script>
-
-    <script>
-        document.getElementById("SelectedDepartmentId").addEventListener("change", function () {
-            const departmentId = this.value;
-            const unitSelect = document.getElementById("SelectedUnitId");
-
-            if (!departmentId) {
-                unitSelect.innerHTML = "<option value=''>-- Изберете Дирекция --</option>";
-                return;
-            }
-
-            fetch(`/UnitDepartment/GetUnitsForDepartment?departmentId=${departmentId}`)
-                .then(response => response.json())
-                .then(data => {
-                    unitSelect.innerHTML = "";
-                    const defaultOption = document.createElement("option");
-                    defaultOption.value = "";
-                    defaultOption.text = "-- Изберете --";
-                    unitSelect.appendChild(defaultOption);
-
-                    data.forEach(unit => {
-                        const option = document.createElement("option");
-                        option.value = unit.id;
-                        option.text = unit.description;
-                        unitSelect.appendChild(option);
-                    });
-                });
-        });
-    </script>
-
-    <script>
-        const selectedUnitIdsInput = document.getElementById("SelectedAccessibleUnitIds");
-        let selectedUnitIds = [];
-
-        function updateHiddenInput() {
-            selectedUnitIdsInput.value = selectedUnitIds.join(',');
-        }
-
-        function toggleUnit(unitId, checked) {
-            if (checked) {
-                if (!selectedUnitIds.includes(unitId)) selectedUnitIds.push(unitId);
-            } else {
-                selectedUnitIds = selectedUnitIds.filter(id => id !== unitId);
-            }
-            updateHiddenInput();
-        }
-
-        function toggleDepartment(deptCheckbox, unitCheckboxes) {
-            unitCheckboxes.forEach(chk => {
-                chk.checked = deptCheckbox.checked;
-                toggleUnit(chk.value, chk.checked);
-            });
-        }
-
-        fetch('/UnitDepartment/GetDepartmentUnits') 
-            .then(res => res.json())
-            .then(data => {
-                const dropdown = document.getElementById("units-dropdown");
-
-                data.forEach(dept => {
-                    const deptId = dept.departmentId;
-                    const deptName = dept.departmentName;
-                    const units = dept.units;
-
-                    const deptItem = document.createElement("li");
-                    deptItem.innerHTML = `
-                        <div class="form-check mb-1">
-                            <input class="form-check-input dept-checkbox" type="checkbox" id="dept-${deptId}" />
-                            <label class="form-check-label fw-bold" for="dept-${deptId}">${deptName}</label>
-                        </div>
-                        <ul class="list-unstyled ms-3">
-                            ${units.map(u => `
-                                <li>
-                                    <div class="form-check">
-                                        <input class="form-check-input unit-checkbox" type="checkbox" id="unit-${u.unitId}" value="${u.unitId}" />
-                                        <label class="form-check-label" for="unit-${u.unitId}">${u.unitName}</label>
-                                    </div>
-                                </li>`).join("")}
-                        </ul>
-                    `;
-                    dropdown.appendChild(deptItem);
-
-                    // Event listeners
-                    const deptCheckbox = deptItem.querySelector(".dept-checkbox");
-                    const unitCheckboxes = Array.from(deptItem.querySelectorAll(".unit-checkbox"));
-
-                    deptCheckbox.addEventListener("change", () => {
-                        toggleDepartment(deptCheckbox, unitCheckboxes);
-                    });
-
-                    unitCheckboxes.forEach(chk => {
-                        chk.addEventListener("change", () => {
-                            toggleUnit(chk.value, chk.checked);
-                        });
-                    });
-                });
-            });
-    </script>
-    <script>
-        function syncReadingWithWriting() {
-            const readSelect = document.getElementById("SelectedReadingAccess");
-            const writeSelect = document.getElementById("SelectedWritingAccess");
-
-            writeSelect.addEventListener("change", () => {
-                const writeVal = parseInt(writeSelect.value);
-                const readVal = parseInt(readSelect.value);
-
-                if (writeVal > readVal) {
-                    readSelect.value = writeVal;
-                    updateVisibility(); // optional if visibility depends on read/write
-                }
-            });
-        }
-
-        syncReadingWithWriting();
-    </script>
-    <script>
-        function togglePasswordVisibility(inputId, button) {
-            const input = document.getElementById(inputId);
-            const icon = document.getElementById("PasswordIcon");
-            if (input.type === "password") {
-                input.type = "text";
-                icon.classList.remove("bi-eye");
-                icon.classList.add("bi-eye-slash");
-            } else {
-                input.type = "password";
-                icon.classList.remove("bi-eye-slash");
-                icon.classList.add("bi-eye");
-            }
-        }
-    </script>
+    <script src="~/js/password-visibility-toggle.js"></script>
+    <script src="~/js/access-visibility.js"></script>
+    <script src="~/js/unit-dropdown-loader.js"></script>
+    <script src="~/js/unit-access-tree.js"></script>
+    <script src="~/js/sync-authority-type-access.js"></script>
 }
