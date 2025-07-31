@@ -26,3 +26,9 @@ document.querySelectorAll(".subaccess-checkbox").forEach(sub => {
         directive.style.display = this.checked ? "block" : "none";
     });
 });
+
+document.getElementById("selectAllSystemsBtn")?.addEventListener("click", function () {
+    document.querySelectorAll(".system-checkbox").forEach(cb => {
+        if (!cb.checked) cb.click();
+    });
+});

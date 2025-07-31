@@ -7,6 +7,8 @@
         public Guid SystemId { get; set; }
         public virtual InformationSystem System { get; set; } = null!;
         public virtual ICollection<UserAccess> UserAccesses { get; set; } = [];
+        public Guid? ParentAccessId { get; set; }
+        public virtual Access? ParentAccess { get; set; }
         public virtual ICollection<Access> SubAccesses { get; set; } = [];
         public DateTime? DeletedOn { get; set; } = null;
     }

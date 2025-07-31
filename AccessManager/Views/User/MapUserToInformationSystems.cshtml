@@ -3,6 +3,18 @@
     ViewData["Title"] = "Свържи потребител с АИС";
 }
 
+<div class="mb-4 p-3 border rounded bg-light d-flex flex-wrap gap-3 align-items-center">
+    <div><strong>Потребителско име:</strong> @Model.UserName</div>
+    <div>|</div>
+    <div><strong>Име:</strong> @Model.FirstName @Model.LastName</div>
+    <div>|</div>
+    <div><strong>Дирекция:</strong> @Model.DepartmentDescription</div>
+    <div>|</div>
+    <div><strong>Отдел:</strong> @Model.UnitDescription</div>
+</div>
+
+<button type="button" class="btn btn-outline-primary mb-3" id="selectAllSystemsBtn">Избери всички системи</button>
+
 <form asp-action="MapUserToInformationSystems" method="post">
     <input type="hidden" asp-for="UserName" />
 
@@ -60,6 +72,17 @@
         <button type="submit" class="btn btn-primary">Запази</button>
     </div>
 </form>
+
+<div class="d-flex justify-content-between mt-4">
+    <a asp-action="CreateUserFromSession" class="btn btn-secondary mt-4">Назад</a>
+
+    <div>
+        <a asp-action="DiscardCreateUserAction" class="btn btn-danger mt-4"
+        onclick="return confirm('Сигурни ли сте, че искате да откажете създаването на потребителя?');">
+            Отказ
+        </a>
+    </div>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

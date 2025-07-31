@@ -10,7 +10,7 @@ public class UserListViewModel
     public List<string> FilterDepartments { get; set; }
     public string SelectedFilterDepartment { get; set; }
 
-    public bool CanAddUser { get; set; }
+    public bool HasWriteAuthority { get; set; }
     public bool IsSuperAdmin { get; set; }
 
     // Pagination

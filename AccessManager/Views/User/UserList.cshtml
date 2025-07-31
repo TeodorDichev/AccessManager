@@ -7,6 +7,10 @@
 
 <h2>Потребители</h2>
 
+<form style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
 <form method="get" class="mb-3 d-flex align-items-center gap-3">
     <div>
         <label for="sortBy" class="form-label">Сортиране по:</label>
@@ -51,7 +55,7 @@
     </div>
 
     <div class="ms-auto">
-        @if (Model.CanAddUser)
+        @if (Model.HasWriteAuthority)
         {
             <a asp-controller="User" asp-action="CreateUser" class="btn btn-success">
                 Добави потребител
@@ -68,7 +72,7 @@
 
 @if (Model.IsSuperAdmin)
 {
-    <form asp-controller="Account" asp-action="HardDeleteAllSoftDeletedUsers" method="post" onsubmit="return confirm('Наистина ли искате да изтриете всички деактивирани потребители?');">
+    <form asp-controller="User" asp-action="HardDeleteUsers" method="post" onsubmit="return confirm('Наистина ли искате да изтриете всички деактивирани потребители?');">
         <button type="submit" class="btn btn-danger mb-3">
             Изтрий всички деактивирани потребители
         </button>
@@ -100,16 +104,22 @@
                 <td>@user.Unit</td>
                 <td>@user.WriteAccess</td>
                 <td>@user.ReadAccess</td>
-                <td>
-                    <a asp-controller="Account" asp-action="EditUser" asp-route-username="@user.UserName" class="btn btn-sm btn-primary">
-                        Редактирай
-                    </a>
-                </td>
-                <td>
-                    <form asp-controller="Account" asp-action="DeleteUser" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Сигурни ли сте?');">
-                        <button type="submit" class="btn btn-sm btn-danger">Изтрий</button>
-                    </form>
-                </td>
+                @if (Model.HasWriteAuthority)
+                {
+                    <td>
+                        <a asp-controller="User" asp-action="EditUser" asp-route-username="@user.UserName" class="btn btn-sm btn-primary">
+                            Редактирай
+                        </a>
+                    </td>
+                    <td>
+                        <form asp-controller="User" asp-action="SoftDeleteUser" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Сигурни ли сте?');">
+                            <button type="button" class="btn btn-sm btn-danger soft-delete-btn" data-username="@user.UserName">
+                                Деактивирай
+                            </button>
+                        </form>
+                    </td>
+
+                }
             </tr>
         }
     </tbody>
@@ -126,4 +136,9 @@
             }
         </ul>
     </nav>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/soft-delete-user.js"></script>
 }

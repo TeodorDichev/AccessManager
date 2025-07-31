@@ -52,6 +52,12 @@ namespace AccessManager.Data
                       .WithMany(u => u.AccessibleUnits)
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.AccessibleUnits)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.NoAction)
+                    .IsRequired(false);
             });
         }
 
@@ -156,6 +162,12 @@ namespace AccessManager.Data
                 entity.HasMany(e => e.UserAccesses)
                       .WithOne(ea => ea.Access)
                       .HasForeignKey(ea => ea.AccessId);
+
+                modelBuilder.Entity<Access>()
+                    .HasOne(a => a.ParentAccess)
+                    .WithMany(a => a.SubAccesses)
+                    .HasForeignKey(a => a.ParentAccessId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
 
@@ -209,6 +221,8 @@ namespace AccessManager.Data
                     .WithMany(s => s.UsersFromUnit)
                     .HasForeignKey(s => s.UnitId)
                     .IsRequired();
+
+                entity.HasQueryFilter(e => e.DeletedOn == null);
             });
         }
 
@@ -233,6 +247,11 @@ namespace AccessManager.Data
 
                 entity.Property(ea => ea.GrantedOn)
                     .IsRequired();
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.UserAccesses)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.NoAction)
+                    .IsRequired(false);
             });
         }
     }

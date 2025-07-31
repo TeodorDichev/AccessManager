@@ -1,5 +1,5 @@
 ﻿const selectedUnitIdsInput = document.getElementById("SelectedAccessibleUnitIds");
-let selectedUnitIds = [];
+let selectedUnitIds = selectedUnitIdsInput.value ? selectedUnitIdsInput.value.split(',') : [];
 
 function updateHiddenInput() {
     selectedUnitIdsInput.value = selectedUnitIds.join(',');
@@ -52,14 +52,35 @@ fetch('/UnitDepartment/GetDepartmentUnits')
             const deptCheckbox = deptItem.querySelector(".dept-checkbox");
             const unitCheckboxes = Array.from(deptItem.querySelectorAll(".unit-checkbox"));
 
+            // Pre-select units that are in selectedUnitIds
+            unitCheckboxes.forEach(chk => {
+                if (selectedUnitIds.includes(chk.value)) {
+                    chk.checked = true;
+                }
+            });
+
+            // Check department if all units are pre-selected
+            deptCheckbox.checked = unitCheckboxes.length > 0 && unitCheckboxes.every(chk => chk.checked);
+
+            // Initialize selectedUnitIds array with the pre-selected units
+            unitCheckboxes.forEach(chk => {
+                toggleUnit(chk.value, chk.checked);
+            });
+
+            // Department checkbox toggles all units
             deptCheckbox.addEventListener("change", () => {
                 toggleDepartment(deptCheckbox, unitCheckboxes);
             });
 
+            // Unit checkboxes update hidden input and department checkbox state
             unitCheckboxes.forEach(chk => {
                 chk.addEventListener("change", () => {
                     toggleUnit(chk.value, chk.checked);
+                    deptCheckbox.checked = unitCheckboxes.every(c => c.checked);
                 });
             });
         });
+
+        updateHiddenInput();
     });
+
