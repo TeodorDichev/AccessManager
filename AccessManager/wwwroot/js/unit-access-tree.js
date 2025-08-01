@@ -21,7 +21,7 @@ function toggleDepartment(deptCheckbox, unitCheckboxes) {
     });
 }
 
-fetch('/UnitDepartment/GetDepartmentUnits')
+fetch(`/User/GetAccessibleUnitsForUserDepartment?departmentId=${departmentId}`)
     .then(res => res.json())
     .then(data => {
         const dropdown = document.getElementById("units-dropdown");

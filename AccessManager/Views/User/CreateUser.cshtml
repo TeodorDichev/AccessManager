@@ -69,6 +69,7 @@
                     <option value="@((int)level)">@level</option>
                 }
             </select>
+            <span asp-validation-for="SelectedReadingAccess" class="text-danger"></span>
         </div>
         <div class="col-md-6">
             <label asp-for="SelectedWritingAccess" class="form-label">Достъп за писане</label>
@@ -78,6 +79,7 @@
                     <option value="@((int)level)">@level</option>
                 }
             </select>
+            <span asp-validation-for="SelectedWritingAccess" class="text-danger"></span>
         </div>
     </div>
 

@@ -13,8 +13,11 @@ namespace AccessManager
             builder.Services.AddDbContext<Context>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            builder.Services.AddSingleton<PasswordService>();
-            builder.Services.AddSingleton<UserService>();
+            builder.Services.AddScoped<UserService>();
+            builder.Services.AddScoped<AccessService>();
+            builder.Services.AddScoped<PasswordService>();
+            builder.Services.AddScoped<DepartmentUnitService>();
+            builder.Services.AddScoped<InformationSystemsService>();
 
             // Add services to the container.
             builder.Services.AddSession();

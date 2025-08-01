@@ -1,7 +1,6 @@
 ﻿using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
-using Microsoft.AspNetCore.Identity;
 
 namespace AccessManager.Data
 {
@@ -11,7 +10,16 @@ namespace AccessManager.Data
         {
             if (context.Users.FirstOrDefault(d => d.UserName == "adichev") == null)
             {
-                var user = new User { UserName = "adichev", FirstName = "Ангел", MiddleName = "Тодоров", LastName = "Дичев", ReadingAccess = AuthorityType.Full, WritingAccess = AuthorityType.Full, Password = passwordService.HashPassword(config["SuperAdmin:Password"]), };
+                User user = new User 
+                { 
+                    UserName = "adichev", 
+                    FirstName = "Ангел", 
+                    MiddleName = "Тодоров",
+                    LastName = "Дичев", 
+                    ReadingAccess = AuthorityType.SuperAdmin, 
+                    WritingAccess = AuthorityType.SuperAdmin};
+
+                user.Password = passwordService.HashPassword(user, config["SuperAdmin:Password"]);
 
                 if (context.Departments.FirstOrDefault(d => d.Description == "ДКИС") == null)
                 {
@@ -56,7 +64,7 @@ namespace AccessManager.Data
                         context.Units.Add(unit);
                         context.Users.Add(user);
                     }
-                    else                    
+                    else
                     {
                         var unit = context.Units.FirstOrDefault(d => d.Description == "Пазарджик" && d.Department.Description == "ДКИС")!;
                         user.UnitId = unit.Id;

@@ -1,6 +1,7 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
+using AccessManager.Utills;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,72 @@ namespace AccessManager.Services
 {
     public class UserService
     {
-        internal List<SelectListItem> GetAllowedDepartmentsAsSelectListItem(Context context, User user)
+        private readonly Context _context;
+        public UserService(Context context)
+        {
+            _context = context;
+        }
+
+        public void SaveChanges()
+        {
+            _context.SaveChanges();
+        }
+
+        public User? GetUser(string? username)
+        {
+            return _context.Users.FirstOrDefault(u => u.UserName == username && u.DeletedOn == null);
+        }
+
+        public bool UserWithUsernameExists(string username)
+        {
+            return _context.Users.Any(u => u.UserName == username && u.DeletedOn == null);
+        }
+
+        public void AddUser(User user)
+        {
+            _context.Users.Add(user);
+            _context.SaveChanges();
+        }
+
+        internal void SoftDeleteUser(User userToDelete)
+        {
+            userToDelete.DeletedOn = DateTime.UtcNow;
+            _context.SaveChanges();
+        }
+
+        internal void HardDeleteUsers()
+        {
+            var softDeletedUsers = _context.Users
+                .IgnoreQueryFilters()
+                .Where(u => u.DeletedOn != null)
+                .ToList();
+
+            if (softDeletedUsers.Count != 0)
+            {
+                var userIds = softDeletedUsers.Select(u => u.Id).ToList();
+
+                var unitUsers = _context.UnitUser
+                    .Where(uu => userIds.Contains(uu.UserId));
+                _context.UnitUser.RemoveRange(unitUsers);
+
+                var userAccesses = _context.UserAccesses
+                    .Where(ua => userIds.Contains(ua.UserId));
+
+                _context.UserAccesses.RemoveRange(userAccesses);
+                _context.Users.RemoveRange(softDeletedUsers);
+                 _context.SaveChanges();
+            }
+        }
+
+        public bool canUserEditUser(User user, User other)
+        {
+            if (other.WritingAccess == AuthorityType.SuperAdmin || other.ReadingAccess == AuthorityType.SuperAdmin) return false;
+            else if (user.WritingAccess == AuthorityType.SuperAdmin || user.WritingAccess == AuthorityType.Full) return true;
+            else if (user.WritingAccess == AuthorityType.Restricted) return user.AccessibleUnits.Any(au => au.UnitId == other.UnitId);
+            else return false;
+        }
+
+        internal List<SelectListItem> GetAllowedDepartmentsAsSelectListItem(User user)
         {
             if (user.WritingAccess == AuthorityType.None)
             {
@@ -18,7 +84,7 @@ namespace AccessManager.Services
             else if (user.WritingAccess == AuthorityType.Restricted)
             {
                 var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
-                return context.Units
+                return _context.Units
                     .Where(u => allowedUnitIds.Contains(u.Id))
                     .Select(u => u.Department)
                     .Distinct()
@@ -27,31 +93,42 @@ namespace AccessManager.Services
             }
             else
             {
-                return context.Departments
+                return _context.Departments
                     .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description })
                     .ToList();
             }
         }
 
-        internal List<string> GetDepartmentDescriptions(User loggedUser)
+        internal List<SelectListItem> GetAllowedUnitsAsSelectListItem(User user)
         {
-            return loggedUser.AccessibleUnits.Select(u => u.Unit.Department.Description).Distinct().ToList();
+            if (user.WritingAccess == AuthorityType.None)
+            {
+                return [];
+            }
+            else if (user.WritingAccess == AuthorityType.Restricted)
+            {
+                var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
+                return _context.Units
+                    .Where(u => allowedUnitIds.Contains(u.Id))
+                    .Distinct()
+                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description })
+                    .ToList();
+            }
+            else
+            {
+                return _context.Units
+                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description })
+                    .ToList();
+            }
         }
 
-        internal List<UserListItemViewModel> GetFilteredUsers(Context context, string sortBy, string filterUnit, string filterDepartment, User loggedUser)
+        internal List<UserListItemViewModel> GetFilteredUsers(string sortBy, string filterUnit, string filterDepartment, User loggedUser)
         {
             var accessibleUnitIds = loggedUser.AccessibleUnits.Select(au => au.UnitId).ToList();
-            var filteredUsers = context.Users.Where(u => u.DeletedOn == null && accessibleUnitIds.Contains(u.UnitId));
+            var filteredUsers = _context.Users.Where(u => u.DeletedOn == null && accessibleUnitIds.Contains(u.UnitId));
 
-            if (!string.IsNullOrEmpty(filterUnit))
-            {
-                filteredUsers = filteredUsers.Where(u => u.Unit.Description == filterUnit);
-            }
-
-            if (!string.IsNullOrEmpty(filterDepartment))
-            {
-                filteredUsers = filteredUsers.Where(u => u.Unit.Department.Description == filterDepartment);
-            }
+            if (!string.IsNullOrEmpty(filterUnit)) filteredUsers = filteredUsers.Where(u => u.Unit.Description == filterUnit);
+            if (!string.IsNullOrEmpty(filterDepartment)) filteredUsers = filteredUsers.Where(u => u.Unit.Department.Description == filterDepartment);
 
             filteredUsers = sortBy switch
             {
@@ -83,11 +160,6 @@ namespace AccessManager.Services
         internal List<string> GetSortOptions()
         {
             return ["Достъп за писане", "Достъп за четене", "Потребителско име", "Дирекция", "Отдел"];
-        }
-
-        internal List<string> GetUnitDescriptions(User loggedUser)
-        {
-            return loggedUser.AccessibleUnits.Select(u => u.Unit.Description).Distinct().ToList();
         }
     }
 }

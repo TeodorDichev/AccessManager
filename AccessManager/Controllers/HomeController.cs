@@ -12,9 +12,7 @@ namespace AccessManager.Controllers
         public IActionResult Index()
         {
             var username = HttpContext.Session.GetString("Username");
-
-            if (!string.IsNullOrEmpty(username))
-                ViewData["Username"] = username;
+            if (!string.IsNullOrEmpty(username)) ViewData["Username"] = username;
 
             return View();
         }

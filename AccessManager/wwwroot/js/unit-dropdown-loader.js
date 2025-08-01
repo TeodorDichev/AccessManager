@@ -7,7 +7,7 @@
         return;
     }
 
-    fetch(`/UnitDepartment/GetUnitsForDepartment?departmentId=${departmentId}`)
+    fetch(`/User/GetAccessibleUnitsForUserDepartment?departmentId=${departmentId}`)
         .then(response => response.json())
         .then(data => {
             unitSelect.innerHTML = "";

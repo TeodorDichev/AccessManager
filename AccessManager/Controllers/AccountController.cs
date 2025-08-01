@@ -2,6 +2,7 @@
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
+using AccessManager.Utills;
 using AccessManager.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,12 +10,12 @@ namespace AccessManager.Controllers
 {
     public class AccountController : BaseController
     {
-        private readonly Context context;
-        private readonly PasswordService passwordService;
-        public AccountController(Context context, PasswordService passwordService)
+        private readonly UserService _userService;
+        private readonly PasswordService _passwordService;
+        public AccountController(UserService userService, PasswordService passwordService)
         {
-            this.context = context;
-            this.passwordService = passwordService;
+            _userService = userService;
+            _passwordService = passwordService;
         }
 
         [HttpGet]
@@ -26,11 +27,11 @@ namespace AccessManager.Controllers
         [HttpPost]
         public IActionResult Login(LoginViewModel model)
         {
-            if (!ModelState.IsValid)
-                return View(model);
+            if (!ModelState.IsValid) return View(model);
+            if(_userService.GetUser(HttpContext.Session.GetString("Username")) != null)  ModelState.AddModelError("", "Излесте от профила си!");
 
-            User? user = context.Users.FirstOrDefault(u => u.UserName == model.Username);
-            if (user != null && user.Password != null && passwordService.VerifyPassword(model.Password, user.Password))
+            User? user = _userService.GetUser(model.Username);
+            if (user != null && user.Password != null && _passwordService.VerifyPassword(user, model.Password, user.Password))
             {
                 HttpContext.Session.SetString("Username", model.Username);
                 return RedirectToAction("Index", "Home");
@@ -50,75 +51,59 @@ namespace AccessManager.Controllers
         [HttpGet]
         public IActionResult MyProfile()
         {
-            var username = HttpContext.Session.GetString("Username");
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login");
 
-            if (string.IsNullOrEmpty(username))
-                return RedirectToAction("Login");
+            LoggedAccountViewModel model = new LoggedAccountViewModel
+            {
+                UserName = loggedUser.UserName,
+                FirstName = loggedUser.FirstName,
+                MiddleName = loggedUser.MiddleName,
+                LastName = loggedUser.LastName,
+                ReadingAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(loggedUser.ReadingAccess),
+                WritingAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(loggedUser.WritingAccess),
+                UnitDescription = loggedUser.Unit.Description,
+                DepartmentDescription = loggedUser.Unit.Department.Description,
+                EGN = loggedUser.EGN ?? string.Empty,
+                Phone = loggedUser.Phone ?? string.Empty,
+                AccessibleUnits = loggedUser.AccessibleUnits.Select(u => u.Unit.Description).ToList(),
+                UserAccesses = loggedUser.UserAccesses.Select(ua => ua.Access.Description).ToList(), // To be modified for tree structure
+                canEdit = (loggedUser.WritingAccess != AuthorityType.None && loggedUser.WritingAccess != AuthorityType.None)
+            };
 
-            if (context.Users.FirstOrDefault(u => u.UserName == username) == null)
-                return NotFound();
-
-            return View(BuildLoggedAccountViewModel(username));
+            return View(model);
         }
 
         [HttpPost]
         public IActionResult MyProfile(LoggedAccountViewModel model, string? OldPassword, string? NewPassword)
         {
-            if (!ModelState.IsValid)
-                return View(model);
+            if (!ModelState.IsValid) return View(model);
 
-            var user = context.Users.FirstOrDefault(u => u.UserName == model.UserName);
-            if (user == null)
-                return NotFound();
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login");
 
-            if (!string.IsNullOrWhiteSpace(NewPassword))
+            if (!string.IsNullOrWhiteSpace(NewPassword) && !string.IsNullOrWhiteSpace(loggedUser.Password))
             {
-                if (string.IsNullOrWhiteSpace(OldPassword) || !passwordService.VerifyPassword(OldPassword, user.Password))
+                if (string.IsNullOrWhiteSpace(OldPassword) || !_passwordService.VerifyPassword(loggedUser, OldPassword, loggedUser.Password))
                 {
                     ModelState.AddModelError("Password", "Старата парола е невалидна.");
                     return View(model);
                 }
 
-                user.Password = passwordService.HashPassword(NewPassword);
+                loggedUser.Password = _passwordService.HashPassword(loggedUser, NewPassword);
             }
 
-            user.FirstName = model.FirstName;
-            user.MiddleName = model.MiddleName;
-            user.LastName = model.LastName;
-            user.EGN = model.EGN;
-            user.Phone = model.Phone;
+            loggedUser.FirstName = model.FirstName;
+            loggedUser.MiddleName = model.MiddleName;
+            loggedUser.LastName = model.LastName;
+            loggedUser.EGN = model.EGN;
+            loggedUser.Phone = model.Phone;
 
-            if (user.WritingAccess >= AuthorityType.Full)
-                user.UserName = model.UserName;
+            if (loggedUser.WritingAccess >= AuthorityType.Full) loggedUser.UserName = model.UserName;
 
-            context.SaveChanges();
-
+            _userService.SaveChanges();
             ViewBag.Success = true;
-            return View(BuildLoggedAccountViewModel(user.UserName));
-        }
-
-        private LoggedAccountViewModel BuildLoggedAccountViewModel(string username)
-        {
-            var user = context.Users.FirstOrDefault(u => u.UserName == username);
-
-            if (user == null) return null;
-
-            return new LoggedAccountViewModel
-            {
-                UserName = user.UserName,
-                FirstName = user.FirstName,
-                MiddleName = user.MiddleName,
-                LastName = user.LastName,
-                ReadingAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(user.ReadingAccess),
-                WritingAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(user.WritingAccess),
-                UnitDescription = user.Unit.Description,
-                DepartmentDescription = user.Unit.Department.Description,
-                EGN = user.EGN ?? string.Empty,
-                Phone = user.Phone ?? string.Empty,
-                AccessibleUnits = user.AccessibleUnits.Select(u => u.Unit.Description).ToList(),
-                UserAccesses = user.UserAccesses.Select(ua => ua.Access.Description).ToList(), // To be modified for tree structure
-                canEdit = (user.WritingAccess != AuthorityType.None && user.WritingAccess != AuthorityType.None)
-            };
+            return View(model);
         }
     }
 }

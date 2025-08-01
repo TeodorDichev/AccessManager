@@ -8,11 +8,7 @@ namespace AccessManager.Controllers
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             var username = context.HttpContext.Session.GetString("Username");
-            if (!string.IsNullOrEmpty(username))
-            {
-                ViewData["Username"] = username;
-            }
-
+            if (!string.IsNullOrEmpty(username)) ViewData["Username"] = username;
             base.OnActionExecuting(context);
         }
     }

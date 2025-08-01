@@ -127,7 +127,7 @@
             </div>
             @if (ViewData.ModelState["Password"]?.Errors.Count > 0)
             {
-                <span class="text-danger">@ViewData.ModelState["Password"].Errors[0].ErrorMessage</span>
+                <span class="text-danger">@ViewData?.ModelState["Password"]?.Errors[0].ErrorMessage</span>
             }
         </div>
         <div class="col-md-6 mb-3">

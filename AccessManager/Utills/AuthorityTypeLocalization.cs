@@ -1,6 +1,6 @@
 ﻿using AccessManager.Data.Enums;
 
-namespace AccessManager.Services
+namespace AccessManager.Utills
 {
     public static class AuthorityTypeLocalization
     {
