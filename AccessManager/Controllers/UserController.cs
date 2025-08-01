@@ -285,7 +285,30 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login");
 
-            return Json(loggedUser.AccessibleUnits.Select(au => new { au.UnitId, au.Unit.Description }));
+            return Json(loggedUser.AccessibleUnits.Where(au => au.Unit.DepartmentId == departmentId).Select(au => new { au.UnitId, au.Unit.Description }));
+        }
+
+        [HttpGet]
+        public IActionResult GetAccessibleDepartmentsForUser()
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login");
+
+            var departments = loggedUser.AccessibleUnits
+                .GroupBy(u => u.Unit.Department)
+                .Select(g => new
+                {
+                    DepartmentId = g.Key.Id,
+                    DepartmentName = g.Key.Description,
+                    Units = g.Select(u => new
+                    {
+                        UnitId = u.UnitId,
+                        UnitName = u.Unit.Description
+                    }).ToList()
+                })
+                .ToList();
+            
+            return Json(departments);
         }
     }
 }
