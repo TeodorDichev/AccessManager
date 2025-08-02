@@ -1,0 +1,169 @@
+﻿@using AccessManager.Data.Enums
+@model AccessManager.ViewModels.User.EditUserViewModel
+@{
+    ViewData["Title"] = $"{Model.FirstName} {Model.LastName}";
+}
+
+<h2 class="text-center fw-bold">@ViewData["Title"]</h2>
+
+@if (ViewBag.Success != null && (bool)ViewBag.Success)
+{
+    <div class="alert alert-success">Профилът е обновен успешно.</div>
+}
+
+<form asp-action="EditUser" method="post">
+    <input type="hidden" asp-for="Id" />
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="FirstName" class="form-label">Първо име</label>
+                <input asp-for="FirstName" class="form-control" />
+                <span asp-validation-for="FirstName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="MiddleName" class="form-label">Второ име</label>
+                <input asp-for="MiddleName" class="form-control" />
+                <span asp-validation-for="MiddleName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="LastName" class="form-label">Фамилия</label>
+                <input asp-for="LastName" class="form-control" />
+                <span asp-validation-for="LastName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="EGN" class="form-label">ЕГН</label>
+                <input asp-for="EGN" class="form-control" />
+                <span asp-validation-for="EGN" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Phone" class="form-label">Телефонен номер</label>
+                <input asp-for="Phone" class="form-control" />
+                <span asp-validation-for="Phone" class="text-danger"></span>
+            </div>
+
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="UserName" class="form-label">Потребителско име</label>
+                <input asp-for="UserName" class="form-control" />
+                <span asp-validation-for="UserName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="ReadingAccess" class="form-label">Достъп за четене</label>
+                <select asp-for="ReadingAccess" class="form-select" id="SelectedReadingAccess">
+                    @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
+                    {
+                        <option value="@((int)level)">@level</option>
+                    }
+                </select>
+                <span asp-validation-for="ReadingAccess" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="WritingAccess" class="form-label">Достъп за писане</label>
+                <select asp-for="WritingAccess" class="form-select" id="SelectedWritingAccess">
+                    @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
+                    {
+                        <option value="@((int)level)">@level</option>
+                    }
+                </select>
+                <span asp-validation-for="WritingAccess" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Нова парола</label>
+                <input type="password" name="NewPassword" class="form-control" />
+            </div>
+        </div>
+        <div class="row">
+
+            <div class="d-grid col-md-6">
+            <button type="submit" class="btn btn-primary btn-lg">Запази</button>
+            </div>
+            <div class="d-grid col-md-6">
+            <button type="submit" formaction="/User/Deactivate" formmethod="post" class="btn btn-danger btn-lg">Деактивирай акаунта</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<hr />
+<h4>Видими отдели</h4>
+<div style="max-height: 200px; overflow-y: auto;">
+    <table class="table table-sm table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Дирекция</th>
+                <th>Отдел</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var unit in Model.AccessibleUnits)
+            {
+                <tr>
+                    <td>@unit.DepartmentName</td>
+                    <td>@unit.UnitName</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger remove-unit-btn" data-unit-id="@unit.UnitId">Премахни</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<hr />
+<h4>Достъпи</h4>
+<div style="max-height: 200px; overflow-y: auto;">
+    <table class="table table-sm table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>АИС</th>
+                <th>Родителски достъп</th>
+                <th>Достъп</th>
+                <th>Заповед</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var access in Model.UserAccesses)
+            {
+                <tr data-access-id="@access.Id">
+                    <td>@access.InformationSystemDescription</td>
+                    <td>@access.ParentAccessDescription</td>
+                    <td>@access.Description</td>
+                    <td>
+                        <input type="text" class="form-control directive-input" value="@access.Directive" data-access-id="@access.Id" />
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-danger remove-access-btn" data-access-id="@access.Id">Премахни</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<hr />
+<h4>Добавяне на достъпи и отдели</h4>
+
+@* <form asp-action="MapAccessAndUnits" method="post">
+    <input type="hidden" name="UserId" value="@Model.Id" />
+    <input type="hidden" id="SelectedAccessibleUnitIds" name="SelectedAccessibleUnitIds" value="" />
+    <div id="units-dropdown" class="mb-3"></div>
+
+    <div id="accesses-section">
+        @await Html.PartialAsync("_AccessesCheckboxes", Model.AccessesMap)
+    </div>
+
+    <div class="d-grid mb-4">
+        <button type="submit" class="btn btn-success btn-lg">Добави достъпи и отдели</button>
+    </div>
+</form>
+ *@
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/password-visibility-toggle.js" asp-append-version="true"></script>
+    <script src="~/js/edit-user.js" asp-append-version="true"></script>
+}

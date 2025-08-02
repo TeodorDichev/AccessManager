@@ -26,6 +26,11 @@ namespace AccessManager.Services
             return _context.Users.FirstOrDefault(u => u.UserName == username && u.DeletedOn == null);
         }
 
+        public User? GetUser(Guid? id)
+        {
+            return _context.Users.FirstOrDefault(u => u.Id == id && u.DeletedOn == null);
+        }
+
         public bool UserWithUsernameExists(string username)
         {
             return _context.Users.Any(u => u.UserName == username && u.DeletedOn == null);

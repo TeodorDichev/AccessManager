@@ -30,9 +30,38 @@ namespace AccessManager.Services
             return _context.Units.Where(u => u.DepartmentId == departmentId && u.DeletedOn == null).ToList();
         }
 
+        public List<Unit> GetUnits()
+        {
+            return _context.Units.Where(u => u.DeletedOn == null).ToList();
+        }
+
         public List<Department> GetDepartments()
         {
             return _context.Departments.Where(d => d.DeletedOn == null).ToList();
+        }
+
+        internal void RemoveUserUnit(Guid userId, Guid unitId)
+        {
+            var uu = _context.UnitUser.FirstOrDefault(u => u.UserId == userId && u.UnitId == unitId);
+            if (uu != null)
+            {
+                _context.UnitUser.Remove(uu);
+                _context.SaveChanges();
+            }
+        }
+
+        internal void AddUnitAccess(Guid userId, List<Guid> selectedUnitIds)
+        {
+            foreach (var unitId in selectedUnitIds)
+            {
+                bool exists = _context.UnitUser.Any(uu => uu.UserId == userId && uu.UnitId == unitId);
+                if (!exists)
+                {
+                    _context.UnitUser.Add(new UnitUser { UserId = userId, UnitId = unitId });
+                }
+            }
+
+            _context.SaveChanges();
         }
     }
 }

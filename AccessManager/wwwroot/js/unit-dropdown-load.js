@@ -18,9 +18,10 @@
 
             data.forEach(unit => {
                 const option = document.createElement("option");
-                option.value = unit.id;
+                option.value = unit.unitId;
                 option.text = unit.description;
                 unitSelect.appendChild(option);
+                console.log(unit.unitId);
             });
         });
 });

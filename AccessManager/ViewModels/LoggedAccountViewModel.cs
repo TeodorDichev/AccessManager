@@ -1,4 +1,6 @@
 ﻿using AccessManager.Utills;
+using AccessManager.ViewModels.InformationSystem;
+using AccessManager.ViewModels.UnitDepartment;
 using System.ComponentModel.DataAnnotations;
 
 namespace AccessManager.ViewModels
@@ -20,8 +22,8 @@ namespace AccessManager.ViewModels
         [RegularExpression(@"^(?:\+359|0)?8[7-9][0-9]{7}$", ErrorMessage = ExceptionMessages.InvalidPhone)]
 
         public string? Phone { get; set; } = string.Empty;
-        public List<string> AccessibleUnits { get; set; } = [];
-        public List<string> UserAccesses { get; set; } = [];
+        public List<UnitViewModel> AccessibleUnits { get; set; } = [];
+        public List<AccessViewModel> UserAccesses { get; set; } = [];
         public bool canEditUserName { get; set; }
         public bool canEdit { get; set; }
     }

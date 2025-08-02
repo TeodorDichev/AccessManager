@@ -156,7 +156,7 @@
     <table class="table table-sm table-bordered">
         <thead class="table-light">
             <tr>
-                <th>#</th>
+                <th>Дирекция</th>
                 <th>Отдел</th>
             </tr>
         </thead>
@@ -164,8 +164,8 @@
             @for (int i = 0; i < Model.AccessibleUnits.Count; i++)
             {
                 <tr>
-                    <td>@(i + 1)</td>
-                    <td>@Model.AccessibleUnits[i]</td>
+                    <td>@Model.AccessibleUnits[i].DepartmentName</td>
+                    <td>@Model.AccessibleUnits[i].UnitName</td>
                 </tr>
             }
         </tbody>
@@ -177,16 +177,20 @@
     <table class="table table-sm table-bordered">
         <thead class="table-light">
             <tr>
-                <th>#</th>
+                <th>АИС</th>
+                <th>Родителски достъп</th>
                 <th>Достъп</th>
+                <th>Заповед</th>
             </tr>
         </thead>
         <tbody>
             @for (int i = 0; i < Model.UserAccesses.Count; i++)
             {
                 <tr>
-                    <td>@(i + 1)</td>
-                    <td>@Model.UserAccesses[i]</td>
+                    <td>@Model.UserAccesses[i].InformationSystemDescription</td>
+                    <td>@Model.UserAccesses[i].ParentAccessDescription</td>
+                    <td>@Model.UserAccesses[i].Description</td>
+                    <td>@Model.UserAccesses[i].Directive</td>
                 </tr>
             }
         </tbody>
@@ -195,5 +199,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/password-visibility-toggle.js"></script>
+    <script src="~/js/password-visibility-toggle.js" asp-append-version="true"></script>
 }

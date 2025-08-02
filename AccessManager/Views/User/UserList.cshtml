@@ -112,11 +112,9 @@
                         </a>
                     </td>
                     <td>
-                        <form asp-controller="User" asp-action="SoftDeleteUser" asp-route-username="@user.UserName" method="post" onsubmit="return confirm('Сигурни ли сте?');">
-                            <button type="button" class="btn btn-sm btn-danger soft-delete-btn" data-username="@user.UserName">
-                                Деактивирай
-                            </button>
-                        </form>
+                        <a asp-controller="User" asp-action="SoftDeleteUser" asp-route-username="@user.UserName" class="btn btn-sm btn-danger">
+                            Деактивирай
+                        </a>
                     </td>
 
                 }
@@ -140,5 +138,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/soft-delete-user.js"></script>
+    <script src="~/js/soft-delete-user.js" asp-append-version="true"></script>
 }

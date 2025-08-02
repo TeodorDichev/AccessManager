@@ -42,11 +42,8 @@ namespace AccessManager.ViewModels.User
             }
         }
 
-        // Dropdown data
-        public List<DepartmentUnitViewModel> DepartmentUnits { get; set; } = [];
         public List<SelectListItem> Departments { get; set; } = [];
         public List<SelectListItem> Units { get; set; } = [];
         public string? SelectedAccessibleUnitIds { get; set; }
-        public List<SelectListItem> AvailableUnits { get; set; } = [];
     }
 }

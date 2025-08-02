@@ -4,6 +4,8 @@ using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
 using AccessManager.ViewModels;
+using AccessManager.ViewModels.InformationSystem;
+using AccessManager.ViewModels.UnitDepartment;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccessManager.Controllers
@@ -66,12 +68,64 @@ namespace AccessManager.Controllers
                 DepartmentDescription = loggedUser.Unit.Department.Description,
                 EGN = loggedUser.EGN ?? string.Empty,
                 Phone = loggedUser.Phone ?? string.Empty,
-                AccessibleUnits = loggedUser.AccessibleUnits.Select(u => u.Unit.Description).ToList(),
-                UserAccesses = loggedUser.UserAccesses.Select(ua => ua.Access.Description).ToList(), // To be modified for tree structure
+                AccessibleUnits = loggedUser.AccessibleUnits.Select(au => new UnitViewModel 
+                    { 
+                        UnitId = au.UnitId, 
+                        UnitName = au.Unit.Description, 
+                        DepartmentName = au.Unit.Department.Description
+                    }).ToList(),
+                UserAccesses = loggedUser.UserAccesses.Select(ua => new AccessViewModel
+                    {
+                        Id = ua.AccessId,
+                        InformationSystemDescription = ua.Access.System.Name,
+                        Description = ua.Access.Description,
+                        IsSelected = true,
+                        Directive = ua.Directive,
+                        ParentAccessDescription = ua.Access.ParentAccess?.Description ?? "-",
+                }).ToList(),
                 canEdit = (loggedUser.WritingAccess != AuthorityType.None && loggedUser.WritingAccess != AuthorityType.None)
             };
 
             return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult Profile(string username)
+        {
+            var user = _userService.GetUser(username);
+            if (user == null) return BadRequest();
+
+            LoggedAccountViewModel model = new LoggedAccountViewModel
+            {
+                UserName = user.UserName,
+                FirstName = user.FirstName,
+                MiddleName = user.MiddleName,
+                LastName = user.LastName,
+                ReadingAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(user.ReadingAccess),
+                WritingAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(user.WritingAccess),
+                UnitDescription = user.Unit.Description,
+                DepartmentDescription = user.Unit.Department.Description,
+                EGN = user.EGN ?? string.Empty,
+                Phone = user.Phone ?? string.Empty,
+                AccessibleUnits = user.AccessibleUnits.Select(au => new UnitViewModel
+                {
+                    UnitId = au.UnitId,
+                    UnitName = au.Unit.Description,
+                    DepartmentName = au.Unit.Department.Description
+                }).ToList(),
+                UserAccesses = user.UserAccesses.Select(ua => new AccessViewModel
+                {
+                    Id = ua.AccessId,
+                    InformationSystemDescription = ua.Access.System.Name,
+                    Description = ua.Access.Description,
+                    IsSelected = true,
+                    Directive = ua.Directive,
+                    ParentAccessDescription = ua.Access.ParentAccess?.Description ?? "-",
+                }).ToList(),
+                canEdit = (user.WritingAccess != AuthorityType.None && user.WritingAccess != AuthorityType.None)
+            };
+
+            return View("MyProfile", model);
         }
 
         [HttpPost]
