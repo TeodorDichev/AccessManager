@@ -126,6 +126,29 @@ namespace AccessManager.Services
                     .ToList();
             }
         }
+        internal List<SelectListItem> GetAllowedUnitsForDepartmentAsSelectListItem(User user, Guid departmentId)
+        {
+            if (user.WritingAccess == AuthorityType.None)
+            {
+                return [];
+            }
+            else if (user.WritingAccess == AuthorityType.Restricted)
+            {
+                var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
+                return _context.Units
+                    .Where(u => allowedUnitIds.Contains(u.Id) && u.DepartmentId == departmentId)
+                    .Distinct()
+                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description })
+                    .ToList();
+            }
+            else
+            {
+                return _context.Units
+                    .Where(u => u.DepartmentId == departmentId)
+                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description })
+                    .ToList();
+            }
+        }
 
         internal List<UserListItemViewModel> GetFilteredUsers(string sortBy, string filterUnit, string filterDepartment, User loggedUser)
         {

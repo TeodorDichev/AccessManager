@@ -332,9 +332,11 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(username);
             if (user == null) return BadRequest();
 
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login");
+
             var model = new EditUserViewModel
             {
-                Id = user.Id,
                 UserName = user.UserName,
                 FirstName = user.FirstName,
                 MiddleName = user.MiddleName,
@@ -343,8 +345,8 @@ namespace AccessManager.Controllers
                 Phone = user.Phone ?? string.Empty,
                 ReadingAccess = user.ReadingAccess,
                 WritingAccess = user.WritingAccess,
-                DepartmentDescription = user.Unit?.Department?.Description ?? string.Empty,
-                UnitDescription = user.Unit?.Description ?? string.Empty,
+                SelectedDepartmentId = user.Unit.Department.Id,
+                SelectedUnitId = user.Unit.Id,
                 AccessibleUnits = user.AccessibleUnits
                     .Select(au => new UnitViewModel
                     {
@@ -360,17 +362,42 @@ namespace AccessManager.Controllers
                         ParentAccessDescription = ua.Access.ParentAccess?.Description ?? string.Empty,
                         Description = ua.Access.Description,
                         Directive = ua.Directive
+                    }).ToList(),
+                AvailableDepartments = _userService.GetAllowedDepartmentsAsSelectListItem(loggedUser),
+                AvailableUnits = _userService.GetAllowedUnitsForDepartmentAsSelectListItem(loggedUser, user.Unit.Department.Id),
+                AvailableUserAccesses = user.UserAccesses
+                    .Select(ua => new InformationSystemViewModel
+                    {
+                        Id = ua.Access.System.Id,
+                        Name = ua.Access.System.Name,
+                        Accesses = ua.Access.System.Accesses
+                            .Where(a => a.DeletedOn == null && a.ParentAccessId == null)
+                            .Select(a => new AccessViewModel
+                            {
+                                Id = a.Id,
+                                Description = a.Description,
+                                SubAccesses = a.SubAccesses
+                                    .Where(sa => sa.DeletedOn == null)
+                                    .Select(sa => new AccessViewModel
+                                    {
+                                        Id = sa.Id,
+                                        Description = sa.Description
+                                    }).ToList()
+                            }).ToList(),
+                        Directive = ua.Directive
                     }).ToList()
             };
-
+            model.AvailableDepartments.ForEach(d => d.Selected = d.Value == model.SelectedDepartmentId.ToString());
+            model.AvailableUnits.ForEach(d => d.Selected = d.Value == model.SelectedUnitId.ToString());
             return View(model);
         }
 
         [HttpPost]
         public IActionResult EditUser(EditUserViewModel model)
         {
-            var user = _userService.GetUser(model.Id);
+            var user = _userService.GetUser(model.UserName);
             if (user == null) return BadRequest();
+            if(!ModelState.IsValid) return View(model);
 
             user.FirstName = model.FirstName;
             user.MiddleName = model.MiddleName;
@@ -383,44 +410,64 @@ namespace AccessManager.Controllers
             {
                 user.Password = _passwordService.HashPassword(user, model.NewPassword);
             }
-
+            Unit? newUnit = _departmentUnitService.GetUnits().FirstOrDefault(u => u.Id == model.SelectedUnitId);
+            if(newUnit != null)
+            {
+                user.UnitId = newUnit.Id;
+                user.Unit = newUnit;
+            }
             _userService.SaveChanges();
-            return RedirectToAction("EditUser", new { id = model.Id });
+            return RedirectToAction("EditUser", new { UserName = model.UserName });
         }
 
         [HttpPost]
-        public IActionResult RemoveUnitAccess(Guid userId, Guid unitId)
+        public IActionResult RemoveUnitAccess(string username, Guid unitId)
         {
-            _departmentUnitService.RemoveUserUnit(userId, unitId);
-            return RedirectToAction("EditUser", new { id = userId });
+            var user = _userService.GetUser(username);
+            if (user == null) return BadRequest();
+            
+            _departmentUnitService.RemoveUserUnit(user.Id, unitId);
+            return RedirectToAction("EditUser", new { UserName = username });
         }
 
         [HttpPost]
-        public IActionResult RemoveUserAccess(Guid userId, Guid accessId)
+        public IActionResult RemoveUserAccess(string username, Guid accessId)
         {
-            _informationSystemService.RemoveUserAccess(userId, accessId);
-            return RedirectToAction("EditUser", new { id = userId });
+            var user = _userService.GetUser(username);
+            if (user == null) return BadRequest();
+            
+            _informationSystemService.RemoveUserAccess(user.Id, accessId);
+            return RedirectToAction("EditUser", new { UserName = username });
         }
 
         [HttpPost]
-        public IActionResult UpdateUserAccessDirective(Guid userId, Guid accessId, string directive)
+        public IActionResult UpdateUserAccessDirective(string username, Guid accessId, string directive)
         {
-            _informationSystemService.UpdateAccessDirective(userId, accessId, directive);
-            return RedirectToAction("EditUser", new { id = userId });
+            var user = _userService.GetUser(username);
+            if (user == null) return BadRequest();
+            
+            _informationSystemService.UpdateAccessDirective(user.Id, accessId, directive);
+            return RedirectToAction("EditUser", new { UserName = username });
         }
 
         [HttpPost]
-        public IActionResult AddUnitAccess(Guid userId, List<Guid> selectedUnitIds)
+        public IActionResult AddUnitAccess(string username, List<Guid> selectedUnitIds)
         {
-            _departmentUnitService.AddUnitAccess(userId, selectedUnitIds);
-            return RedirectToAction("EditUser", new { id = userId });
+            var user = _userService.GetUser(username);
+            if (user == null) return BadRequest();
+
+            _departmentUnitService.AddUnitAccess(user.Id, selectedUnitIds);
+            return RedirectToAction("EditUser", new { UserName = username });
         }
 
         [HttpPost]
-        public IActionResult AddAccesses(Guid userId, List<AccessViewModel> accesses)
+        public IActionResult AddAccesses(string username, List<AccessViewModel> accesses)
         {
-            _informationSystemService.AddAccesses(userId, accesses);
-            return RedirectToAction("EditUser", new { id = userId });
+            var user = _userService.GetUser(username);
+            if (user == null) return BadRequest();
+            
+            _informationSystemService.AddAccesses(user.Id, accesses);
+            return RedirectToAction("EditUser", new { UserName = username });
         }
     }
 }
