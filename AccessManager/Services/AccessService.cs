@@ -13,7 +13,10 @@ namespace AccessManager.Services
 
         public void AddUserAccess(UserAccess userAccess)
         {
-            _context.UserAccesses.Add(userAccess);
+            if(!_context.UserAccesses.Any(ua => ua.AccessId == userAccess.AccessId && ua.UserId == userAccess.UserId))
+            {
+                _context.UserAccesses.Add(userAccess);  
+            }
         }
     }
 }

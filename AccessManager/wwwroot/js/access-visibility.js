@@ -10,8 +10,12 @@ function updateVisibility() {
     const showPassword = readVal === 0 && writeVal === 0;
     const showUnitAccess = readVal === 1 || writeVal === 1;
 
-    passwordContainer.style.display = showPassword ? "none" : "block";
-    unitAccessContainer.style.display = showUnitAccess ? "block" : "none";
+    if (passwordContainer !== null) {
+        passwordContainer.style.display = showPassword ? "none" : "block";
+    }
+    if (unitAccessContainer !== null) { 
+        unitAccessContainer.style.display = showUnitAccess ? "block" : "none";
+    }
 }
 
 readSelect.addEventListener("change", updateVisibility);

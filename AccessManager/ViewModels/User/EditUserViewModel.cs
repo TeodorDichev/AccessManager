@@ -33,6 +33,6 @@ namespace AccessManager.ViewModels.User
         public List<AccessViewModel> UserAccesses { get; set; } = new();
         public List<SelectListItem> AvailableDepartments { get; set; } = [];
         public List<SelectListItem> AvailableUnits { get; set; } = [];
-        public List<InformationSystemViewModel> AvailableUserAccesses { get; set; } = [];
+        public string? SelectedAccessibleUnitIds { get; set; }
     }
 }

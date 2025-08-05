@@ -83,7 +83,6 @@
         </div>
     </div>
 
-
     <div class="form-outline form-white mb-3" id="password-container">
         <label asp-for="Password" class="form-label">Парола</label>
         <div class="position-relative d-flex align-items-center">
@@ -97,7 +96,7 @@
         </div>
         <span asp-validation-for="Password" class="text-danger"></span>
     </div>
-
+    
     <div class="mb-3" id="unit-access-container" style="display: none;">
         <label class="form-label">Отдели с достъп</label>
         <div class="dropdown">
@@ -109,9 +108,17 @@
         <input type="hidden" name="SelectedAccessibleUnitIds" id="SelectedAccessibleUnitIds" value="@Model.SelectedAccessibleUnitIds" />
     </div>
 
-    <div class="text-center mt-4">
-        <button type="submit" class="btn btn-primary px-5">Създай потребител</button>
-    </div>
+    <form asp-action="CreateUser" method="post">
+        <div class="d-flex justify-content-center align-items-center mt-4 gap-3">
+            <button type="submit" name="redirectTo" value="UserList" class="btn btn-primary px-5">
+                Създай потребител
+            </button>
+
+            <button type="submit" name="redirectTo" value="MapAccess" class="btn btn-primary px-5">
+                Дай достъпи
+            </button>
+        </div>
+    </form>
 </form>
 
 @section Scripts {

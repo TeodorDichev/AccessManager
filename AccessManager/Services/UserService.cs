@@ -33,7 +33,7 @@ namespace AccessManager.Services
 
         public bool UserWithUsernameExists(string username)
         {
-            return _context.Users.Any(u => u.UserName == username && u.DeletedOn == null);
+            return _context.Users.IgnoreQueryFilters().Any(u => u.UserName == username && u.DeletedOn == null);
         }
 
         public void AddUser(User user)

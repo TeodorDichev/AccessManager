@@ -1,5 +1,6 @@
 ﻿using AccessManager.Data.Enums;
 using AccessManager.Utills;
+using AccessManager.ViewModels.InformationSystem;
 using AccessManager.ViewModels.UnitDepartment;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
@@ -44,6 +45,7 @@ namespace AccessManager.ViewModels.User
 
         public List<SelectListItem> Departments { get; set; } = [];
         public List<SelectListItem> Units { get; set; } = [];
+        public List<InformationSystemViewModel> Systems { get; set; } = [];
         public string? SelectedAccessibleUnitIds { get; set; }
     }
 }

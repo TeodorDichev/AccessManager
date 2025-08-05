@@ -112,9 +112,9 @@
                         </a>
                     </td>
                     <td>
-                        <a asp-controller="User" asp-action="SoftDeleteUser" asp-route-username="@user.UserName" class="btn btn-sm btn-danger">
+                        <button type="button" class="btn btn-sm btn-danger" data-username="@user.UserName" onclick="softDeleteUser(this)">
                             Деактивирай
-                        </a>
+                        </button>
                     </td>
 
                 }
