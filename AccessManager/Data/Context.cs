@@ -233,10 +233,7 @@ namespace AccessManager.Data
                     .HasForeignKey(ea => ea.AccessId)
                     .IsRequired();
 
-                entity.Property(ea => ea.GrantedOn)
-                    .IsRequired();
-
-                entity.HasOne(ua => ua.Directive);
+                entity.HasOne(ua => ua.GrantedByDirective);
     
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.UserAccesses)
