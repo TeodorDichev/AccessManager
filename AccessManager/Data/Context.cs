@@ -10,7 +10,6 @@ namespace AccessManager.Data
         {
         }
 
-        public DbSet<InformationSystem> InformationSystems { get; set; } = null!;
         public DbSet<Access> Accesses { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<UserAccess> UserAccesses { get; set; } = null!;
@@ -18,12 +17,12 @@ namespace AccessManager.Data
         public DbSet<Unit> Units { get; set; } = null!;
         public DbSet<Log> Logs { get; set; } = null!;
         public DbSet<UnitUser> UnitUser { get; set; } = null!;
+        public DbSet<Directive> Directives { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            ConfigureInformationSystem(modelBuilder);
             ConfigureAccess(modelBuilder);
             ConfigureUsers(modelBuilder);
             ConfigureUserAccess(modelBuilder);
@@ -31,6 +30,7 @@ namespace AccessManager.Data
             ConfigureUserUnit(modelBuilder);
             ConfigureUnit(modelBuilder);
             ConfigureLog(modelBuilder);
+            ConfigureDirective(modelBuilder);
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -72,6 +72,19 @@ namespace AccessManager.Data
 
                 entity.Property(e => e.CreatedOn)
                     .IsRequired();
+            });
+        }
+
+        private void ConfigureDirective(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Directive>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Name)
+                    .IsRequired();
+                entity.HasIndex(e => e.Name)
+                     .IsUnique();
             });
         }
 
@@ -124,23 +137,6 @@ namespace AccessManager.Data
             });
         }
 
-        private void ConfigureInformationSystem(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<InformationSystem>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-
-                entity.Property(e => e.Name)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.HasMany(e => e.Accesses)
-                      .WithOne(a => a.System)
-                      .HasForeignKey(a => a.SystemId)
-                      .IsRequired();
-            });
-        }
-
         private void ConfigureAccess(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Access>(entity =>
@@ -153,11 +149,6 @@ namespace AccessManager.Data
 
                 entity.HasIndex(e => e.Description)
                       .IsUnique();
-
-                entity.HasOne(e => e.System)
-                      .WithMany(s => s.Accesses)
-                      .HasForeignKey(e => e.SystemId)
-                      .IsRequired();
 
                 entity.HasMany(e => e.UserAccesses)
                       .WithOne(ea => ea.Access)
@@ -242,11 +233,11 @@ namespace AccessManager.Data
                     .HasForeignKey(ea => ea.AccessId)
                     .IsRequired();
 
-                entity.Property(ea => ea.Directive)
-                    .IsRequired();
-
                 entity.Property(ea => ea.GrantedOn)
                     .IsRequired();
+
+                entity.HasOne(ua => ua.Directive);
+    
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.UserAccesses)
                     .HasForeignKey(e => e.UserId)

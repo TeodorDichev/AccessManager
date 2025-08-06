@@ -45,7 +45,7 @@ namespace AccessManager.ViewModels.User
 
         public List<SelectListItem> Departments { get; set; } = [];
         public List<SelectListItem> Units { get; set; } = [];
-        public List<InformationSystemViewModel> Systems { get; set; } = [];
+        public List<AccessViewModel> Accesses { get; set; } = [];
         public string? SelectedAccessibleUnitIds { get; set; }
     }
 }

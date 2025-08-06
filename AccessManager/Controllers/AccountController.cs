@@ -77,10 +77,10 @@ namespace AccessManager.Controllers
                 UserAccesses = loggedUser.UserAccesses.Select(ua => new AccessViewModel
                     {
                         Id = ua.AccessId,
-                        InformationSystemDescription = ua.Access.System.Name,
+                        //InformationSystemDescription = ua.Access.System.Name,
                         Description = ua.Access.Description,
                         IsSelected = true,
-                        Directive = ua.Directive,
+                        //Directive = ua.Directive,
                         ParentAccessDescription = ua.Access.ParentAccess?.Description ?? "-",
                 }).ToList(),
                 canEdit = (loggedUser.WritingAccess != AuthorityType.None && loggedUser.WritingAccess != AuthorityType.None)
@@ -116,10 +116,10 @@ namespace AccessManager.Controllers
                 UserAccesses = user.UserAccesses.Select(ua => new AccessViewModel
                 {
                     Id = ua.AccessId,
-                    InformationSystemDescription = ua.Access.System.Name,
+                    //InformationSystemDescription = ua.Access.System.Name,
                     Description = ua.Access.Description,
                     IsSelected = true,
-                    Directive = ua.Directive,
+                    //Directive = ua.Directive,
                     ParentAccessDescription = ua.Access.ParentAccess?.Description ?? "-",
                 }).ToList(),
                 canEdit = (user.WritingAccess != AuthorityType.None && user.WritingAccess != AuthorityType.None)

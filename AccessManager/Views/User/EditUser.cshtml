@@ -153,13 +153,13 @@
             @foreach (var access in Model.UserAccesses)
             {
                 <tr data-access-id="@access.Id">
-                    <td>@access.InformationSystemDescription</td>
+                    @* <td>@access.InformationSystemDescription</td> *@
                     <td>@access.ParentAccessDescription</td>
                     <td>@access.Description</td>
                     <td>
                         <input type="text"
                                class="form-control directive-input"
-                               value="@access.Directive"
+                               @* value="@access.Directive" *@
                                data-access-id="@access.Id"
                                data-username="@Model.UserName" />
                     </td>

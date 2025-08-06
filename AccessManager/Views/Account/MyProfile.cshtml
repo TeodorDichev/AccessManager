@@ -187,10 +187,10 @@
             @for (int i = 0; i < Model.UserAccesses.Count; i++)
             {
                 <tr>
-                    <td>@Model.UserAccesses[i].InformationSystemDescription</td>
+                    @* <td>@Model.UserAccesses[i].InformationSystemDescription</td> *@
                     <td>@Model.UserAccesses[i].ParentAccessDescription</td>
                     <td>@Model.UserAccesses[i].Description</td>
-                    <td>@Model.UserAccesses[i].Directive</td>
+                    @* <td>@Model.UserAccesses[i].Directive</td> *@
                 </tr>
             }
         </tbody>

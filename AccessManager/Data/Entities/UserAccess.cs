@@ -8,7 +8,8 @@
         public Guid AccessId { get; set; }
         virtual public Access Access { get; set; } = null!;
 
-        public string Directive { get; set; } = string.Empty;
+        public Guid DirectiveId { get; set; }
+        virtual public Directive Directive { get; set; } = null!;
 
         public DateTime GrantedOn { get; set; }
         public DateTime? DeletedOn { get; set; } = null;

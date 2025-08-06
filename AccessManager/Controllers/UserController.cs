@@ -17,10 +17,10 @@ namespace AccessManager.Controllers
         private readonly AccessService _accessService;
         private readonly PasswordService _passwordService;
         private readonly DepartmentUnitService _departmentUnitService;
-        private readonly InformationSystemsService _informationSystemService;
+        private readonly AccessService _informationSystemService;
 
         public UserController(Context context, PasswordService passwordService, UserService userService,
-            InformationSystemsService informationSystemsService, AccessService accessService, DepartmentUnitService departmentUnitService)
+            AccessService informationSystemsService, AccessService accessService, DepartmentUnitService departmentUnitService)
         {
             _passwordService = passwordService;
             _userService = userService;
@@ -69,29 +69,10 @@ namespace AccessManager.Controllers
             }
 
             var pendingUserJson = HttpContext.Session.GetString("PendingUser");
-            var systems = _informationSystemService.GetAllInformationSystems();
 
             CreateUserViewModel model = new CreateUserViewModel
             {
-                Systems = systems.Select(s => new InformationSystemViewModel
-                {
-                    Id = s.Id,
-                    Name = s.Name,
-                    Accesses = s.Accesses
-                        .Where(a => a.DeletedOn == null && a.ParentAccessId == null)
-                        .Select(a => new AccessViewModel
-                        {
-                            Id = a.Id,
-                            Description = a.Description,
-                            SubAccesses = a.SubAccesses
-                            .Where(sa => sa.DeletedOn == null)
-                            .Select(sa => new AccessViewModel
-                            {
-                                Id = sa.Id,
-                                Description = sa.Description
-                            }).ToList()
-                        }).ToList()
-                }).ToList(),
+                // TO DO SYSTEMS
                 Departments = _userService.GetAllowedDepartmentsAsSelectListItem(loggedUser)
             };
 
@@ -159,33 +140,7 @@ namespace AccessManager.Controllers
                     .ToList();
             }
 
-            foreach (var system in model.Systems)
-            {
-                foreach (var access in system.Accesses)
-                {
-                    if (access.IsSelected && access.SubAccesses.Count() == 0)
-                    {
-                        _accessService.AddUserAccess(new UserAccess
-                        {
-                            UserId = user.Id,
-                            AccessId = access.Id,
-                            Directive = access.Directive ?? system.Directive ?? string.Empty,
-                            GrantedOn = DateTime.UtcNow
-                        });
-                    }
-
-                    foreach (var sub in access.SubAccesses.Where(s => s.IsSelected))
-                    {
-                        _accessService.AddUserAccess(new UserAccess
-                        {
-                            UserId = user.Id,
-                            AccessId = sub.Id,
-                            Directive = sub.Directive ?? access.Directive ?? system.Directive ?? string.Empty,
-                            GrantedOn = DateTime.UtcNow
-                        });
-                    }
-                }
-            }
+            // TO DO SYSTEMS
 
             _userService.SaveChanges();
             if (redirectTo == "MapAccess") 
@@ -258,8 +213,6 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login");
 
-            var systems = _informationSystemService.GetAllInformationSystems();
-
             var model = new EditUserViewModel
             {
                 UserName = user.UserName,
@@ -283,11 +236,11 @@ namespace AccessManager.Controllers
                     .Select(ua => new AccessViewModel
                     {
                         Id = ua.AccessId,
-                        InformationSystemDescription = ua.Access.System.Name,
-                        InformationSystemId = ua.Access.System.Id,
+                        //InformationSystemDescription = ua.Access.System.Name,
+                        //InformationSystemId = ua.Access.System.Id,
                         ParentAccessDescription = ua.Access.ParentAccess?.Description ?? string.Empty,
                         Description = ua.Access.Description,
-                        Directive = ua.Directive,
+                        //Directive = ua.Directive,
                     }).ToList(),
                 AvailableDepartments = _userService.GetAllowedDepartmentsAsSelectListItem(loggedUser),
                 AvailableUnits = _userService.GetAllowedUnitsForDepartmentAsSelectListItem(loggedUser, user.Unit.Department.Id),
@@ -343,7 +296,7 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(username);
             if (user == null) return BadRequest();
 
-            _informationSystemService.RemoveUserAccess(user.Id, accessId);
+            // TO DO SYSTEMS
             return RedirectToAction("EditUser", new { UserName = username });
         }
 
@@ -353,7 +306,7 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(username);
             if (user == null) return BadRequest();
 
-            _informationSystemService.UpdateAccessDirective(user.Id, accessId, directive);
+            // TO DO SYSTEMS
             return RedirectToAction("EditUser", new { UserName = username });
         }
 
@@ -373,7 +326,7 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(username);
             if (user == null) return BadRequest();
 
-            _informationSystemService.AddAccesses(user.Id, accesses);
+            // TO DO SYSTEMS
             return RedirectToAction("EditUser", new { UserName = username });
         }
     }
