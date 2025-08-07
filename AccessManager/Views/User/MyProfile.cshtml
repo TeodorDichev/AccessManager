@@ -26,85 +26,117 @@
         <div class="col-md-6">
             <div class="mb-3">
                 <label asp-for="FirstName" class="form-label">Първо име</label>
-                <input asp-for="FirstName" class="form-control" />
-                <span asp-validation-for="FirstName" class="text-danger"></span>
-                @if (Model.WritingAccess < AuthorityType.SuperAdmin)
+                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
+                {
+                    <input asp-for="FirstName" class="form-control" />
+                }
+                else
                 {
                     <input type="hidden" asp-for="FirstName" />
+                    <input class="form-control" value="@Model.FirstName" disabled />
                 }
+                <span asp-validation-for="FirstName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="MiddleName" class="form-label">Второ име</label>
-                <input asp-for="MiddleName" class="form-control" />
-                <span asp-validation-for="MiddleName" class="text-danger"></span>
-                @if (Model.WritingAccess < AuthorityType.SuperAdmin)
+                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
+                {
+                    <input asp-for="MiddleName" class="form-control" />
+                }
+                else
                 {
                     <input type="hidden" asp-for="MiddleName" />
+                    <input class="form-control" value="@Model.MiddleName" disabled />
                 }
+                <span asp-validation-for="MiddleName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="LastName" class="form-label">Фамилия</label>
-                <input asp-for="LastName" class="form-control" />
-                <span asp-validation-for="LastName" class="text-danger"></span>
-                @if (Model.WritingAccess < AuthorityType.SuperAdmin)
+                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
+                {
+                    <input asp-for="LastName" class="form-control" />
+                }
+                else
                 {
                     <input type="hidden" asp-for="LastName" />
+                    <input class="form-control" value="@Model.LastName" disabled />
                 }
+                <span asp-validation-for="LastName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="EGN" class="form-label">ЕГН</label>
-                <input asp-for="EGN" class="form-control" />
                 <span asp-validation-for="EGN" class="text-danger"></span>
-                @if (Model.WritingAccess != AuthorityType.None) // in order to be able to add it
+                @if (Model.WritingAccess >= AuthorityType.Restricted)
+                {
+                    <input asp-for="EGN" class="form-control" />
+                }
+                else
                 {
                     <input type="hidden" asp-for="EGN" />
+                    <input class="form-control" value="@Model.EGN" disabled />
                 }
             </div>
 
             <div class="mb-3">
                 <label asp-for="Phone" class="form-label">Телефонен номер</label>
-                <input asp-for="Phone" class="form-control" />
-                <span asp-validation-for="Phone" class="text-danger"></span>
-                @if (Model.WritingAccess != AuthorityType.None) // in order to be able to add it
+                @if (Model.WritingAccess >= AuthorityType.Restricted)
+                {
+                    <input asp-for="Phone" class="form-control" />
+                }
+                else
                 {
                     <input type="hidden" asp-for="Phone" />
+                    <input class="form-control" value="@Model.Phone" disabled />
                 }
+                <span asp-validation-for="Phone" class="text-danger"></span>
             </div>
         </div>
 
         <div class="col-md-6">
             <div class="mb-3">
                 <label asp-for="UserName" class="form-label">Потребителско име</label>
-                <input asp-for="UserName" class="form-control" />
-                <span asp-validation-for="UserName" class="text-danger"></span>
-                @if (Model.WritingAccess < AuthorityType.SuperAdmin)
+                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
+                {
+                    <input asp-for="UserName" class="form-control" />
+                }
+                else
                 {
                     <input type="hidden" asp-for="UserName" />
+                    <input class="form-control" value="@Model.UserName" disabled />
                 }
+                <span asp-validation-for="UserName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="SelectedDepartmentId" class="form-label">Дирекция</label>
-                <select asp-for="SelectedDepartmentId" asp-items="Model.AvailableDepartments" class="form-select" id="SelectedDepartmentId">
-                </select>
-                <span asp-validation-for="SelectedDepartmentId" class="text-danger"></span>
-                @if(Model.WritingAccess < AuthorityType.SuperAdmin)
+                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
+                {
+                    <select asp-for="SelectedDepartmentId" asp-items="Model.AvailableDepartments" class="form-select" id="SelectedDepartmentId"></select>
+                }
+                else
                 {
                     <input type="hidden" asp-for="SelectedDepartmentId" />
+                    <input class="form-control" value="@Model.AvailableDepartments.FirstOrDefault(u => u.Value.ToLower() == Model.SelectedDepartmentId.ToString().ToLower())?.Text" disabled />
                 }
+                <span asp-validation-for="SelectedDepartmentId" class="text-danger"></span>
             </div>
             <div class="mb-3">
                 <label asp-for="SelectedUnitId" class="form-label">Отдел</label>
-                <select asp-for="SelectedUnitId" asp-items="Model.AvailableUnits" class="form-select" id="SelectedUnitId">
-                </select>
-                <span asp-validation-for="SelectedUnitId" class="text-danger"></span>
-                @if (Model.WritingAccess < AuthorityType.SuperAdmin)
+
+                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
+                {
+                    <select asp-for="SelectedUnitId" asp-items="Model.AvailableUnits" class="form-select" id="SelectedUnitId"></select>
+                }
+                else
                 {
                     <input type="hidden" asp-for="SelectedUnitId" />
+                    <input class="form-control" value="@Model.AvailableUnits.FirstOrDefault(u => u.Value.ToLower() == Model.SelectedUnitId.ToString().ToLower())?.Text" disabled />
                 }
+
+                <span asp-validation-for="SelectedUnitId" class="text-danger"></span>
             </div>
 
             <div class="mb-3">

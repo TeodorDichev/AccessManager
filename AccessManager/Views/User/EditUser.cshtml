@@ -12,43 +12,77 @@
     <div class="alert alert-success">Профилът е обновен успешно.</div>
 }
 
-<form asp-action="EditUser" method="post">
-    <div class="row">
+<form asp-action="EditUser" method="post" class="edit-user-wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+    <div class="row" >
         <div class="col-md-6">
             <div class="mb-3">
                 <label asp-for="FirstName" class="form-label">Първо име</label>
-                <input asp-for="FirstName" class="form-control" />
+                @if (Model.LoggedUserWritingAccess >= AuthorityType.SuperAdmin)
+                {
+                    <input asp-for="FirstName" class="form-control" />
+                }
+                else
+                {
+                    <input type="hidden" asp-for="FirstName" />
+                    <input class="form-control" value="@Model.FirstName" disabled />
+                }
                 <span asp-validation-for="FirstName" class="text-danger"></span>
             </div>
+
             <div class="mb-3">
                 <label asp-for="MiddleName" class="form-label">Второ име</label>
-                <input asp-for="MiddleName" class="form-control" />
+                @if (Model.LoggedUserWritingAccess >= AuthorityType.SuperAdmin)
+                {
+                    <input asp-for="MiddleName" class="form-control" />
+                }
+                else
+                {
+                    <input type="hidden" asp-for="MiddleName" />
+                    <input class="form-control" value="@Model.MiddleName" disabled />
+                }
                 <span asp-validation-for="MiddleName" class="text-danger"></span>
             </div>
+
             <div class="mb-3">
                 <label asp-for="LastName" class="form-label">Фамилия</label>
-                <input asp-for="LastName" class="form-control" />
+                @if (Model.LoggedUserWritingAccess >= AuthorityType.SuperAdmin)
+                {
+                    <input asp-for="LastName" class="form-control" />
+                }
+                else
+                {
+                    <input type="hidden" asp-for="LastName" />
+                    <input class="form-control" value="@Model.LastName" disabled />
+                }
                 <span asp-validation-for="LastName" class="text-danger"></span>
             </div>
+            
             <div class="mb-3">
-                <label asp-for="EGN" class="form-label">ЕГН</label>
-                <input asp-for="EGN" class="form-control" />
-                <span asp-validation-for="EGN" class="text-danger"></span>
+                    <label asp-for="Phone" class="form-label">Телефонен номер</label>
+                    <input asp-for="Phone" class="form-control" />
+                    <span asp-validation-for="Phone" class="text-danger"></span>
             </div>
-            <div class="mb-3">
-                <label asp-for="Phone" class="form-label">Телефонен номер</label>
-                <input asp-for="Phone" class="form-control" />
-                <span asp-validation-for="Phone" class="text-danger"></span>
-            </div>
+
             <div class="mb-3">
                 <label class="form-label">Нова парола</label>
-                <input type="password" name="NewPassword" class="form-control" />
+                @if (Model.LoggedUserWritingAccess >= AuthorityType.Full)
+                {
+                    <input type="password" name="NewPassword" class="form-control" />
+                }
             </div>
         </div>
         <div class="col-md-6">
             <div class="mb-3">
                 <label asp-for="UserName" class="form-label">Потребителско име</label>
-                <input asp-for="UserName" class="form-control" />
+                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
+                {
+                    <input asp-for="UserName" class="form-control" />
+                }
+                else
+                {
+                    <input type="hidden" asp-for="UserName" />
+                    <input class="form-control" value="@Model.UserName" disabled />
+                }
                 <span asp-validation-for="UserName" class="text-danger"></span>
             </div>
             <div class="mb-3">
@@ -56,7 +90,10 @@
                 <select asp-for="ReadingAccess" class="form-select" id="SelectedReadingAccess">
                     @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
                     {
-                        <option value="@((int)level)">@level</option>
+                        @if (level <= Model.LoggedUserReadingAccess)
+                        {
+                            <option value="@((int)level)">@level</option>
+                        }
                     }
                 </select>
                 <span asp-validation-for="ReadingAccess" class="text-danger"></span>
@@ -66,7 +103,10 @@
                 <select asp-for="WritingAccess" class="form-select" id="SelectedWritingAccess">
                     @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
                     {
-                        <option value="@((int)level)">@level</option>
+                        @if(level <= Model.LoggedUserWritingAccess)
+                        {
+                            <option value="@((int)level)">@level</option>
+                        }
                     }
                 </select>
                 <span asp-validation-for="WritingAccess" class="text-danger"></span>
@@ -114,7 +154,7 @@
 @*ADD PAGINATION HERE*@
 <hr />
 <h4>Видими отдели</h4>
-<div style="max-height: 200px; overflow-y: auto;">
+<div style="max-height: 200px; overflow-y: auto;" class="edit-user-wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
     <table class="table table-sm table-bordered">
         <thead class="table-light">
             <tr>

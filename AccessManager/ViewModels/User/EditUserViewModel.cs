@@ -22,6 +22,8 @@ namespace AccessManager.ViewModels.User
 
         public AuthorityType ReadingAccess { get; set; } = AuthorityType.None;
         public AuthorityType WritingAccess { get; set; } = AuthorityType.None;
+        public AuthorityType LoggedUserReadingAccess { get; set; } = AuthorityType.None;
+        public AuthorityType LoggedUserWritingAccess { get; set; } = AuthorityType.None;
 
         [Required]
         public Guid SelectedDepartmentId { get; set; }

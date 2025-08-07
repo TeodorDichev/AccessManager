@@ -219,5 +219,13 @@ namespace AccessManager.Services
                 user.Unit = _context.Units.FirstOrDefault(u => u.Id == unitId) ?? throw new ArgumentException("Unit not found");
             }
         }
+
+        internal List<string> GetAccessibleUsersUserNames(User loggedUser)
+        {
+            return _context.Users
+                .Where(u => u.DeletedOn == null && u.Id != loggedUser.Id && loggedUser.AccessibleUnits.Any(au => au.UnitId == u.UnitId))
+                .Select(u => u.UserName)
+                .ToList();
+        }
     }
 }

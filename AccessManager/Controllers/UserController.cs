@@ -15,14 +15,12 @@ namespace AccessManager.Controllers
         private readonly AccessService _accessService;
         private readonly PasswordService _passwordService;
         private readonly DepartmentUnitService _departmentUnitService;
-        private readonly AccessService _informationSystemService;
 
         public UserController(Context context, PasswordService passwordService, UserService userService,
-            AccessService informationSystemsService, AccessService accessService, DepartmentUnitService departmentUnitService)
+            AccessService accessService, DepartmentUnitService departmentUnitService)
         {
             _passwordService = passwordService;
             _userService = userService;
-            _informationSystemService = informationSystemsService;
             _accessService = accessService;
             _departmentUnitService = departmentUnitService;
         }
@@ -53,7 +51,7 @@ namespace AccessManager.Controllers
                 AvailableUnits = _userService.GetAllowedUnitsForDepartmentAsSelectListItem(loggedUser, loggedUser.Unit.Department.Id),
                 SelectedDepartmentId = loggedUser.Unit.Department.Id,
                 SelectedUnitId = loggedUser.Unit.Id,
-                UserAccesses = _accessService.GetUserAccesses(loggedUser)
+                UserAccesses = _accessService.GetGrantedUserAccesses(loggedUser)
             };
 
             return View(model);
@@ -133,7 +131,7 @@ namespace AccessManager.Controllers
         public IActionResult CreateUser(CreateUserViewModel model, string redirectTo)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login");
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             if (_userService.UserWithUsernameExists(model.UserName))
                 ModelState.AddModelError("UserName", "Потребител с това потребителско име вече съществува.");
@@ -185,7 +183,7 @@ namespace AccessManager.Controllers
         public IActionResult SoftDeleteUser(string username)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login");
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
             if (string.IsNullOrWhiteSpace(username)) return BadRequest();
 
             var userToDelete = _userService.GetUser(username);
@@ -204,7 +202,7 @@ namespace AccessManager.Controllers
         public IActionResult HardDeleteUsers()
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login");
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             if (loggedUser.WritingAccess == AuthorityType.SuperAdmin) _userService.HardDeleteUsers();
             return RedirectToAction("UserList");
@@ -220,7 +218,12 @@ namespace AccessManager.Controllers
             if (user == null) return BadRequest();
 
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login");
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            if (loggedUser.WritingAccess < user.WritingAccess)
+            {
+                ViewBag.IsReadOnly = true;
+            }
 
             var model = new EditUserViewModel
             {
@@ -232,6 +235,8 @@ namespace AccessManager.Controllers
                 Phone = user.Phone ?? string.Empty,
                 ReadingAccess = user.ReadingAccess,
                 WritingAccess = user.WritingAccess,
+                LoggedUserReadingAccess = loggedUser.ReadingAccess,
+                LoggedUserWritingAccess = loggedUser.WritingAccess,
                 SelectedDepartmentId = user.Unit.Department.Id,
                 SelectedUnitId = user.Unit.Id,
                 AccessibleUnits = user.AccessibleUnits
@@ -241,7 +246,7 @@ namespace AccessManager.Controllers
                         UnitName = au.Unit.Description,
                         UnitId = au.Unit.Id
                     }).ToList(),
-                UserAccesses = _accessService.GetUserAccesses(user),
+                UserAccesses = _accessService.GetGrantedUserAccesses(user),
                 AvailableDepartments = _userService.GetAllowedDepartmentsAsSelectListItem(loggedUser),
                 AvailableUnits = _userService.GetAllowedUnitsForDepartmentAsSelectListItem(loggedUser, user.Unit.Department.Id),
                 SelectedAccessibleUnitIds = string.Join(",", user.AccessibleUnits.Select(au => au.UnitId))
@@ -256,6 +261,16 @@ namespace AccessManager.Controllers
         {
             var user = _userService.GetUser(model.UserName);
             if (user == null) return BadRequest();
+
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            if (_userService.UserWithUsernameExists(model.UserName))
+                ModelState.AddModelError("UserName", "Потребител с това потребителско име вече съществува.");
+
+            if (loggedUser.WritingAccess < model.WritingAccess || loggedUser.ReadingAccess < model.ReadingAccess)
+                ModelState.AddModelError("SelectedReadingAccess", "Не може да добавяш потребител с по-висок достъп.");
+
             if (!ModelState.IsValid) return View(model);
 
             if (!string.IsNullOrWhiteSpace(model.NewPassword))

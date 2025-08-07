@@ -55,7 +55,7 @@
     </div>
 
     <div class="ms-auto">
-        @if (Model.WriteAuthority > AccessManager.Data.Enums.AuthorityType.None)
+        @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
         {
             <a asp-controller="User" asp-action="CreateUser" class="btn btn-success">
                 Добави потребител
@@ -111,7 +111,7 @@
                 <td>@user.Unit</td>
                 <td>@user.WriteAccess</td>
                 <td>@user.ReadAccess</td>
-                @if (Model.WriteAuthority > AccessManager.Data.Enums.AuthorityType.None)
+                @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Restricted)
                 {
                     <td>
                         <a asp-controller="User" asp-action="EditUser" asp-route-username="@user.UserName" class="btn btn-sm btn-info">
