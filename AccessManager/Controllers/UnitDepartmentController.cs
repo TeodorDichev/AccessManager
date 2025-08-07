@@ -29,7 +29,8 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login");
 
-            var res = loggedUser.AccessibleUnits.Where(au => au.Unit.DepartmentId == departmentId).Select(au => new { au.UnitId, au.Unit.Description });
+
+            var res = _userService.GetAllowedUnitsForDepartment(loggedUser, departmentId).Select(u => new { u.Id, u.Description });
             return Json(res);
         }
 
@@ -39,16 +40,16 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login");
 
-            var departments = loggedUser.AccessibleUnits
-                .GroupBy(u => u.Unit.Department)
+            var departments = _userService.GetUserAllowedUnits(loggedUser)
+                .GroupBy(u => u.Department)
                 .Select(g => new
                 {
                     DepartmentId = g.Key.Id,
                     DepartmentName = g.Key.Description,
                     Units = g.Select(u => new
                     {
-                        UnitId = u.UnitId,
-                        UnitName = u.Unit.Description
+                        UnitId = u.Id,
+                        UnitName = u.Description
                     }).ToList()
                 })
                 .ToList();

@@ -52,19 +52,21 @@
                 @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Restricted)
                 {
                     <td>
-                        <a asp-controller="Access" asp-action="EditAccess" asp-route-username="@access.AccessId" class="btn btn-sm btn-info">
+                        <a asp-controller="Access" asp-action="EditAccess" asp-route-id="@access.AccessId" class="btn btn-sm btn-info">
                             Редактирай
                         </a>
                     </td>
                     <td>
-                        <a asp-controller="Access" asp-action="MapUsers" asp-route-username="@access.AccessId" class="btn btn-sm btn-primary">
+                        <a asp-controller="Access" asp-action="MapUsers" asp-route-id="@access.AccessId" class="btn btn-sm btn-primary">
                             Потребители
                         </a>
                     </td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-danger" data-id="@access.AccessId" onclick="softDeleteAccess(this)">
-                            Деактивирай
-                        </button>
+                        <form asp-controller="Access" asp-action="SoftDeleteAccess" method="post" asp-route-id="@access.AccessId">
+                            <button type="submit" class="btn btn-danger me-2">
+                                Изтрий
+                            </button>
+                        </form>
                     </td>
 
                 }

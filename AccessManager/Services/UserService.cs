@@ -43,50 +43,10 @@ namespace AccessManager.Services
             _context.SaveChanges();
         }
 
-        internal void SoftDeleteUser(User userToDelete)
-        {
-            userToDelete.DeletedOn = DateTime.UtcNow;
-            _context.SaveChanges();
-        }
-
-        internal void HardDeleteUsers()
-        {
-            var softDeletedUsers = _context.Users
-                .IgnoreQueryFilters()
-                .Where(u => u.DeletedOn != null)
-                .ToList();
-
-            if (softDeletedUsers.Count != 0)
-            {
-                var userIds = softDeletedUsers.Select(u => u.Id).ToList();
-
-                var unitUsers = _context.UnitUser
-                    .Where(uu => userIds.Contains(uu.UserId));
-                _context.UnitUser.RemoveRange(unitUsers);
-
-                var userAccesses = _context.UserAccesses
-                    .Where(ua => userIds.Contains(ua.UserId));
-
-                _context.UserAccesses.RemoveRange(userAccesses);
-                _context.Users.RemoveRange(softDeletedUsers);
-                 _context.SaveChanges();
-            }
-        }
-
-        public bool canUserEditUser(User user, User other)
-        {
-            if (other.WritingAccess == AuthorityType.SuperAdmin || other.ReadingAccess == AuthorityType.SuperAdmin) return false;
-            else if (user.WritingAccess == AuthorityType.SuperAdmin || user.WritingAccess == AuthorityType.Full) return true;
-            else if (user.WritingAccess == AuthorityType.Restricted) return user.AccessibleUnits.Any(au => au.UnitId == other.UnitId);
-            else return false;
-        }
-
-        internal List<SelectListItem> GetAllowedDepartmentsAsSelectListItem(User user)
+        internal List<Department> GetAllowedDepartments(User user)
         {
             if (user.WritingAccess == AuthorityType.None)
-            {
                 return [];
-            }
             else if (user.WritingAccess == AuthorityType.Restricted)
             {
                 var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
@@ -94,61 +54,42 @@ namespace AccessManager.Services
                     .Where(u => allowedUnitIds.Contains(u.Id))
                     .Select(u => u.Department)
                     .Distinct()
-                    .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description })
                     .ToList();
             }
             else
-            {
-                return _context.Departments
-                    .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description })
-                    .ToList();
-            }
+                return _context.Departments.ToList();
         }
 
-        internal List<SelectListItem> GetAllowedUnitsAsSelectListItem(User user)
+        internal List<Unit> GetUserAllowedUnits(User user)
         {
             if (user.WritingAccess == AuthorityType.None)
-            {
                 return [];
-            }
             else if (user.WritingAccess == AuthorityType.Restricted)
             {
                 var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
                 return _context.Units
                     .Where(u => allowedUnitIds.Contains(u.Id))
                     .Distinct()
-                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description })
                     .ToList();
             }
             else
-            {
-                return _context.Units
-                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description })
-                    .ToList();
-            }
+                return _context.Units.ToList();
         }
-        internal List<SelectListItem> GetAllowedUnitsForDepartmentAsSelectListItem(User user, Guid departmentId)
+
+        internal List<Unit> GetAllowedUnitsForDepartment(User user, Guid departmentId)
         {
             if (user.WritingAccess == AuthorityType.None)
-            {
                 return [];
-            }
             else if (user.WritingAccess == AuthorityType.Restricted)
             {
                 var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
                 return _context.Units
                     .Where(u => allowedUnitIds.Contains(u.Id) && u.DepartmentId == departmentId)
                     .Distinct()
-                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description })
                     .ToList();
             }
             else
-            {
-                return _context.Units
-                    .Where(u => u.DepartmentId == departmentId)
-                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description })
-                    .ToList();
-            }
+                return _context.Units.Where(u => u.DepartmentId == departmentId).ToList();
         }
 
         internal List<UserListItemViewModel> GetFilteredUsers(string sortBy, string filterUnit, string filterDepartment, User loggedUser)
@@ -226,6 +167,74 @@ namespace AccessManager.Services
                 .Where(u => u.DeletedOn == null && u.Id != loggedUser.Id && loggedUser.AccessibleUnits.Any(au => au.UnitId == u.UnitId))
                 .Select(u => u.UserName)
                 .ToList();
+        }
+
+        internal void SoftDeleteUser(User userToDelete)
+        {
+            userToDelete.DeletedOn = DateTime.UtcNow;
+
+            foreach (var userAccess in userToDelete.UserAccesses)
+                userAccess.DeletedOn = DateTime.UtcNow;
+
+            _context.SaveChanges();
+        }
+
+        internal void HardDeleteUser(User userToDelete)
+        {
+            var userAccesses = _context.UserAccesses.Where(ua => ua.UserId == userToDelete.Id);
+            _context.UserAccesses.RemoveRange(userAccesses);
+
+            var unitUsers = _context.UnitUser.Where(uu => uu.UserId == userToDelete.Id);
+            _context.UnitUser.RemoveRange(unitUsers);
+
+            _context.Users.Remove(userToDelete);
+            _context.SaveChanges();
+        }
+
+        internal void HardDeleteUsers()
+        {
+            foreach (var user in _context.Users.IgnoreQueryFilters().Where(u => u.DeletedOn != null).ToList())
+                HardDeleteUser(user);
+        }
+
+        internal List<UserListItemViewModel> GetDeletedUsers()
+        {
+            return _context.Users
+                .IgnoreQueryFilters()
+                .Where(u => u.DeletedOn != null)
+                .ToList()
+                .Select(u => new UserListItemViewModel
+                {
+                    UserName = u.UserName,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Unit = u.Unit.Description,
+                    Department = u.Unit.Department.Description,
+                    WriteAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(u.WritingAccess),
+                    ReadAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(u.ReadingAccess),
+                })
+                .ToList();
+        }
+
+        internal void RestoreUser(User user)
+        {
+            user.DeletedOn = null;
+
+            foreach (var userAccess in user.UserAccesses)
+                userAccess.DeletedOn = null;
+
+            _context.SaveChanges();
+        }
+
+        internal void RestoreAllUsers()
+        {
+            foreach (var user in _context.Users.IgnoreQueryFilters().Where(u => u.DeletedOn != null).ToList())
+                RestoreUser(user);
+        }
+
+        internal User? GetDeletedUser(string username)
+        {
+            return _context.Users.IgnoreQueryFilters().FirstOrDefault(u => u.UserName == username);
         }
     }
 }

@@ -1,0 +1,87 @@
+﻿@model AccessManager.ViewModels.User.DeletedUserListViewModel
+
+@{
+    ViewData["Title"] = "Потребители";
+}
+
+<h2>Деактивирани потребители</h2>
+
+<form style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="d-flex mb-3">
+    <form asp-controller="User" asp-action="HardDeleteUsers" method="post" onsubmit="return confirm('Наистина ли искате да изтриете всички деактивирани потребители?');">
+        <button type="submit" class="btn btn-danger me-2">
+            Изтрий всички деактивирани потребители
+        </button>
+    </form>
+    <form asp-controller="User" asp-action="RestoreAllUsers" method="post">
+        <button type="submit" class="btn btn-success me-2">
+            Възстанови всички деактивирани потребители
+        </button>
+    </form>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>Потребителско име</th>
+            <th>Собствено име</th>
+            <th>Фамилия</th>
+            <th>Дирекция</th>
+            <th>Отдел</th>
+            <th>Достъп за писане</th>
+            <th>Достъп за четене</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model.Users)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@user.FirstName</td>
+                <td>@user.LastName</td>
+                <td>@user.Department</td>
+                <td>@user.Unit</td>
+                <td>@user.WriteAccess</td>
+                <td>@user.ReadAccess</td>
+                <td>
+                    <form asp-controller="User" asp-action="HardDeleteUser" method="post" asp-route-username="@user.UserName">
+                        <button type="submit" class="btn btn-danger me-2">
+                            Изтрий
+                        </button>
+                    </form>
+                </td>
+                <td>
+                    <form asp-controller="User" asp-action="RestoreUser" method="post" asp-route-username="@user.UserName">
+                        <button type="submit" class="btn btn-success me-2">
+                            Възстанови
+                        </button>
+                    </form>
+                </td>
+
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center mt-4">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="?page=@i">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

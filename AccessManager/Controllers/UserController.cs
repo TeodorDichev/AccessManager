@@ -6,6 +6,8 @@ using AccessManager.Utills;
 using AccessManager.ViewModels.UnitDepartment;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Globalization;
 
 namespace AccessManager.Controllers
 {
@@ -47,8 +49,10 @@ namespace AccessManager.Controllers
                     UnitName = au.Unit.Description,
                     DepartmentName = au.Unit.Department.Description
                 }).ToList(),
-                AvailableDepartments = _userService.GetAllowedDepartmentsAsSelectListItem(loggedUser),
-                AvailableUnits = _userService.GetAllowedUnitsForDepartmentAsSelectListItem(loggedUser, loggedUser.Unit.Department.Id),
+                AvailableDepartments = _userService.GetAllowedDepartments(loggedUser)
+                    .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList(),
+                AvailableUnits = _userService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
+                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList(),
                 SelectedDepartmentId = loggedUser.Unit.Department.Id,
                 SelectedUnitId = loggedUser.Unit.Id,
                 UserAccesses = _accessService.GetGrantedUserAccesses(loggedUser)
@@ -114,15 +118,19 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var pendingUserJson = HttpContext.Session.GetString("PendingUser");
-
             CreateUserViewModel model = new CreateUserViewModel
             {
-                Departments = _userService.GetAllowedDepartmentsAsSelectListItem(loggedUser)
+                Departments = _userService.GetAllowedDepartments(loggedUser).Select(d => new SelectListItem
+                {
+                    Value = d.Id.ToString(),
+                    Text = d.Description,
+                }).ToList(),
             };
 
             if (model.SelectedDepartmentId.HasValue)
-                model.Units = _userService.GetAllowedUnitsAsSelectListItem(loggedUser);
+                model.Units = _userService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
+                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList();
+;
 
             return View(model);
         }
@@ -140,13 +148,20 @@ namespace AccessManager.Controllers
                 ModelState.AddModelError("SelectedReadingAccess", "Не може да добавяш потребител с по-висок достъп.");
 
             if (model.SelectedDepartmentId.HasValue)
-                model.Units = _userService.GetAllowedUnitsAsSelectListItem(loggedUser);
+                model.Units = _userService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
+                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList();
 
             if (!ModelState.IsValid)
             {
-                model.Departments = _userService.GetAllowedDepartmentsAsSelectListItem(loggedUser);
+                model.Departments = _userService.GetAllowedDepartments(loggedUser).Select(d => new SelectListItem
+                {
+                    Value = d.Id.ToString(),
+                    Text = d.Description,
+                }).ToList();
+
                 if (model.SelectedDepartmentId.HasValue)
-                    model.Units = _userService.GetAllowedUnitsAsSelectListItem(loggedUser);
+                    model.Units = _userService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
+                        .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList();
 
                 return View(model);
             }
@@ -176,36 +191,6 @@ namespace AccessManager.Controllers
                 return RedirectToAction("MapAccess", "Access", new { username = model.UserName });
 
             return RedirectToAction(redirectTo);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult SoftDeleteUser(string username)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-            if (string.IsNullOrWhiteSpace(username)) return BadRequest();
-
-            var userToDelete = _userService.GetUser(username);
-            if (userToDelete == null) return NotFound();
-
-            if (loggedUser.WritingAccess >= AuthorityType.Full
-                && userToDelete.WritingAccess < loggedUser.WritingAccess
-                && userToDelete.ReadingAccess < loggedUser.WritingAccess) return BadRequest();
-
-            _userService.SoftDeleteUser(userToDelete);
-            return Ok();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult HardDeleteUsers()
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            if (loggedUser.WritingAccess == AuthorityType.SuperAdmin) _userService.HardDeleteUsers();
-            return RedirectToAction("UserList");
         }
 
         [HttpGet]
@@ -247,8 +232,10 @@ namespace AccessManager.Controllers
                         UnitId = au.Unit.Id
                     }).ToList(),
                 UserAccesses = _accessService.GetGrantedUserAccesses(user),
-                AvailableDepartments = _userService.GetAllowedDepartmentsAsSelectListItem(loggedUser),
-                AvailableUnits = _userService.GetAllowedUnitsForDepartmentAsSelectListItem(loggedUser, user.Unit.Department.Id),
+                AvailableDepartments = _userService.GetAllowedDepartments(loggedUser)
+                    .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList(),
+                AvailableUnits = _userService.GetAllowedUnitsForDepartment(loggedUser, user.Unit.Department.Id)
+                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList(),
                 SelectedAccessibleUnitIds = string.Join(",", user.AccessibleUnits.Select(au => au.UnitId))
             };
             model.AvailableDepartments.ForEach(d => d.Selected = d.Value == model.SelectedDepartmentId.ToString());
@@ -281,5 +268,95 @@ namespace AccessManager.Controllers
             return RedirectToAction("UserList");
         }
 
+        [HttpPost]
+        public IActionResult SoftDeleteUser(string username)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (string.IsNullOrWhiteSpace(username)) return BadRequest();
+
+            var userToDelete = _userService.GetUser(username);
+            if (userToDelete == null) return NotFound();
+
+            if (loggedUser.WritingAccess < AuthorityType.Full
+                || userToDelete.WritingAccess >= loggedUser.WritingAccess
+                || userToDelete.ReadingAccess >= loggedUser.WritingAccess) return BadRequest();
+
+            _userService.SoftDeleteUser(userToDelete);
+            return RedirectToAction("UserList");
+        }
+
+        [HttpPost]
+        public IActionResult HardDeleteUser(string username)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (string.IsNullOrWhiteSpace(username)) return BadRequest();
+
+            var userToDelete = _userService.GetDeletedUser(username);
+            if (userToDelete == null) return NotFound();
+
+            if (loggedUser.WritingAccess < AuthorityType.Full
+                || userToDelete.WritingAccess >= loggedUser.WritingAccess
+                || userToDelete.ReadingAccess >= loggedUser.WritingAccess) return BadRequest();
+
+            _userService.HardDeleteUser(userToDelete);
+            return RedirectToAction("DeletedUsers");
+        }
+
+        [HttpPost]
+        public IActionResult HardDeleteUsers()
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            if (loggedUser.WritingAccess == AuthorityType.SuperAdmin) _userService.HardDeleteUsers();
+            return RedirectToAction("DeletedUsers");
+        }
+
+        [HttpPost]
+        public IActionResult RestoreUser(string username)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var userToRestore = _userService.GetDeletedUser(username);
+            if (userToRestore == null) return NotFound();
+
+            _userService.RestoreUser(userToRestore);
+            return RedirectToAction("DeletedUsers");
+        }
+
+        [HttpPost]
+        public IActionResult RestoreAllUsers()
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            _userService.RestoreAllUsers();
+            return RedirectToAction("DeletedUsers");
+        }
+
+        [HttpGet]
+        public IActionResult DeletedUsers(int page = 1)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (loggedUser.WritingAccess < AuthorityType.SuperAdmin) return RedirectToAction("UserList");
+
+            List<UserListItemViewModel> allUsers = _userService.GetDeletedUsers();
+            int totalUsers = allUsers.Count();
+
+            List<UserListItemViewModel> users = allUsers.Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).ToList();
+
+            var model = new DeletedUserListViewModel
+            {
+                Users = users,
+                CurrentPage = page,
+                TotalPages = (int)Math.Ceiling((double)totalUsers / Constants.ItemsPerPage)
+            };
+
+            return View(model);
+        }
     }
 }
