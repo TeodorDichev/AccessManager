@@ -2,6 +2,7 @@
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Utills;
+using AccessManager.ViewModels.UnitDepartment;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -188,6 +189,35 @@ namespace AccessManager.Services
         internal List<string> GetSortOptions()
         {
             return ["Достъп за писане", "Достъп за четене", "Потребителско име", "Дирекция", "Отдел"];
+        }
+
+        internal void UpdateUser(MyProfileViewModel model, User loggedUser)
+        {
+            UpdateUserFromModel(loggedUser, model.FirstName, model.MiddleName, model.LastName, model.EGN, model.Phone, model.SelectedUnitId);
+            _context.SaveChanges();
+        }
+
+        internal void UpdateUser(EditUserViewModel model, User user)
+        {
+            UpdateUserFromModel(user, model.FirstName, model.MiddleName, model.LastName, model.EGN, model.Phone, model.SelectedUnitId);
+            _context.SaveChanges();
+        }
+
+        internal void UpdateUserFromModel(User user, string firstName, string middleName, string lastName, string? egn, string? phone, Guid unitId)
+        {
+            if (user == null) return;
+
+            user.FirstName = firstName;
+            user.MiddleName = middleName;
+            user.LastName = lastName;
+            user.EGN = egn;
+            user.Phone = phone;
+
+            if (unitId != user.UnitId)
+            {
+                user.UnitId = unitId;
+                user.Unit = _context.Units.FirstOrDefault(u => u.Id == unitId) ?? throw new ArgumentException("Unit not found");
+            }
         }
     }
 }

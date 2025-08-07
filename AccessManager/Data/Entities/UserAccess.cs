@@ -17,7 +17,7 @@
         public Guid? RevokedByDirectiveId { get; set; }
         virtual public Directive? RevokedByDirective { get; set; } = null!;
 
-        public DateTime RevokedOn { get; set; }
+        public DateTime? RevokedOn { get; set; }
         public DateTime? DeletedOn { get; set; } = null;
     }
 }

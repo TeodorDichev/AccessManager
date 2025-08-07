@@ -34,7 +34,7 @@
             formData.append('unitId', unitId);
             formData.append('__RequestVerificationToken', token);
 
-            fetch('/User/RemoveUnitAccess', {
+            fetch('/UnitDepartment/RemoveUnitAccess', {
                 method: 'POST',
                 body: formData
             }).then(response => {

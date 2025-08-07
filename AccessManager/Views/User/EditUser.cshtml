@@ -96,16 +96,22 @@
         </div>
     </div>
     <div class="row">
-        <div class="d-grid col-md-6">
-            <button type="submit" class="btn btn-primary btn-lg">Запази</button>
-            </div>
-            <div class="d-grid col-md-6">
-                <button type="submit" formaction="/User/Deactivate" formmethod="post" class="btn btn-danger btn-lg">Деактивирай акаунта</button>
-            </div>
+        <div class="d-grid col-md-4">
+            <button type="submit" class="btn btn-success btn-lg">Запази</button>
+        </div>
+        <div class="d-grid col-md-4">
+            <a asp-controller="Access" asp-action="MapAccesses" asp-route-username="@Model.UserName" class="btn btn-primary btn-lg">
+                Достъпи
+            </a>
+        </div>
+        <div class="d-grid col-md-4">
+             <button type="submit" formaction="/User/Deactivate" formmethod="post" class="btn btn-danger btn-lg">Деактивирай акаунта</button>
+        </div>
     </div>
 
 </form>
 
+@*ADD PAGINATION HERE*@
 <hr />
 <h4>Видими отдели</h4>
 <div style="max-height: 200px; overflow-y: auto;">
@@ -124,9 +130,7 @@
                     <td>@unit.DepartmentName</td>
                     <td>@unit.UnitName</td>
                     <td>
-                        <button class="btn btn-sm btn-danger remove-unit-btn"
-                                data-unit-id="@unit.UnitId"
-                                data-username="@Model.UserName">
+                        <button class="btn btn-sm btn-danger remove-unit-btn" data-unit-id="@unit.UnitId" data-username="@Model.UserName">
                             Премахни
                         </button>
                     </td>
@@ -136,47 +140,26 @@
     </table>
 </div>
 
-<hr />
-<h4>Достъпи</h4>
+<h4>Видими достъпи</h4>
 <div style="max-height: 200px; overflow-y: auto;">
     <table class="table table-sm table-bordered">
         <thead class="table-light">
             <tr>
-                <th>АИС</th>
-                <th>Родителски достъп</th>
-                <th>Достъп</th>
-                <th>Заповед</th>
-                <th></th>
+                <th>Име</th>
+                <th>Заповед за даване на достъп</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var access in Model.UserAccesses)
+            @for (int i = 0; i < Model.UserAccesses.Count; i++)
             {
-                <tr data-access-id="@access.Id">
-                    @* <td>@access.InformationSystemDescription</td> *@
-                    <td>@access.ParentAccessDescription</td>
-                    <td>@access.Description</td>
-                    <td>
-                        <input type="text"
-                               class="form-control directive-input"
-                               @* value="@access.Directive" *@
-                               data-access-id="@access.Id"
-                               data-username="@Model.UserName" />
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-danger remove-access-btn"
-                                data-access-id="@access.Id"
-                                data-username="@Model.UserName">
-                            Премахни
-                        </button>
-                    </td>
+                <tr>
+                    <td>@Model.UserAccesses[i].Description</td>
+                    <td>@Model.UserAccesses[i].DirectiveDescription</td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
-
-<hr />
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

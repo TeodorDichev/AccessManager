@@ -55,7 +55,7 @@
     </div>
 
     <div class="ms-auto">
-        @if (Model.HasWriteAuthority)
+        @if (Model.WriteAuthority > AccessManager.Data.Enums.AuthorityType.None)
         {
             <a asp-controller="User" asp-action="CreateUser" class="btn btn-success">
                 Добави потребител
@@ -70,13 +70,19 @@
     </div>
 </form>
 
-@if (Model.IsSuperAdmin)
+@if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.SuperAdmin)
 {
-    <form asp-controller="User" asp-action="HardDeleteUsers" method="post" onsubmit="return confirm('Наистина ли искате да изтриете всички деактивирани потребители?');">
-        <button type="submit" class="btn btn-danger mb-3">
-            Изтрий всички деактивирани потребители
-        </button>
-    </form>
+    <div class="d-flex mb-3">
+        <form asp-controller="User" asp-action="HardDeleteUsers" method="post" onsubmit="return confirm('Наистина ли искате да изтриете всички деактивирани потребители?');">
+            <button type="submit" class="btn btn-danger me-2">
+                Изтрий всички деактивирани потребители
+            </button>
+        </form>
+
+        <a asp-controller="User" asp-action="ViewDeactivatedUsers" class="btn btn-primary">
+            Виж изтритите потребители
+        </a>
+    </div>
 }
 
 <table class="table table-bordered table-striped">
@@ -89,6 +95,7 @@
             <th>Отдел</th>
             <th>Достъп за писане</th>
             <th>Достъп за четене</th>
+            <th></th>
             <th></th>
             <th></th>
         </tr>
@@ -104,11 +111,16 @@
                 <td>@user.Unit</td>
                 <td>@user.WriteAccess</td>
                 <td>@user.ReadAccess</td>
-                @if (Model.HasWriteAuthority)
+                @if (Model.WriteAuthority > AccessManager.Data.Enums.AuthorityType.None)
                 {
                     <td>
-                        <a asp-controller="User" asp-action="EditUser" asp-route-username="@user.UserName" class="btn btn-sm btn-primary">
+                        <a asp-controller="User" asp-action="EditUser" asp-route-username="@user.UserName" class="btn btn-sm btn-info">
                             Редактирай
+                        </a>
+                    </td>
+                    <td>
+                        <a asp-controller="Access" asp-action="MapAccesses" asp-route-username="@user.UserName" class="btn btn-sm btn-primary">
+                            Достъпи
                         </a>
                     </td>
                     <td>

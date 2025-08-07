@@ -1,4 +1,5 @@
-﻿using AccessManager.ViewModels.User;
+﻿using AccessManager.Data.Enums;
+using AccessManager.ViewModels.User;
 
 public class UserListViewModel
 {
@@ -9,10 +10,7 @@ public class UserListViewModel
     public string SelectedFilterUnit { get; set; } = String.Empty;
     public List<string> FilterDepartments { get; set; } = [];
     public string SelectedFilterDepartment { get; set; } = String.Empty;
-
-    public bool HasWriteAuthority { get; set; }
-    public bool IsSuperAdmin { get; set; }
-
+    public AuthorityType WriteAuthority { get; set; }
     public int CurrentPage { get; set; }
     public int TotalPages { get; set; }
 }

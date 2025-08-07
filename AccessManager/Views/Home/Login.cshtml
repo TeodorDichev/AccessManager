@@ -15,7 +15,7 @@
 
                         @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
-                        <form asp-action="Login" asp-controller="Account" method="post">
+                        <form asp-action="Login" asp-controller="Home" method="post">
                             <div class="form-outline form-white mb-3">
                                 <label asp-for="Username" class="form-label">Потребителско име</label>
                                 <input asp-for="Username" class="form-control" />

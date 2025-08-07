@@ -3,10 +3,7 @@
     public class AccessViewModel
     {
         public Guid Id { get; set; }
-        public string ParentAccessId { get; set; } = string.Empty;
-        public string ParentAccessDescription { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public bool IsSelected { get; set; }
-        public List<AccessViewModel> SubAccesses { get; set; } = [];
+        public string DirectiveDescription { get; set; } = string.Empty;
     }
 }

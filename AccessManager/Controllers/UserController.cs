@@ -3,11 +3,9 @@ using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
-using AccessManager.ViewModels.InformationSystem;
 using AccessManager.ViewModels.UnitDepartment;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 
 namespace AccessManager.Controllers
 {
@@ -30,10 +28,65 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
+        public IActionResult MyProfile()
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            MyProfileViewModel model = new()
+            {
+                UserName = loggedUser.UserName,
+                FirstName = loggedUser.FirstName,
+                MiddleName = loggedUser.MiddleName,
+                LastName = loggedUser.LastName,
+                ReadingAccess = loggedUser.ReadingAccess,
+                WritingAccess = loggedUser.WritingAccess,
+                EGN = loggedUser.EGN ?? string.Empty,
+                Phone = loggedUser.Phone ?? string.Empty,
+                AccessibleUnits = loggedUser.AccessibleUnits.Select(au => new UnitViewModel
+                {
+                    UnitId = au.UnitId,
+                    UnitName = au.Unit.Description,
+                    DepartmentName = au.Unit.Department.Description
+                }).ToList(),
+                AvailableDepartments = _userService.GetAllowedDepartmentsAsSelectListItem(loggedUser),
+                AvailableUnits = _userService.GetAllowedUnitsForDepartmentAsSelectListItem(loggedUser, loggedUser.Unit.Department.Id),
+                SelectedDepartmentId = loggedUser.Unit.Department.Id,
+                SelectedUnitId = loggedUser.Unit.Id,
+                UserAccesses = _accessService.GetUserAccesses(loggedUser)
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public IActionResult MyProfile(MyProfileViewModel model, string? OldPassword, string? NewPassword)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            if (!string.IsNullOrWhiteSpace(NewPassword) && !string.IsNullOrWhiteSpace(loggedUser.Password))
+            {
+                if (string.IsNullOrWhiteSpace(OldPassword) || !_passwordService.VerifyPassword(loggedUser, OldPassword, loggedUser.Password))
+                {
+                    ModelState.AddModelError("Password", "Старата парола е невалидна.");
+                    return View(model);
+                }
+
+                loggedUser.Password = _passwordService.HashPassword(loggedUser, NewPassword);
+            }
+
+            _userService.UpdateUser(model, loggedUser);
+            return RedirectToAction("MyProfile");
+        }
+
+        [HttpGet]
         public IActionResult UserList(string sortBy, string filterUnit, string filterDepartment, int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login");
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             List<UserListItemViewModel> allUsers = _userService.GetFilteredUsers(sortBy, filterUnit, filterDepartment, loggedUser);
             int totalUsers = allUsers.Count();
@@ -49,8 +102,7 @@ namespace AccessManager.Controllers
                 SelectedFilterUnit = filterUnit,
                 FilterDepartments = loggedUser.AccessibleUnits.Select(u => u.Unit.Department.Description).Distinct().ToList(),
                 SelectedFilterDepartment = filterDepartment,
-                HasWriteAuthority = (loggedUser.WritingAccess != AuthorityType.None),
-                IsSuperAdmin = loggedUser.WritingAccess == AuthorityType.SuperAdmin,
+                WriteAuthority = loggedUser.WritingAccess,
                 CurrentPage = page,
                 TotalPages = (int)Math.Ceiling((double)totalUsers / Constants.ItemsPerPage)
             };
@@ -62,17 +114,12 @@ namespace AccessManager.Controllers
         public IActionResult CreateUser()
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null)
-            {
-                HttpContext.Session.Remove("PendingUser");
-                return RedirectToAction("Login");
-            }
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var pendingUserJson = HttpContext.Session.GetString("PendingUser");
 
             CreateUserViewModel model = new CreateUserViewModel
             {
-                // TO DO SYSTEMS
                 Departments = _userService.GetAllowedDepartmentsAsSelectListItem(loggedUser)
             };
 
@@ -114,7 +161,7 @@ namespace AccessManager.Controllers
                 LastName = model.LastName,
                 EGN = model.EGN,
                 Phone = model.Phone,
-                UnitId = model.SelectedUnitId.Value,
+                UnitId = model.SelectedUnitId,
                 ReadingAccess = model.SelectedReadingAccess,
                 WritingAccess = model.SelectedWritingAccess,
             };
@@ -123,28 +170,13 @@ namespace AccessManager.Controllers
             _userService.AddUser(user);
 
             if (model.SelectedReadingAccess >= AuthorityType.Full)
-            {
-                user.AccessibleUnits = _departmentUnitService.GetUnits().Select(u => new UnitUser
-                {
-                    Unit = u,
-                    UnitId = u.Id,
-                    UserId = user.Id,
-                    User = user
-                }).ToList();
-            }
+                _departmentUnitService.AddFullUnitAccess(user.Id);
             else if (model.SelectedReadingAccess == AuthorityType.Restricted && !string.IsNullOrEmpty(model.SelectedAccessibleUnitIds))
-            {
-                user.AccessibleUnits = model.SelectedAccessibleUnitIds
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(uid => new UnitUser { UnitId = Guid.Parse(uid), UserId = user.Id })
-                    .ToList();
-            }
+                _departmentUnitService.AddUnitAccess(user.Id, model.SelectedAccessibleUnitIds.Split(',').Select(Guid.Parse).ToList());
 
-            // TO DO SYSTEMS
+            if (redirectTo == "MapAccess")
+                return RedirectToAction("MapAccess", "Access", new { username = model.UserName });
 
-            _userService.SaveChanges();
-            if (redirectTo == "MapAccess") 
-                return RedirectToAction("MapAccess", new { username = model.UserName });
             return RedirectToAction(redirectTo);
         }
 
@@ -158,7 +190,10 @@ namespace AccessManager.Controllers
 
             var userToDelete = _userService.GetUser(username);
             if (userToDelete == null) return NotFound();
-            if (!_userService.canUserEditUser(loggedUser, userToDelete)) return BadRequest();
+
+            if (loggedUser.WritingAccess >= AuthorityType.Full
+                && userToDelete.WritingAccess < loggedUser.WritingAccess
+                && userToDelete.ReadingAccess < loggedUser.WritingAccess) return BadRequest();
 
             _userService.SoftDeleteUser(userToDelete);
             return Ok();
@@ -168,45 +203,19 @@ namespace AccessManager.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult HardDeleteUsers()
         {
-            _userService.HardDeleteUsers();
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login");
+
+            if (loggedUser.WritingAccess == AuthorityType.SuperAdmin) _userService.HardDeleteUsers();
             return RedirectToAction("UserList");
-        }
-
-        [HttpGet]
-        public IActionResult GetAccessibleUnitsForUserDepartment(Guid departmentId)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login");
-            var res = loggedUser.AccessibleUnits.Where(au => au.Unit.DepartmentId == departmentId).Select(au => new { au.UnitId, au.Unit.Description });
-            return Json(res);
-        }
-
-        [HttpGet]
-        public IActionResult GetAccessibleDepartmentsForUser()
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login");
-
-            var departments = loggedUser.AccessibleUnits
-                .GroupBy(u => u.Unit.Department)
-                .Select(g => new
-                {
-                    DepartmentId = g.Key.Id,
-                    DepartmentName = g.Key.Description,
-                    Units = g.Select(u => new
-                    {
-                        UnitId = u.UnitId,
-                        UnitName = u.Unit.Description
-                    }).ToList()
-                })
-                .ToList();
-
-            return Json(departments);
         }
 
         [HttpGet]
         public IActionResult EditUser(string username)
         {
+            if (HttpContext.Session.GetString("Username") == username)
+                return RedirectToAction("MyProfile");
+
             var user = _userService.GetUser(username);
             if (user == null) return BadRequest();
 
@@ -232,16 +241,7 @@ namespace AccessManager.Controllers
                         UnitName = au.Unit.Description,
                         UnitId = au.Unit.Id
                     }).ToList(),
-                UserAccesses = user.UserAccesses
-                    .Select(ua => new AccessViewModel
-                    {
-                        Id = ua.AccessId,
-                        //InformationSystemDescription = ua.Access.System.Name,
-                        //InformationSystemId = ua.Access.System.Id,
-                        ParentAccessDescription = ua.Access.ParentAccess?.Description ?? string.Empty,
-                        Description = ua.Access.Description,
-                        //Directive = ua.Directive,
-                    }).ToList(),
+                UserAccesses = _accessService.GetUserAccesses(user),
                 AvailableDepartments = _userService.GetAllowedDepartmentsAsSelectListItem(loggedUser),
                 AvailableUnits = _userService.GetAllowedUnitsForDepartmentAsSelectListItem(loggedUser, user.Unit.Department.Id),
                 SelectedAccessibleUnitIds = string.Join(",", user.AccessibleUnits.Select(au => au.UnitId))
@@ -258,76 +258,13 @@ namespace AccessManager.Controllers
             if (user == null) return BadRequest();
             if (!ModelState.IsValid) return View(model);
 
-            user.FirstName = model.FirstName;
-            user.MiddleName = model.MiddleName;
-            user.LastName = model.LastName;
-            user.EGN = model.EGN;
-            user.Phone = model.Phone;
-            user.UserName = model.UserName;
-
             if (!string.IsNullOrWhiteSpace(model.NewPassword))
             {
                 user.Password = _passwordService.HashPassword(user, model.NewPassword);
             }
-            Unit? newUnit = _departmentUnitService.GetUnits().FirstOrDefault(u => u.Id == model.SelectedUnitId);
-            if (newUnit != null)
-            {
-                user.UnitId = newUnit.Id;
-                user.Unit = newUnit;
-            }
-
-            _userService.SaveChanges();
-            return RedirectToAction("EditUser", new { UserName = model.UserName });
+            _userService.UpdateUser(model, user);
+            return RedirectToAction("UserList");
         }
 
-        [HttpPost]
-        public IActionResult RemoveUnitAccess(string username, Guid unitId)
-        {
-            var user = _userService.GetUser(username);
-            if (user == null) return BadRequest();
-
-            _departmentUnitService.RemoveUserUnit(user.Id, unitId);
-            return RedirectToAction("EditUser", new { UserName = username });
-        }
-
-        [HttpPost]
-        public IActionResult RemoveUserAccess(string username, Guid accessId)
-        {
-            var user = _userService.GetUser(username);
-            if (user == null) return BadRequest();
-
-            // TO DO SYSTEMS
-            return RedirectToAction("EditUser", new { UserName = username });
-        }
-
-        [HttpPost]
-        public IActionResult UpdateUserAccessDirective(string username, Guid accessId, string directive)
-        {
-            var user = _userService.GetUser(username);
-            if (user == null) return BadRequest();
-
-            // TO DO SYSTEMS
-            return RedirectToAction("EditUser", new { UserName = username });
-        }
-
-        [HttpPost]
-        public IActionResult AddUnitAccess(string username, List<Guid> selectedUnitIds)
-        {
-            var user = _userService.GetUser(username);
-            if (user == null) return BadRequest();
-
-            _departmentUnitService.AddUnitAccess(user.Id, selectedUnitIds);
-            return RedirectToAction("EditUser", new { UserName = username });
-        }
-
-        [HttpPost]
-        public IActionResult AddAccesses(string username, List<AccessViewModel> accesses)
-        {
-            var user = _userService.GetUser(username);
-            if (user == null) return BadRequest();
-
-            // TO DO SYSTEMS
-            return RedirectToAction("EditUser", new { UserName = username });
-        }
     }
 }

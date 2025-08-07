@@ -24,7 +24,7 @@ namespace AccessManager.ViewModels.User
         public Guid? SelectedDepartmentId { get; set; }
 
         [Required(ErrorMessage = "Моля изберете отдел")]
-        public Guid? SelectedUnitId { get; set; }
+        public Guid SelectedUnitId { get; set; }
 
         public AuthorityType SelectedReadingAccess { get; set; } = AuthorityType.None;
         public AuthorityType SelectedWritingAccess { get; set; } = AuthorityType.None;
@@ -45,7 +45,6 @@ namespace AccessManager.ViewModels.User
 
         public List<SelectListItem> Departments { get; set; } = [];
         public List<SelectListItem> Units { get; set; } = [];
-        public List<AccessViewModel> Accesses { get; set; } = [];
         public string? SelectedAccessibleUnitIds { get; set; }
     }
 }

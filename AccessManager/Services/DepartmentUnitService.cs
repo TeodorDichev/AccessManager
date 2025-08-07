@@ -63,5 +63,10 @@ namespace AccessManager.Services
 
             _context.SaveChanges();
         }
+
+        internal void AddFullUnitAccess(Guid userId)
+        {
+            AddUnitAccess(userId, _context.Units.Select(u => u.Id).ToList());
+        }
     }
 }

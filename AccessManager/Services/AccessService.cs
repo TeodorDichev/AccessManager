@@ -1,5 +1,6 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
+using AccessManager.ViewModels.InformationSystem;
 
 namespace AccessManager.Services
 {
@@ -11,12 +12,29 @@ namespace AccessManager.Services
             _context = context;
         }
 
-        public void AddUserAccess(UserAccess userAccess)
+        internal List<AccessViewModel> GetUserAccesses(User loggedUser)
         {
-            if(!_context.UserAccesses.Any(ua => ua.AccessId == userAccess.AccessId && ua.UserId == userAccess.UserId))
+            return _context.UserAccesses
+                .Where(ua => ua.UserId == loggedUser.Id && ua.RevokedOn == null)
+                .ToList()
+                .Select(ua => new AccessViewModel
+                {
+                    Id = ua.Id,
+                    Description = GetAccessDescription(ua.Access),
+                    DirectiveDescription = ua.GrantedByDirective.Name
+                }).ToList();
+        }
+
+        internal string GetAccessDescription(Access access)
+        {
+            var result = access.Description;
+            var current = access.ParentAccess;
+            while (current != null)
             {
-                _context.UserAccesses.Add(userAccess);  
+                result = current.Description + " -> " + result;
+                current = current.ParentAccess;
             }
+            return result;
         }
     }
 }
