@@ -1,0 +1,110 @@
+﻿@model AccessManager.ViewModels.UnitDepartment.UnitDepartmentListViewModel
+
+@{
+    ViewData["Title"] = "Дирекции";
+}
+
+<form style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<h2>Дирекции</h2>
+
+<div class="d-flex justify-content-start gap-2 mb-3">
+    @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
+    {
+        <a asp-controller="UnitDepartment" asp-action="CreateNewDepartment" class="btn btn-success">
+            Добави новa дирекция
+        </a>
+    }
+    @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.SuperAdmin)
+    {
+        <form asp-controller="UnitDepartment" asp-action="HardDeleteUnitDepartmentс" method="post" onsubmit="return confirm('Наистина ли искате да изтриете всички деактивирани отдели?');">
+            <button type="submit" class="btn btn-danger">
+                Изтрий всички деактивирани отдели
+            </button>
+        </form>
+
+        <a asp-controller="UnitDepartment" asp-action="ViewDeactivatedUnits" class="btn btn-primary">
+            Виж изтритите отдели
+        </a>
+    }
+</div>
+
+
+<table class="table table-bordered table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>Дирекция</th>
+            <th>Отдел</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var dep in Model.Departments)
+        {
+            <tr>
+                <td>@dep.DepartmentName</td>
+                <td>-</td>
+                @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
+                {
+                    <td>
+                        <a asp-controller="UnitDepartment" asp-action="EditDepartment" asp-route-id="@dep.DepartmentId" class="btn btn-sm btn-info">
+                            Редактирай
+                        </a>
+                    </td>
+                    <td>
+                        <form asp-controller="UnitDepartment" asp-action="SoftDeleteDepartment" method="post" asp-route-id="@dep.DepartmentId">
+                            <button type="submit" class="btn btn-danger me-2">
+                                Изтрий
+                            </button>
+                        </form>
+                    </td>
+                }
+            </tr>
+            @foreach (var unit in dep.Units)
+            {
+                <tr>
+                    <td>@unit.DepartmentName</td>
+                    <td>@unit.UnitName</td>
+                    @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
+                    {
+                        <td>
+                            <a asp-controller="UnitDepartment" asp-action="EditUnit" asp-route-id="@unit.UnitId" class="btn btn-sm btn-info">
+                                Редактирай
+                            </a>
+                        </td>
+                        <td>
+                            <form asp-controller="UnitDepartment" asp-action="SoftDeleteUnit" method="post" asp-route-id="@unit.UnitId">
+                                <button type="submit" class="btn btn-danger me-2">
+                                    Изтрий
+                                </button>
+                            </form>
+                        </td>
+
+                    }
+                </tr>
+            }
+
+        }
+    </tbody>
+</table>
+
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center mt-4">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="?page=@i">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

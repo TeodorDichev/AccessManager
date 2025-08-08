@@ -28,7 +28,7 @@
             </button>
         </form>
 
-        <a asp-controller="User" asp-action="ViewDeactivatedAccesses" class="btn btn-primary">
+        <a asp-controller="Access" asp-action="ViewDeactivatedAccesses" class="btn btn-primary">
             Виж изтритите достъпи
         </a>
     }
@@ -91,5 +91,4 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/soft-delete-access.js" asp-append-version="true"></script>
 }

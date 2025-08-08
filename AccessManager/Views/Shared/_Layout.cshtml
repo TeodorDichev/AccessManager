@@ -14,43 +14,47 @@
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
 
-                <div class="d-flex align-items-center">
-                    <a class="navbar-brand me-4" asp-controller="Home" asp-action="Index">
-                        <img src="~/images/home.png" alt="Home" class="img-fluid" style="max-height: 30px;" />
-                    </a>
-                    <a class="navbar-brand me-4" asp-controller="User" asp-action="UserList">
-                        <img src="~/images/users.png" alt="Users" class="img-fluid" style="max-height: 30px;" />
-                    </a>
-                    <a class="navbar-brand me-4" asp-controller="Access" asp-action="AccessList">
-                        <img src="~/images/systems.png" alt="Systems" class="img-fluid" style="max-height: 30px;" />
-                    </a>
-                    <a class="navbar-brand me-4" asp-controller="Access" asp-action="AccessUsersList">
-                        <img src="~/images/user_access.png" alt="AccessUsers" class="img-fluid" style="max-height: 30px;" />
-                    </a>
-                    <a class="navbar-brand me-4" asp-controller="Log" asp-action="LogList">
-                        <img src="~/images/logs.png" alt="Log" class="img-fluid" style="max-height: 30px;" />
-                    </a>
-                </div>
-
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu" aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
+                <div class="collapse navbar-collapse" id="navbarMenu">
                     <div class="d-flex align-items-center">
-                        @{
-                            var username = ViewData["Username"] as string;
-                        }
-
-                        @if (!string.IsNullOrEmpty(username))
-                        {
-                            <a class="btn btn-link text-decoration-none text-black" asp-controller="User" asp-action="MyProfile">Моят профил</a>
-                            <a class="btn btn-link text-decoration-none text-black" asp-controller="Home" asp-action="Logout">Изход</a>
-                        }
-                        else
-                        {
-                            <a class="btn btn-link text-decoration-none" asp-controller="Home" asp-action="Login">Вход</a>
-                        }
+                        <a class="navbar-brand me-4" asp-controller="Home" asp-action="Index">
+                            <img src="~/images/home.png" alt="Home" class="img-fluid" style="max-height: 30px;" />
+                        </a>
+                        <a class="navbar-brand me-4" asp-controller="User" asp-action="UserList">
+                            <img src="~/images/users.png" alt="Users" class="img-fluid" style="max-height: 30px;" />
+                        </a>
+                        <a class="navbar-brand me-4" asp-controller="Access" asp-action="AccessList">
+                            <img src="~/images/systems.png" alt="Systems" class="img-fluid" style="max-height: 30px;" />
+                        </a>
+                        <a class="navbar-brand me-4" asp-controller="Access" asp-action="AccessUsersList">
+                            <img src="~/images/user_access.png" alt="AccessUsers" class="img-fluid" style="max-height: 30px;" />
+                        </a>
+                        <a class="navbar-brand me-4" asp-controller="Log" asp-action="LogList">
+                            <img src="~/images/logs.png" alt="Log" class="img-fluid" style="max-height: 30px;" />
+                        </a>
+                        <a class="navbar-brand me-4" asp-controller="UnitDepartment" asp-action="UnitDepartmentList">
+                            <img src="~/images/unit.png" alt="Log" class="img-fluid" style="max-height: 30px;" />
+                        </a>
                     </div>
+                </div>
+
+                <div class="d-flex align-items-center">
+                    @{
+                        var username = ViewData["Username"] as string;
+                    }
+                    @if (!string.IsNullOrEmpty(username))
+                    {
+                        <a class="btn btn-link text-decoration-none text-black" asp-controller="User" asp-action="MyProfile">Моят профил</a>
+                        <a class="btn btn-link text-decoration-none text-black" asp-controller="Home" asp-action="Logout">Изход</a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-link text-decoration-none" asp-controller="Home" asp-action="Login">Вход</a>
+                    }
+                </div>
             </div>
         </nav>
     </header>
