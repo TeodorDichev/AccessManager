@@ -12,7 +12,7 @@
     <div class="alert alert-success">Профилът е обновен успешно.</div>
 }
 
-<form asp-action="EditUser" method="post" class="edit-user-wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<form asp-action="EditUser" method="post" class="wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
     <div class="row" >
         <div class="col-md-6">
             <div class="mb-3">
@@ -154,7 +154,7 @@
 @*ADD PAGINATION HERE*@
 <hr />
 <h4>Видими отдели</h4>
-<div style="max-height: 200px; overflow-y: auto;" class="edit-user-wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<div style="max-height: 200px; overflow-y: auto;" class="wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
     <table class="table table-sm table-bordered">
         <thead class="table-light">
             <tr>
@@ -205,6 +205,7 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/password-visibility-toggle.js" asp-append-version="true"></script>
     <script src="~/js/edit-user.js" asp-append-version="true"></script>
+    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
     <script src="~/js/unit-dropdown-load.js" asp-append-version="true"></script>
     <script src="~/js/unit-dropdown-tree.js" asp-append-version="true"></script>
     <script src="~/js/access-visibility.js" asp-append-version="true"></script>

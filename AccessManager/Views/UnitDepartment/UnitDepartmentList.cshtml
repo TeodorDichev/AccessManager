@@ -32,7 +32,7 @@
 </div>
 
 
-<table class="table table-bordered table-striped">
+<table class="table table-bordered table-striped wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
     <thead class="table-light">
         <tr>
             <th>Дирекция</th>
@@ -47,8 +47,6 @@
             <tr>
                 <td>@dep.DepartmentName</td>
                 <td>-</td>
-                @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
-                {
                     <td>
                         <a asp-controller="UnitDepartment" asp-action="EditDepartment" asp-route-id="@dep.DepartmentId" class="btn btn-sm btn-info">
                             Редактирай
@@ -56,34 +54,30 @@
                     </td>
                     <td>
                         <form asp-controller="UnitDepartment" asp-action="SoftDeleteDepartment" method="post" asp-route-id="@dep.DepartmentId">
-                            <button type="submit" class="btn btn-danger me-2">
+                        <button type="submit" class="btn btn-danger btn-sm">
                                 Изтрий
                             </button>
                         </form>
                     </td>
-                }
             </tr>
             @foreach (var unit in dep.Units)
             {
                 <tr>
                     <td>@unit.DepartmentName</td>
                     <td>@unit.UnitName</td>
-                    @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
-                    {
                         <td>
                             <a asp-controller="UnitDepartment" asp-action="EditUnit" asp-route-id="@unit.UnitId" class="btn btn-sm btn-info">
                                 Редактирай
                             </a>
                         </td>
                         <td>
-                            <form asp-controller="UnitDepartment" asp-action="SoftDeleteUnit" method="post" asp-route-id="@unit.UnitId">
-                                <button type="submit" class="btn btn-danger me-2">
+                        <form asp-controller="UnitDepartment" asp-action="SoftDeleteUnit" method="post" asp-route-id="@unit.UnitId">
+                            <button type="submit" class="btn btn-danger btn-sm">
                                     Изтрий
                                 </button>
-                            </form>
+                        </form>
                         </td>
 
-                    }
                 </tr>
             }
 
@@ -107,4 +101,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
 }

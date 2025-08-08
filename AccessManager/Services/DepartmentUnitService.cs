@@ -68,5 +68,20 @@ namespace AccessManager.Services
         {
             AddUnitAccess(userId, _context.Units.Select(u => u.Id).ToList());
         }
+
+        internal Unit? GetUnit(string id)
+        {
+            return _context.Units.FirstOrDefault(u => u.Id == Guid.Parse(id));
+        }
+
+        internal Department? GetDepartment(string id)
+        {
+            return _context.Departments.FirstOrDefault(u => u.Id == Guid.Parse(id));
+        }
+
+        internal bool DepartmentWithDescriptionExists(string departmentName)
+        {
+            return _context.Departments.Select(d => d.Description).Contains(departmentName);
+        }
     }
 }

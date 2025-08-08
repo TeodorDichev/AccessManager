@@ -1,5 +1,60 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@using AccessManager.Data.Enums
+@model AccessManager.ViewModels.UnitDepartment.DepartmentEditViewModel
 @{
+    ViewData["Title"] = $"{Model.DepartmentName}";
+}
+
+<h2 class="text-center fw-bold">@ViewData["Title"]</h2>
+
+<div class="d-flex align-items-bottom">
+    <form asp-action="EditDepartment" method="post" class="wrapper m-3" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+        <div class="p-0">
+            <label asp-for="DepartmentName" class="form-label">Име</label>
+            <input asp-for="DepartmentName" class="form-control" />
+            <span asp-validation-for="DepartmentName" class="text-danger"></span>
+        </div>
+    </form>
+        <a asp-controller="UnitDepartment" asp-action="AddUnit" asp-route-id="@Model.DepartmentId" class="btn btn-primary m-3">
+            Добави нов отдел
+        </a>
+</div>
+
+<hr />
+<h4>Отдели</h4>
+<div style="max-height: 200px; overflow-y: auto;" class="wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+    <table class="table table-sm table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Име</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var unit in Model.Units)
+            {
+                <tr>
+                    <td>@unit.UnitName</td>
+                    <td>
+                        <form asp-controller="UnitDepartment" asp-action="SoftDeleteUnit" method="post">
+                            <button type="submit" class="btn btn-danger">
+                                Изтрий
+                            </button>
+                        </form>
+                    </td>
+                    <td>
+                        <a asp-controller="UnitDepartment" asp-action="EditUnit" asp-route-id="@unit.UnitId" class="btn btn-primary">
+                            Редактирай
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
 }

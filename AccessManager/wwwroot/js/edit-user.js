@@ -1,20 +1,4 @@
-﻿document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".edit-user-wrapper").forEach(wrapper => {
-        const isReadOnly = wrapper.dataset.readonly === "true";
-        if (isReadOnly) {
-            wrapper.querySelectorAll("input:not([type=hidden]), select, textarea, button[type=submit]").forEach(el => {
-                el.disabled = true;
-            });
-
-            wrapper.querySelectorAll(".btn-success, .btn-danger").forEach(btn => {
-                btn.style.display = "none";
-            });
-        }
-    });
-});
-
-
-document.addEventListener('DOMContentLoaded', function () {
+﻿document.addEventListener('DOMContentLoaded', function () {
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
     // ---- Directive Update ----
     document.querySelectorAll('.directive-input').forEach(input => {
