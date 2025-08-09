@@ -83,5 +83,19 @@ namespace AccessManager.Services
         {
             return _context.Departments.Select(d => d.Description).Contains(departmentName);
         }
+
+        internal void RemoveUnitAccess(Guid userId, List<Guid> removeIds)
+        {
+            foreach (var unitId in removeIds)
+            {
+                var uu = _context.UnitUser.FirstOrDefault(uu => uu.UserId == userId && uu.UnitId == unitId);
+                if (uu != null)
+                {
+                    _context.UnitUser.Remove(uu);
+                }
+            }
+
+            _context.SaveChanges();
+        }
     }
 }

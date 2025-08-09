@@ -1,0 +1,35 @@
+﻿@model (int currentPage, int totalPages, string pageParam, object routeValues)
+
+<nav>
+    <ul class="pagination">
+        @if (Model.currentPage > 1)
+        {
+            <li class="page-item">
+                <a class="page-link"
+                   href="@Url.Action(null, new RouteValueDictionary(Model.routeValues) { [Model.pageParam] = Model.currentPage - 1 })">
+                    Previous
+                </a>
+            </li>
+        }
+
+        @for (int i = 1; i <= Model.totalPages; i++)
+        {
+            <li class="page-item @(i == Model.currentPage ? "active" : "")">
+                <a class="page-link"
+                   href="@Url.Action(null, new RouteValueDictionary(Model.routeValues) { [Model.pageParam] = i })">
+                    @i
+                </a>
+            </li>
+        }
+
+        @if (Model.currentPage < Model.totalPages)
+        {
+            <li class="page-item">
+                <a class="page-link"
+                   href="@Url.Action(null, new RouteValueDictionary(Model.routeValues) { [Model.pageParam] = Model.currentPage + 1 })">
+                    Next
+                </a>
+            </li>
+        }
+    </ul>
+</nav>

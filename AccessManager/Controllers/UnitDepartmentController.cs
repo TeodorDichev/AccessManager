@@ -95,8 +95,6 @@ namespace AccessManager.Controllers
             dep.Description = model.DepartmentName;
             _userService.SaveChanges();
 
-
-
             return View(model);
         }
 
@@ -115,8 +113,9 @@ namespace AccessManager.Controllers
                 UnitId = unit.Id,
                 DepartmentName = unit.Department.Description,
                 UnitName = unit.Description,
-                UsersWithAccess = unit.UsersWithAccess.Where(u => u.User != null).Select(
-                    u => new UserListItemViewModel 
+                UsersWithAccess = unit.UsersWithAccess
+                    .Where(u => u.User != null && loggedUser.AccessibleUnits.Select(au => au.UnitId).Contains(u.User.UnitId))
+                    .Select(u => new UserListItemViewModel 
                     {
                         UserName = u.User.UserName, 
                         FirstName = u.User.FirstName, 

@@ -65,15 +65,46 @@ namespace AccessManager.Services
             if (user.WritingAccess == AuthorityType.None)
                 return [];
             else if (user.WritingAccess == AuthorityType.Restricted)
-            {
-                var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
-                return _context.Units
-                    .Where(u => allowedUnitIds.Contains(u.Id))
-                    .Distinct()
-                    .ToList();
-            }
+                return _context.Units.Where(u => _context.UnitUser.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id)).ToList();
             else
                 return _context.Units.ToList();
+        }
+
+        internal List<Unit> GetUserAccessibleUnits(User user, User loggedUser)
+        {
+            if (user.WritingAccess == AuthorityType.None || loggedUser.WritingAccess == AuthorityType.None)
+                return [];
+
+            var query = _context.Units.AsQueryable();
+
+            if (user.WritingAccess == AuthorityType.Restricted)
+                query = query.Where(u => _context.UnitUser.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id));
+
+            if (loggedUser.WritingAccess == AuthorityType.Restricted)
+                query = query.Where(u => _context.UnitUser.Any(uu => uu.UserId == loggedUser.Id && uu.UnitId == u.Id));
+
+            return query.ToList();
+        }
+
+        internal List<Unit> GetUserInaccessibleUnits(User user, User loggedUser)
+        {
+            if (loggedUser.WritingAccess == AuthorityType.None)
+                return [];
+
+            var query = _context.Units.AsQueryable();
+
+            if (loggedUser.WritingAccess == AuthorityType.Restricted)
+                query = query.Where(u => _context.UnitUser.Any(uu => uu.UserId == loggedUser.Id && uu.UnitId == u.Id));
+
+            if (user.WritingAccess != AuthorityType.None)
+            {
+                if (user.WritingAccess == AuthorityType.Restricted)
+                    query = query.Where(u => !_context.UnitUser.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id));
+                else
+                    return [];
+            }
+
+            return query.ToList();
         }
 
         internal List<Unit> GetAllowedUnitsForDepartment(User user, Guid departmentId)
@@ -161,11 +192,10 @@ namespace AccessManager.Services
             }
         }
 
-        internal List<string> GetAccessibleUsersUserNames(User loggedUser)
+        internal List<User> GetAccessibleUsers(User loggedUser)
         {
             return _context.Users
                 .Where(u => u.DeletedOn == null && u.Id != loggedUser.Id && loggedUser.AccessibleUnits.Any(au => au.UnitId == u.UnitId))
-                .Select(u => u.UserName)
                 .ToList();
         }
 

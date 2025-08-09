@@ -1,6 +1,4 @@
 ﻿using AccessManager.Data.Enums;
-using AccessManager.ViewModels.InformationSystem;
-using AccessManager.ViewModels.UnitDepartment;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 

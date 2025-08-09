@@ -7,7 +7,7 @@ using AccessManager.ViewModels.UnitDepartment;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using System.Globalization;
+using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Controllers
 {
@@ -130,7 +130,7 @@ namespace AccessManager.Controllers
             if (model.SelectedDepartmentId.HasValue)
                 model.Units = _userService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
                     .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList();
-;
+            ;
 
             return View(model);
         }
@@ -184,11 +184,11 @@ namespace AccessManager.Controllers
 
             if (model.SelectedReadingAccess >= AuthorityType.Full)
                 _departmentUnitService.AddFullUnitAccess(user.Id);
-            else if (model.SelectedReadingAccess == AuthorityType.Restricted && !string.IsNullOrEmpty(model.SelectedAccessibleUnitIds))
-                _departmentUnitService.AddUnitAccess(user.Id, model.SelectedAccessibleUnitIds.Split(',').Select(Guid.Parse).ToList());
 
-            if (redirectTo == "MapAccess")
-                return RedirectToAction("MapAccess", "Access", new { username = model.UserName });
+            if (redirectTo == "MapUserAccess")
+                return RedirectToAction(redirectTo, new { username = model.UserName });
+            else if (redirectTo == "MapUserUnitAccess")
+                return RedirectToAction("MapUserUnitAccess", new { username = model.UserName });
 
             return RedirectToAction(redirectTo);
         }
@@ -349,6 +349,116 @@ namespace AccessManager.Controllers
             };
 
             return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult MapUserUnitAccess(string username, string filterDepartment1, string filterDepartment2, int page1 = 1, int page2 = 1)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var user = _userService.GetUser(username);
+            if (user == null) return NotFound();
+
+            var departments = _userService.GetAllowedDepartments(loggedUser).OrderBy(d => d.Description)
+                                    .Select(d => new SelectListItem(d.Description, d.Id.ToString()))
+                                    .ToList();
+
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
+
+            // Units user has access to
+            var accessibleUnitsQuery = _userService.GetUserAccessibleUnits(user, loggedUser);
+
+            // Units user does NOT have access to
+            var inaccessibleUnitsQuery = _userService.GetUserInaccessibleUnits(user, loggedUser);
+
+            // Apply filters
+            if (!string.IsNullOrEmpty(filterDepartment1))
+                accessibleUnitsQuery = accessibleUnitsQuery.Where(u => u.Department.Description == filterDepartment1).ToList();
+            if (!string.IsNullOrEmpty(filterDepartment2))
+                inaccessibleUnitsQuery = inaccessibleUnitsQuery.Where(u => u.Department.Description == filterDepartment2).ToList();
+
+            // Pagination total counts
+            var totalAccessible = accessibleUnitsQuery.Count();
+            var totalInaccessible = inaccessibleUnitsQuery.Count();
+
+            // Paginate
+            var accessibleUnits = accessibleUnitsQuery
+                .OrderBy(u => u.Description)
+                .Skip((page1 - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .Select(u => new UnitViewModel
+                {
+                    UnitId = u.Id,
+                    UnitName = u.Description,
+                    DepartmentName = u.Department.Description
+                })
+                .ToList();
+
+            var inaccessibleUnits = inaccessibleUnitsQuery
+                .OrderBy(u => u.Description)
+                .Skip((page2 - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .Select(u => new UnitViewModel
+                {
+                    UnitId = u.Id,
+                    UnitName = u.Description,
+                    DepartmentName = u.Department.Description
+                })
+                .ToList();
+
+            var vm = new MapUserUnitAccessViewModel
+            {
+                UserName = user.UserName,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Department = user.Unit.Department.Description,
+                Unit = user.Unit.Description,
+                FilterDepartments = departments,
+                SelectedFilterDepartment1 = filterDepartment1,
+                SelectedFilterDepartment2 = filterDepartment2,
+                AccessibleUnits = accessibleUnits,
+                InaccessibleUnits = inaccessibleUnits,
+                CurrentPage1 = page1,
+                TotalPages1 = (int)Math.Ceiling(totalAccessible / (double)Constants.ItemsPerPage),
+                CurrentPage2 = page2,
+                TotalPages2 = (int)Math.Ceiling(totalInaccessible / (double)Constants.ItemsPerPage)
+            };
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        public IActionResult UpdateUnitAccess(string username, string? selectedAccessibleUnitIds, string? selectedInaccessibleUnitIds)
+            {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var user = _userService.GetUser(username);
+            if (user == null) return NotFound();
+
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full || loggedUser.WritingAccess > user.WritingAccess;
+
+            var removeIds = (selectedAccessibleUnitIds ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(Guid.Parse)
+                .ToList();
+
+            var addIds = (selectedInaccessibleUnitIds ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(Guid.Parse)
+                .ToList();
+
+            if(removeIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
+            {
+                user.WritingAccess = AuthorityType.Restricted;
+                user.ReadingAccess = AuthorityType.Restricted;
+            }
+
+            _departmentUnitService.AddUnitAccess(user.Id, addIds);
+            _departmentUnitService.RemoveUnitAccess(user.Id, removeIds);
+
+            return RedirectToAction("MapUserUnitAccess", new { username });
         }
     }
 }
