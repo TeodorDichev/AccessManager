@@ -1,5 +1,77 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@using AccessManager.Data.Enums
+@using AccessManager.Utills
+@model AccessManager.ViewModels.UnitDepartment.UnitEditViewModel
 @{
+    ViewData["Title"] = $"{Model.UnitName}";
+}
+
+<h2 class="text-center fw-bold">@ViewData["Title"]</h2>
+<h4 class="text-center fw-bold">@Model.DepartmentName</h4>
+
+<div class="d-flex align-items-bottom">
+    <form asp-action="EditUnit" method="post" class="wrapper m-3" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+        <div class="p-0">
+            <label asp-for="UnitName" class="form-label">Име</label>
+            <input asp-for="UnitName" class="form-control" />
+            <span asp-validation-for="UnitName" class="text-danger"></span>
+        </div>
+        @*sending the rest of the model so it does not leave null fields*@
+        <input asp-for="UnitId" type="hidden" />
+        <input asp-for="UsersWithAccess" type="hidden" />
+        <input asp-for="DepartmentName" type="hidden" />
+        <input asp-for="WriteAuthority" type="hidden" />
+    </form>
+</div>
+
+<div id="removeAccessMessage" class="mt-2"></div>
+
+<hr />
+<h4>Потребители с достъп</h4>
+<div style="max-height: 200px; overflow-y: auto;" class="wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+    <table class="table table-sm table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Потребителско име</th>
+                <th>Собствено име</th>
+                <th>Фамилия</th>
+                <th>Дирекция</th>
+                <th>Отдел</th>
+                <th>Достъп за писане</th>
+                <th>Достъп за четене</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model.UsersWithAccess)
+            {
+                <tr>
+                    <td>@user.UserName</td>
+                    <td>@user.FirstName</td>
+                    <td>@user.LastName</td>
+                    <td>@user.Department</td>
+                    <td>@user.Unit</td>
+                    <td>@AuthorityTypeLocalization.GetBulgarianAuthorityType(user.WriteAccess)</td>
+                    <td>@AuthorityTypeLocalization.GetBulgarianAuthorityType(user.ReadAccess)</td>
+                    <td>
+                        <button class="btn btn-danger remove-access-btn" data-username="@user.UserName" data-unitid="@Model.UnitId">
+                            Премахни достъпа
+                        </button>
+                    </td>
+                    <td>
+                        <a asp-controller="User" asp-action="EditUser" asp-route-username="@user.UserName" class="btn btn-primary">
+                            Редактирай
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
+    <script src="~/js/remove-unit-access.js" asp-append-version="true"></script>
 }

@@ -119,8 +119,8 @@ namespace AccessManager.Services
                     LastName = u.LastName,
                     Unit = u.Unit.Description,
                     Department = u.Unit.Department.Description,
-                    WriteAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(u.WritingAccess),
-                    ReadAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(u.ReadingAccess)
+                    WriteAccess = u.WritingAccess,
+                    ReadAccess = u.ReadingAccess
                 });
 
 
@@ -210,8 +210,8 @@ namespace AccessManager.Services
                     LastName = u.LastName,
                     Unit = u.Unit.Description,
                     Department = u.Unit.Department.Description,
-                    WriteAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(u.WritingAccess),
-                    ReadAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(u.ReadingAccess),
+                    WriteAccess = u.WritingAccess,
+                    ReadAccess = u.ReadingAccess,
                 })
                 .ToList();
         }

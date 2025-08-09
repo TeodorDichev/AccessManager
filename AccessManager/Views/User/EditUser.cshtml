@@ -1,4 +1,5 @@
 ﻿@using AccessManager.Data.Enums
+@using AccessManager.Utills
 @using AccessManager.ViewModels.InformationSystem
 @model AccessManager.ViewModels.User.EditUserViewModel
 @{
@@ -74,7 +75,7 @@
         <div class="col-md-6">
             <div class="mb-3">
                 <label asp-for="UserName" class="form-label">Потребителско име</label>
-                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
+                @if (Model.LoggedUserWritingAccess >= AuthorityType.SuperAdmin)
                 {
                     <input asp-for="UserName" class="form-control" />
                 }
@@ -92,7 +93,7 @@
                     {
                         @if (level <= Model.LoggedUserReadingAccess)
                         {
-                            <option value="@((int)level)">@level</option>
+                            <option value="@((int)level)">@AuthorityTypeLocalization.GetBulgarianAuthorityType(level)</option>
                         }
                     }
                 </select>
@@ -105,7 +106,7 @@
                     {
                         @if(level <= Model.LoggedUserWritingAccess)
                         {
-                            <option value="@((int)level)">@level</option>
+                            <option value="@((int)level)">@AuthorityTypeLocalization.GetBulgarianAuthorityType(level)</option>
                         }
                     }
                 </select>
@@ -123,83 +124,28 @@
                 </select>
                 <span asp-validation-for="SelectedUnitId" class="text-danger"></span>
             </div>
-            <div class="mb-3" id="unit-access-container" style="display:none">
-                <label class="form-label">Отдели с достъп</label>
-                <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        Избери отдели
-                    </button>
-                    <ul class="dropdown-menu p-3" style="max-height: 300px; overflow-y: auto;" id="units-dropdown" />
-                </div>
-                <input type="hidden" name="SelectedAccessibleUnitIds" id="SelectedAccessibleUnitIds" value="@Model.SelectedAccessibleUnitIds" />
-            </div>
         </div>
     </div>
     <div class="row">
-        <div class="d-grid col-md-4">
+        <div class="d-grid col-md-3">
             <button type="submit" class="btn btn-success btn-lg">Запази</button>
         </div>
-        <div class="d-grid col-md-4">
+        <div class="d-grid col-md-3">
             <a asp-controller="Access" asp-action="MapAccesses" asp-route-username="@Model.UserName" class="btn btn-primary btn-lg">
-                Достъпи
+                АИС достъпи
             </a>
         </div>
-        <div class="d-grid col-md-4">
+        <div class="d-grid col-md-3">
+            <a asp-controller="UnitDepartment" asp-action="MapUnits" asp-route-username="@Model.UserName" class="btn btn-primary btn-lg">
+                Достъпи до отдели
+            </a>
+        </div>
+        <div class="d-grid col-md-3">
              <button type="submit" formaction="/User/Deactivate" formmethod="post" class="btn btn-danger btn-lg">Деактивирай акаунта</button>
         </div>
     </div>
 
 </form>
-
-@*ADD PAGINATION HERE*@
-<hr />
-<h4>Видими отдели</h4>
-<div style="max-height: 200px; overflow-y: auto;" class="wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
-    <table class="table table-sm table-bordered">
-        <thead class="table-light">
-            <tr>
-                <th>Дирекция</th>
-                <th>Отдел</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var unit in Model.AccessibleUnits)
-            {
-                <tr>
-                    <td>@unit.DepartmentName</td>
-                    <td>@unit.UnitName</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger remove-unit-btn" data-unit-id="@unit.UnitId" data-username="@Model.UserName">
-                            Премахни
-                        </button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
-
-<h4>Видими достъпи</h4>
-<div style="max-height: 200px; overflow-y: auto;">
-    <table class="table table-sm table-bordered">
-        <thead class="table-light">
-            <tr>
-                <th>Име</th>
-                <th>Заповед за даване на достъп</th>
-            </tr>
-        </thead>
-        <tbody>
-            @for (int i = 0; i < Model.UserAccesses.Count; i++)
-            {
-                <tr>
-                    <td>@Model.UserAccesses[i].Description</td>
-                    <td>@Model.UserAccesses[i].DirectiveDescription</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
@@ -207,6 +153,5 @@
     <script src="~/js/edit-user.js" asp-append-version="true"></script>
     <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
     <script src="~/js/unit-dropdown-load.js" asp-append-version="true"></script>
-    <script src="~/js/unit-dropdown-tree.js" asp-append-version="true"></script>
     <script src="~/js/access-visibility.js" asp-append-version="true"></script>
 }

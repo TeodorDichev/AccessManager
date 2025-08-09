@@ -1,4 +1,5 @@
-﻿@using AccessManager.ViewModels.User
+﻿@using AccessManager.Utills
+@using AccessManager.ViewModels.User
 @model UserListViewModel
 
 @{
@@ -103,8 +104,8 @@
                 <td>@user.LastName</td>
                 <td>@user.Department</td>
                 <td>@user.Unit</td>
-                <td>@user.WriteAccess</td>
-                <td>@user.ReadAccess</td>
+                <td>@AuthorityTypeLocalization.GetBulgarianAuthorityType(user.WriteAccess)</td>
+                <td>@AuthorityTypeLocalization.GetBulgarianAuthorityType(user.ReadAccess)</td>
                 @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Restricted)
                 {
                     <td>

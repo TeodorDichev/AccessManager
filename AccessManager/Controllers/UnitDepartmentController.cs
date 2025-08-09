@@ -84,6 +84,9 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
+
+            if (!ModelState.IsValid) return View(model);
 
             Department? dep = _departmentUnitService.GetDepartment(model.DepartmentId.ToString());
             if (dep == null) return NotFound();
@@ -92,9 +95,7 @@ namespace AccessManager.Controllers
             dep.Description = model.DepartmentName;
             _userService.SaveChanges();
 
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            if(ModelState.IsValid) return View(model);
 
             return View(model);
         }
@@ -104,6 +105,7 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
             Unit? unit = _departmentUnitService.GetUnit(id);
             if (unit == null) return NotFound();
@@ -113,14 +115,16 @@ namespace AccessManager.Controllers
                 UnitId = unit.Id,
                 DepartmentName = unit.Department.Description,
                 UnitName = unit.Description,
-                UsersWithAccess = unit.UsersWithAccess.Select(
+                UsersWithAccess = unit.UsersWithAccess.Where(u => u.User != null).Select(
                     u => new UserListItemViewModel 
                     {
-                        UserName = u.User.FirstName, 
+                        UserName = u.User.UserName, 
                         FirstName = u.User.FirstName, 
                         LastName = u.User.LastName, 
-                        ReadAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(u.User.ReadingAccess),
-                        WriteAccess = AuthorityTypeLocalization.GetBulgarianAuthorityType(u.User.WritingAccess)
+                        Department = u.Unit.Department.Description,
+                        Unit = u.Unit.Description,
+                        ReadAccess = u.User.ReadingAccess,
+                        WriteAccess = u.User.WritingAccess
                     }).ToList(),
                 WriteAuthority = loggedUser.WritingAccess
             };
@@ -129,13 +133,35 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
+        public ActionResult EditUnit(UnitEditViewModel model)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
+
+            if (!ModelState.IsValid) return View(model);
+
+            Unit? unit = _departmentUnitService.GetUnit(model.UnitId.ToString());
+            if (unit == null) return NotFound();
+
+            unit.Description = model.UnitName;
+            _userService.SaveChanges();
+
+            return View(model);
+        }
+
+        [HttpPost]
         public IActionResult RemoveUnitAccess(string username, Guid unitId)
         {
             var user = _userService.GetUser(username);
-            if (user == null) return BadRequest();
+            if (user == null) return Json(new { success = false, message = "User not found" });
+            else if (user.WritingAccess == Data.Enums.AuthorityType.SuperAdmin) return Json(new { success = false, message = "Cannot remove unit access from superadmin" });
+
+            if (user.WritingAccess == Data.Enums.AuthorityType.Full) user.WritingAccess = Data.Enums.AuthorityType.Restricted;
+            if (user.ReadingAccess == Data.Enums.AuthorityType.Full) user.ReadingAccess = Data.Enums.AuthorityType.Restricted;
 
             _departmentUnitService.RemoveUserUnit(user.Id, unitId);
-            return RedirectToAction("EditUser", new { UserName = username });
+            return Json(new { success = true, message = "Достъпът е премахнат успешно" });
         }
 
         [HttpGet]

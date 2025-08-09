@@ -224,19 +224,10 @@ namespace AccessManager.Controllers
                 LoggedUserWritingAccess = loggedUser.WritingAccess,
                 SelectedDepartmentId = user.Unit.Department.Id,
                 SelectedUnitId = user.Unit.Id,
-                AccessibleUnits = user.AccessibleUnits
-                    .Select(au => new UnitViewModel
-                    {
-                        DepartmentName = au.Unit.Department.Description,
-                        UnitName = au.Unit.Description,
-                        UnitId = au.Unit.Id
-                    }).ToList(),
-                UserAccesses = _accessService.GetGrantedUserAccesses(user),
                 AvailableDepartments = _userService.GetAllowedDepartments(loggedUser)
                     .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList(),
                 AvailableUnits = _userService.GetAllowedUnitsForDepartment(loggedUser, user.Unit.Department.Id)
                     .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList(),
-                SelectedAccessibleUnitIds = string.Join(",", user.AccessibleUnits.Select(au => au.UnitId))
             };
             model.AvailableDepartments.ForEach(d => d.Selected = d.Value == model.SelectedDepartmentId.ToString());
             model.AvailableUnits.ForEach(d => d.Selected = d.Value == model.SelectedUnitId.ToString());
@@ -252,7 +243,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            if (_userService.UserWithUsernameExists(model.UserName))
+            if (user.UserName != model.UserName && _userService.UserWithUsernameExists(model.UserName))
                 ModelState.AddModelError("UserName", "Потребител с това потребителско име вече съществува.");
 
             if (loggedUser.WritingAccess < model.WritingAccess || loggedUser.ReadingAccess < model.ReadingAccess)
@@ -264,6 +255,7 @@ namespace AccessManager.Controllers
             {
                 user.Password = _passwordService.HashPassword(user, model.NewPassword);
             }
+
             _userService.UpdateUser(model, user);
             return RedirectToAction("UserList");
         }

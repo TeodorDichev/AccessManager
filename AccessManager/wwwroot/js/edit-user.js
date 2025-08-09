@@ -1,6 +1,6 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    // ---- Directive Update ----
+
     document.querySelectorAll('.directive-input').forEach(input => {
         input.addEventListener('change', function () {
             const accessId = input.dataset.accessId;
@@ -20,7 +20,6 @@
         });
     });
 
-    // ---- Remove Unit ----
     document.querySelectorAll('.remove-unit-btn').forEach(btn => {
         btn.addEventListener('click', function () {
             const unitId = btn.dataset.unitId;
@@ -46,7 +45,6 @@
         });
     });
 
-    // ---- Remove Access ----
     document.querySelectorAll('.remove-access-btn').forEach(btn => {
         btn.addEventListener('click', function () {
             const accessId = btn.dataset.accessId;

@@ -31,10 +31,7 @@ namespace AccessManager.ViewModels.User
         [Required]
         public Guid SelectedUnitId { get; set; }
 
-        public List<UnitViewModel> AccessibleUnits { get; set; } = new();
-        public List<AccessViewModel> UserAccesses { get; set; } = new();
         public List<SelectListItem> AvailableDepartments { get; set; } = [];
         public List<SelectListItem> AvailableUnits { get; set; } = [];
-        public string? SelectedAccessibleUnitIds { get; set; }
     }
 }

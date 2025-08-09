@@ -13,10 +13,15 @@
             <input asp-for="DepartmentName" class="form-control" />
             <span asp-validation-for="DepartmentName" class="text-danger"></span>
         </div>
+        @*sending the rest of the model so it does not leave null fields*@
+        <input asp-for="DepartmentId" type="hidden" />
+        <input asp-for="Units" type="hidden" />
+        <input asp-for="DepartmentName" type="hidden" />
+        <input asp-for="WriteAuthority" type="hidden" />
     </form>
-        <a asp-controller="UnitDepartment" asp-action="AddUnit" asp-route-id="@Model.DepartmentId" class="btn btn-primary m-3">
-            Добави нов отдел
-        </a>
+    <a asp-controller="UnitDepartment" asp-action="AddUnit" asp-route-id="@Model.DepartmentId" class="btn btn-primary m-3">
+        Добави нов отдел
+    </a>
 </div>
 
 <hr />

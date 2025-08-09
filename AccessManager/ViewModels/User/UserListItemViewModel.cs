@@ -1,4 +1,6 @@
-﻿namespace AccessManager.ViewModels.User
+﻿using AccessManager.Data.Enums;
+
+namespace AccessManager.ViewModels.User
 {
     public class UserListItemViewModel
     {
@@ -7,7 +9,7 @@
         public string LastName { get; set; } = "";
         public string Department { get; set; } = "";
         public string Unit { get; set; } = "";
-        public string WriteAccess { get; set; } = "";
-        public string ReadAccess { get; set; } = "";
+        public AuthorityType WriteAccess { get; set; }
+        public AuthorityType ReadAccess { get; set; }
     }
 }
