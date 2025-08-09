@@ -1,32 +1,32 @@
 ﻿@model AccessManager.ViewModels.User.MapUserUnitAccessViewModel
 
-<h2>Потребител: @Model.UserName (@Model.FirstName @Model.LastName)</h2>
-<p>Дирекция: @Model.Department</p>
-<p>Отдел: @Model.Unit</p>
+<h2 class="text-center">@Model.FirstName @Model.LastName</h2>
+<h4 class="text-center">@Model.Department - @Model.Unit</h4>
 
-<div class="row wrapper">
+
+
+<div class="row wrapper mt-5">
     <div class="col-md-6">
         <h4>Достъпни отдели</h4>
-        <form asp-action="UpdateUnitAccess" method="post">
-            <input type="hidden" name="username" value="@Model.UserName" />
+        <form method="get" asp-action="MapUserUnitAccess" class="mb-2" as>
+                <input type="hidden" name="username" value="@Model.UserName" /> 
+                <input type="hidden" name="FilterDepartment2" value="@Model.FilterDepartment2" />
+                <input type="hidden" name="page1" value="1" />
+                <input type="hidden" name="page2" value="@Model.CurrentPage2" />
 
-            <form method="get" asp-action="MapUserUnitAccess" class="mb-2" as>
-                <input type="hidden" name="username" value="@Model.UserName" />
-                <input type="hidden" name="filterDept2" value="@Model.SelectedFilterDepartment2" /> @* Preserve other filter *@
-                <input type="hidden" name="page1" value="1" /> @* Reset page to 1 on filter change *@
-                <input type="hidden" name="page2" value="@Model.CurrentPage2" /> @* Preserve other pagination *@
                 <label for="filterDepartment1" class="form-label">Филтър по Дирекция:</label>
                 <select name="filterDepartment1" id="filterDepartment1" class="form-select" onchange="this.form.submit()">
                 <option value="">Всички</option>
                 @foreach (var department in Model.FilterDepartments)
                 {
-                    <option value="@department.Value" selected="@(department.Text == Model.SelectedFilterDepartment1 ? "selected" : null)">
+                    <option value="@department.Value" selected="@(department.Value == Model.FilterDepartment1 ? "selected" : null)">
                         @department.Text
                     </option>
                 }
                 </select>
-            </form>
+        </form>
 
+        <form asp-action="UpdateUnitAccess" method="post">
             <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
@@ -50,44 +50,41 @@
             </table>
 
             @await Html.PartialAsync("_Pagination", 
-    (Model.CurrentPage1, Model.TotalPages1, "page1", (object)new { 
-        username = Model.UserName, 
-        page2 = Model.CurrentPage2, 
-        filterDept1 = Model.SelectedFilterDepartment1, 
-        filterDept2 = Model.SelectedFilterDepartment2 
-    }))
+            (Model.CurrentPage1, Model.TotalPages1, "page1", (object)new { 
+            username = Model.UserName, 
+            page2 = Model.CurrentPage2, 
+            filterDept1 = Model.FilterDepartment1, 
+            filterDept2 = Model.FilterDepartment2}))
       
-                <input type="hidden" id="allSelectedAccessible" name="SelectedAccessibleUnitIds" />
-                <input type="hidden" id="allSelectedInaccessible" name="SelectedInaccessibleUnitIds" />
+            <input type="hidden" id="allSelectedAccessible" name="SelectedAccessibleUnitIds" />
+            <input type="hidden" id="allSelectedInaccessible" name="SelectedInaccessibleUnitIds" />
 
-                <button type="submit" class="btn btn-danger mt-2">Премахни избраните</button>
-                <button type="button" class="btn btn-secondary mt-2" id="selectAllAccessibleBtn">Избери всички</button>
+            <button type="submit" class="btn btn-danger mt-2">Премахни избраните</button>
+            <button type="button" class="btn btn-secondary mt-2" id="selectAllAccessibleBtn">Избери всички</button>
         </form>
     </div>
 
     <div class="col-md-6">
         <h4>Недостъпни отдели</h4>
-        <form asp-action="UpdateUnitAccess" method="post">
+        <form method="get" asp-action="MapUserUnitAccess" class="mb-2">
             <input type="hidden" name="username" value="@Model.UserName" />
-
-            <form method="get" asp-action="MapUserUnitAccess" class="mb-2">
-                <input type="hidden" name="username" value="@Model.UserName" />
-                <input type="hidden" name="filterDept2" value="@Model.SelectedFilterDepartment2" /> @* Preserve other filter *@
-                <input type="hidden" name="page1" value="1" /> @* Reset page to 1 on filter change *@
-                <input type="hidden" name="page2" value="@Model.CurrentPage2" /> @* Preserve other pagination *@
+            <input type="hidden" name="FilterDepartment1" value="@Model.FilterDepartment1" />
+            <input type="hidden" name="page1" value="@Model.CurrentPage1" />
+            <input type="hidden" name="page2" value="1" />
             
-        <label for="filterDepartment2" class="form-label">Филтър по Дирекция:</label>
-        <select name="filterDepartment2" id="filterDepartment2" class="form-select">
+            <label for="filterDepartment2" class="form-label">Филтър по Дирекция:</label>
+            <select name="filterDepartment2" id="filterDepartment2" class="form-select" onchange="this.form.submit()">
             <option value="">Всички</option>
             @foreach (var department in Model.FilterDepartments)
             {
-                <option value="@department" selected="@(department.Value == Model.SelectedFilterDepartment2 ? "selected" : null)">
+                <option value="@department.Value" selected="@(department.Value == Model.FilterDepartment2 ? "selected" : null)">
                     @department.Text
                 </option>
             }
-        </select>
-            </form>
+            </select>
+        </form>
 
+        <form asp-action="UpdateUnitAccess" method="post">
             <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
@@ -111,12 +108,11 @@
             </table>
 
             @await Html.PartialAsync("_Pagination", 
-    (Model.CurrentPage2, Model.TotalPages2, "page2", (object)new { 
-        username = Model.UserName, 
-        page2 = Model.CurrentPage2, 
-        filterDept1 = Model.SelectedFilterDepartment1, 
-        filterDept2 = Model.SelectedFilterDepartment2 
-    }))
+            (Model.CurrentPage2, Model.TotalPages2, "page2", (object)new { 
+            username = Model.UserName, 
+            page2 = Model.CurrentPage2, 
+            filterDept1 = Model.FilterDepartment1, 
+            filterDept2 = Model.FilterDepartment2 }))
             <input type="hidden" id="allSelectedAccessible" name="SelectedAccessibleUnitIds" />
             <input type="hidden" id="allSelectedInaccessible" name="SelectedInaccessibleUnitIds" />
 
@@ -130,7 +126,6 @@
         <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
 
 <script>
-    // Select all toggles for both tables (accessible and inaccessible)
     document.getElementById('selectAllAccessibleBtn').addEventListener('click', () => {
         document.querySelectorAll('input[name="selectedAccessibleUnitIds"]').forEach(cb => cb.checked = true);
     });
@@ -147,19 +142,16 @@
 
 document.querySelectorAll('form').forEach(form => {
     form.addEventListener('submit', function(e) {
-        // Collect and concat checked accessible units inside this form
         const accessibleChecked = Array.from(form.querySelectorAll('input[name="selectedAccessibleUnitIds"]:checked'));
         const accessibleConcatenated = accessibleChecked.map(cb => cb.value).join(',');
         const hiddenAccessible = form.querySelector('#allSelectedAccessible');
         if (hiddenAccessible) hiddenAccessible.value = accessibleConcatenated;
 
-        // Collect and concat checked inaccessible units inside this form
         const inaccessibleChecked = Array.from(form.querySelectorAll('input[name="selectedInaccessibleUnitIds"]:checked'));
         const inaccessibleConcatenated = inaccessibleChecked.map(cb => cb.value).join(',');
         const hiddenInaccessible = form.querySelector('#allSelectedInaccessible');
         if (hiddenInaccessible) hiddenInaccessible.value = inaccessibleConcatenated;
 
-        // Remove all original checkboxes in this form to avoid duplicate data
         form.querySelectorAll('input[name="selectedAccessibleUnitIds"]').forEach(cb => cb.remove());
         form.querySelectorAll('input[name="selectedInaccessibleUnitIds"]').forEach(cb => cb.remove());
     });

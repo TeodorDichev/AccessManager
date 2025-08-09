@@ -374,9 +374,9 @@ namespace AccessManager.Controllers
 
             // Apply filters
             if (!string.IsNullOrEmpty(filterDepartment1))
-                accessibleUnitsQuery = accessibleUnitsQuery.Where(u => u.Department.Description == filterDepartment1).ToList();
+                accessibleUnitsQuery = accessibleUnitsQuery.Where(u => u.Department.Id == Guid.Parse(filterDepartment1)).ToList();
             if (!string.IsNullOrEmpty(filterDepartment2))
-                inaccessibleUnitsQuery = inaccessibleUnitsQuery.Where(u => u.Department.Description == filterDepartment2).ToList();
+                inaccessibleUnitsQuery = inaccessibleUnitsQuery.Where(u => u.Department.Id == Guid.Parse(filterDepartment2)).ToList();
 
             // Pagination total counts
             var totalAccessible = accessibleUnitsQuery.Count();
@@ -415,8 +415,8 @@ namespace AccessManager.Controllers
                 Department = user.Unit.Department.Description,
                 Unit = user.Unit.Description,
                 FilterDepartments = departments,
-                SelectedFilterDepartment1 = filterDepartment1,
-                SelectedFilterDepartment2 = filterDepartment2,
+                FilterDepartment1 = filterDepartment1,
+                FilterDepartment2 = filterDepartment2,
                 AccessibleUnits = accessibleUnits,
                 InaccessibleUnits = inaccessibleUnits,
                 CurrentPage1 = page1,

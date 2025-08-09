@@ -11,8 +11,8 @@ namespace AccessManager.ViewModels.User
         public string Department { get; set; } = "";
         public string Unit { get; set; } = "";
         public List<SelectListItem> FilterDepartments { get; set; } = [];
-        public string SelectedFilterDepartment1 { get; set; } = String.Empty;
-        public string SelectedFilterDepartment2 { get; set; } = String.Empty;
+        public string FilterDepartment1 { get; set; } = String.Empty;
+        public string FilterDepartment2 { get; set; } = String.Empty;
         public List<UnitViewModel> AccessibleUnits { get; set; } = [];
         public List<UnitViewModel> InaccessibleUnits { get; set; } = [];
         public string? SelectedAccessibleUnitIds { get; set; }
