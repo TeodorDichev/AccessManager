@@ -169,7 +169,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var res = _userService.GetAllowedUnitsForDepartment(loggedUser, departmentId).Select(u => new { u.Id, u.Description });
+            var res = _userService.GetAllowedUnitsForDepartment(loggedUser, departmentId).Select(u => new {UnitId = u.Id, u.Description });
             return Json(res);
         }
 

@@ -1,5 +1,4 @@
 ﻿using AccessManager.Data.Enums;
-using AccessManager.ViewModels.InformationSystem;
 
 namespace AccessManager.ViewModels.Access
 {

@@ -14,7 +14,7 @@
                 <input type="hidden" name="page1" value="1" />
                 <input type="hidden" name="page2" value="@Model.CurrentPage2" />
 
-                <label for="filterDepartment1" class="form-label">Филтър по Дирекция:</label>
+                <label for="filterDepartment1" class="form-label">Филтър по дирекция:</label>
                 <select name="filterDepartment1" id="filterDepartment1" class="form-select" onchange="this.form.submit()">
                 <option value="">Всички</option>
                 @foreach (var department in Model.FilterDepartments)
@@ -55,7 +55,9 @@
             page2 = Model.CurrentPage2, 
             filterDept1 = Model.FilterDepartment1, 
             filterDept2 = Model.FilterDepartment2}))
-      
+
+             <input type="hidden" name="username" value="@Model.UserName" /> 
+
             <input type="hidden" id="allSelectedAccessible" name="SelectedAccessibleUnitIds" />
             <input type="hidden" id="allSelectedInaccessible" name="SelectedInaccessibleUnitIds" />
 
@@ -72,7 +74,7 @@
             <input type="hidden" name="page1" value="@Model.CurrentPage1" />
             <input type="hidden" name="page2" value="1" />
             
-            <label for="filterDepartment2" class="form-label">Филтър по Дирекция:</label>
+            <label for="filterDepartment2" class="form-label">Филтър по дирекция:</label>
             <select name="filterDepartment2" id="filterDepartment2" class="form-select" onchange="this.form.submit()">
             <option value="">Всички</option>
             @foreach (var department in Model.FilterDepartments)
@@ -113,6 +115,8 @@
             page2 = Model.CurrentPage2, 
             filterDept1 = Model.FilterDepartment1, 
             filterDept2 = Model.FilterDepartment2 }))
+            <input type="hidden" name="username" value="@Model.UserName" /> 
+
             <input type="hidden" id="allSelectedAccessible" name="SelectedAccessibleUnitIds" />
             <input type="hidden" id="allSelectedInaccessible" name="SelectedInaccessibleUnitIds" />
 
@@ -120,41 +124,12 @@
             <button type="button" class="btn btn-secondary mt-2" id="selectAllInaccessibleBtn">Избери всички</button>
         </form>
     </div>
+    <a asp-controller="User" asp-action="MapUserAccess" asp-route-username="@Model.UserName" class="btn btn-primary m-2">
+         АИС достъпи
+    </a>
 </div>
 
 @section Scripts {
         <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
-
-<script>
-    document.getElementById('selectAllAccessibleBtn').addEventListener('click', () => {
-        document.querySelectorAll('input[name="selectedAccessibleUnitIds"]').forEach(cb => cb.checked = true);
-    });
-    document.getElementById('selectAllAccessible').addEventListener('change', function() {
-        document.querySelectorAll('input[name="selectedAccessibleUnitIds"]').forEach(cb => cb.checked = this.checked);
-    });
-
-    document.getElementById('selectAllInaccessibleBtn').addEventListener('click', () => {
-        document.querySelectorAll('input[name="selectedInaccessibleUnitIds"]').forEach(cb => cb.checked = true);
-    });
-    document.getElementById('selectAllInaccessible').addEventListener('change', function() {
-        document.querySelectorAll('input[name="selectedInaccessibleUnitIds"]').forEach(cb => cb.checked = this.checked);
-    });
-
-document.querySelectorAll('form').forEach(form => {
-    form.addEventListener('submit', function(e) {
-        const accessibleChecked = Array.from(form.querySelectorAll('input[name="selectedAccessibleUnitIds"]:checked'));
-        const accessibleConcatenated = accessibleChecked.map(cb => cb.value).join(',');
-        const hiddenAccessible = form.querySelector('#allSelectedAccessible');
-        if (hiddenAccessible) hiddenAccessible.value = accessibleConcatenated;
-
-        const inaccessibleChecked = Array.from(form.querySelectorAll('input[name="selectedInaccessibleUnitIds"]:checked'));
-        const inaccessibleConcatenated = inaccessibleChecked.map(cb => cb.value).join(',');
-        const hiddenInaccessible = form.querySelector('#allSelectedInaccessible');
-        if (hiddenInaccessible) hiddenInaccessible.value = inaccessibleConcatenated;
-
-        form.querySelectorAll('input[name="selectedAccessibleUnitIds"]').forEach(cb => cb.remove());
-        form.querySelectorAll('input[name="selectedInaccessibleUnitIds"]').forEach(cb => cb.remove());
-    });
-});
-</script>
+        <script src="~/js/map-unit-access.js" asp-append-version="true"></script>
 }

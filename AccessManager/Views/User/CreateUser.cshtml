@@ -98,27 +98,14 @@
         <span asp-validation-for="Password" class="text-danger"></span>
     </div>
     
-    <div class="mb-3" id="unit-access-container" style="display: none;">
-        <label class="form-label">Отдели с достъп</label>
-        <div class="dropdown">
-            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                Избери отдели
-            </button>
-            <ul class="dropdown-menu p-3" style="max-height: 300px; overflow-y: auto;" id="units-dropdown"/>
-        </div>
-        <input type="hidden" name="SelectedAccessibleUnitIds" id="SelectedAccessibleUnitIds" value="@Model.SelectedAccessibleUnitIds" />
-    </div>
-
     <form asp-action="CreateUser" method="post">
         <div class="d-flex justify-content-center align-items-center mt-4 gap-3">
             <button type="submit" name="redirectTo" value="UserList" class="btn btn-primary px-5">
                 Създай потребител
             </button>
-
             <button type="submit" name="redirectTo" value="MapUserAccess" class="btn btn-primary px-5">
                 Дай АИС достъпи
             </button>
-            @*Засега оставяме опцията с падащато меню но в бъдеще може да се използва тази страница*@
             <button type="submit" name="redirectTo" value="MapUserUnitAccess" class="btn btn-primary px-5">
                 Дай достъпи до отдели
             </button>
@@ -131,6 +118,5 @@
     <script src="~/js/password-visibility-toggle.js" asp-append-version="true"></script>
     <script src="~/js/access-visibility.js" asp-append-version="true"></script>
     <script src="~/js/unit-dropdown-load.js" asp-append-version="true"></script>
-    <script src="~/js/unit-dropdown-tree.js" asp-append-version="true"></script>
     <script src="~/js/sync-authority-type-access.js" asp-append-version="true"></script>
 }

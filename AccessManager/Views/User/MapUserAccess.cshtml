@@ -1,5 +1,173 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
+﻿@model AccessManager.ViewModels.User.MapUserAccessViewModel
+
+<h2 class="text-center">@Model.FirstName @Model.LastName</h2>
+<h4 class="text-center">@Model.Department - @Model.Unit</h4>
+
+
+
+<div class="row wrapper mt-5">
+    <div class="col-md-6">
+        <h4>Достъпни системи</h4>
+        <form method="get" asp-action="MapUserAccess" class="mb-2" as>
+                <input type="hidden" name="username" value="@Model.UserName" /> 
+                <input type="hidden" name="FilterDepartment2" value="@Model.FilterDirective2" />
+                <input type="hidden" name="page1" value="1" />
+                <input type="hidden" name="page2" value="@Model.CurrentPage2" />
+
+                <label for="filterDirective1" class="form-label">Филтър по заповед:</label>
+                <select name="filterDirective1" id="filterDirective1" class="form-select" onchange="this.form.submit()">
+                <option value="">Всички</option>
+                @foreach (var directive in Model.FilterDirectives)
+                {
+                    <option value="@directive.Value" selected="@(directive.Value == Model.FilterDirective1 ? "selected" : null)">
+                        @directive.Text
+                    </option>
+                }
+                </select>
+        </form>
+
+        <form asp-action="UpdateAccess" method="post">
+            <label for="directiveToRevokeAccess" class="form-label">Заповед за спиране на достъп:</label>
+            <select name="directiveToRevokeAccess" id="directiveToRevokeAccess" class="form-select">
+            <option value="">""</option>
+            @foreach (var directive in Model.FilterDirectives)
+            {
+                <option value="@directive.Value" selected="@(directive.Value == Model.DirectiveToRevokeAccess ? "selected" : null)">
+                    @directive.Text
+                </option>
+            }
+            </select>
+
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAllAccessible" /></th>
+                        <th>Достъп</th>
+                        <th>Заповед</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach(var acc in Model.AccessibleSystems)
+                    {
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="selectedAccessibleSystemIds" value="@acc.AccessId" />
+                            </td>
+                            <td>@acc.Description</td>
+                                <select name="directiveToRevokeAccessInner" id="directiveToRevokeAccessInner" class="form-select" data-accessid="@acc.AccessId" data-username="@Model.UserName">
+                                @foreach (var directive in Model.FilterDirectives)
+                                {
+                                    <option value="@directive.Value" selected="@(directive.Text == acc.DirectiveId.ToString() ? "selected" : null)">
+                                        @directive.Text
+                                    </option>
+                                }
+                                </select>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @await Html.PartialAsync("_Pagination", 
+            (Model.CurrentPage1, Model.TotalPages1, "page1", (object)new { 
+            username = Model.UserName, 
+            page2 = Model.CurrentPage2, 
+            filterDept1 = Model.FilterDirective1, 
+            filterDept2 = Model.FilterDirective2}))
+
+             <input type="hidden" name="username" value="@Model.UserName" /> 
+
+            <input type="hidden" id="allSelectedAccessible" name="SelectedAccessibleSystemIds" />
+            <input type="hidden" id="allSelectedInaccessible" name="SelectedInaccessibleSystemIds" />
+
+            <button type="submit" class="btn btn-danger mt-2">Премахни избраните</button>
+            <button type="button" class="btn btn-secondary mt-2" id="selectAllAccessibleBtn">Избери всички</button>
+        </form>
+    </div>
+
+    <div class="col-md-6">
+        <h4>Недостъпни отдели</h4>
+        <form method="get" asp-action="MapUserAccess" class="mb-2">
+            <input type="hidden" name="username" value="@Model.UserName" />
+            <input type="hidden" name="FilterDepartment1" value="@Model.FilterDirective1" />
+            <input type="hidden" name="page1" value="@Model.CurrentPage1" />
+            <input type="hidden" name="page2" value="1" />
+            
+            <label for="filterDirective2" class="form-label">Филтър по заповед:</label>
+            <select name="filterDirective2" id="filterDirective2" class="form-select" onchange="this.form.submit()">
+            <option value="">""</option>
+            @foreach (var directive in Model.FilterDirectives)
+            {
+                <option value="@directive.Value" selected="@(directive.Value == Model.FilterDirective2 ? "selected" : null)">
+                    @directive.Text
+                </option>
+            }
+            </select>
+        </form>
+
+        <form asp-action="UpdateAccess" method="post">
+            <label for="directiveToGrantAccess" class="form-label">Заповед за даване на достъп:</label>
+            <select name="directiveToGrantAccess" id="directiveToGrantAccess" class="form-select">
+            <option value="">Всички</option>
+            @foreach (var directive in Model.FilterDirectives)
+            {
+                <option value="@directive.Value" selected="@(directive.Value == Model.DirectiveToGrantAccess ? "selected" : null)">
+                    @directive.Text
+                </option>
+            }
+            </select>
+
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAllInaccessible" /></th>
+                        <th>Достъп</th>
+                        <th>Заповед</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach(var acc in Model.InaccessibleSystems)
+                    {
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="selectedInaccessibleUnitIds" value="@acc.AccessId" />
+                            </td>
+                            <td>@acc.Description</td>
+                            <td>
+                                <select name="directiveToGrantAccessInner" id="directiveToGrantAccessInner" class="form-select" data-accessid="@acc.AccessId" data-username="@Model.UserName">
+                                @foreach (var directive in Model.FilterDirectives)
+                                {
+                                    <option value="@directive.Value" selected="@(directive.Text == acc.DirectiveId.ToString() ? "selected" : null)">
+                                        @directive.Text
+                                    </option>
+                                }
+                                </select>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @await Html.PartialAsync("_Pagination", 
+            (Model.CurrentPage2, Model.TotalPages2, "page2", (object)new { 
+            username = Model.UserName, 
+            page2 = Model.CurrentPage2, 
+            filterDept1 = Model.FilterDirective1, 
+            filterDept2 = Model.FilterDirective2 }))
+            <input type="hidden" name="username" value="@Model.UserName" /> 
+
+            <input type="hidden" id="allSelectedAccessible" name="SelectedAccessibleSystemIds" />
+            <input type="hidden" id="allSelectedInaccessible" name="SelectedInaccessibleSystemIds" />
+
+            <button type="submit" class="btn btn-success mt-2">Добави избраните</button>
+            <button type="button" class="btn btn-secondary mt-2" id="selectAllInaccessibleBtn">Избери всички</button>
+        </form>
+    </div>
+    <a asp-controller="User" asp-action="MapUserUnitAccess" asp-route-username="@Model.UserName" class="btn btn-primary m-2">
+         Достъпи до отдели
+    </a>
+</div>
+
+@section Scripts {
+        <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
+        <script src="~/js/map-system-access.js" asp-append-version="true"></script>
 }

@@ -366,23 +366,17 @@ namespace AccessManager.Controllers
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            // Units user has access to
             var accessibleUnitsQuery = _userService.GetUserAccessibleUnits(user, loggedUser);
-
-            // Units user does NOT have access to
             var inaccessibleUnitsQuery = _userService.GetUserInaccessibleUnits(user, loggedUser);
 
-            // Apply filters
             if (!string.IsNullOrEmpty(filterDepartment1))
                 accessibleUnitsQuery = accessibleUnitsQuery.Where(u => u.Department.Id == Guid.Parse(filterDepartment1)).ToList();
             if (!string.IsNullOrEmpty(filterDepartment2))
                 inaccessibleUnitsQuery = inaccessibleUnitsQuery.Where(u => u.Department.Id == Guid.Parse(filterDepartment2)).ToList();
 
-            // Pagination total counts
             var totalAccessible = accessibleUnitsQuery.Count();
             var totalInaccessible = inaccessibleUnitsQuery.Count();
 
-            // Paginate
             var accessibleUnits = accessibleUnitsQuery
                 .OrderBy(u => u.Description)
                 .Skip((page1 - 1) * Constants.ItemsPerPage)
@@ -457,6 +451,108 @@ namespace AccessManager.Controllers
 
             _departmentUnitService.AddUnitAccess(user.Id, addIds);
             _departmentUnitService.RemoveUnitAccess(user.Id, removeIds);
+
+            return RedirectToAction("MapUserUnitAccess", new { username });
+        }
+
+        [HttpGet]
+        public IActionResult MapUserAccess(string username, string filterDirective1, string filterDirective2, int page1 = 1, int page2 = 1)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var user = _userService.GetUser(username);
+            if (user == null) return NotFound();
+
+            var directives = _accessService.GetDirectives();
+
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
+
+            var accessibleSystemsQuery = _accessService.GetGrantedUserAccesses(user);
+            var inaccessibleSystemsQuery = _accessService.GetRevokedAndNotGrantedAccesses(user);
+
+            if (!string.IsNullOrEmpty(filterDirective1))
+                accessibleSystemsQuery = accessibleSystemsQuery.Where(u => u.DirectiveId == Guid.Parse(filterDirective1)).ToList();
+            if (!string.IsNullOrEmpty(filterDirective2))
+                inaccessibleSystemsQuery = inaccessibleSystemsQuery.Where(u => u.DirectiveId == Guid.Parse(filterDirective2)).ToList();
+
+            var totalAccessible = accessibleSystemsQuery.Count();
+            var totalInaccessible = inaccessibleSystemsQuery.Count();
+
+            var accessibleSystems = accessibleSystemsQuery
+                .OrderBy(u => u.Description)
+                .Skip((page1 - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .ToList();
+
+            var inaccessibleSystems = inaccessibleSystemsQuery
+                .OrderBy(u => u.Description)
+                .Skip((page2 - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .ToList();
+
+            var vm = new MapUserAccessViewModel
+            {
+                UserName = user.UserName,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Department = user.Unit.Department.Description,
+                Unit = user.Unit.Description,
+                FilterDirectives = directives,
+                FilterDirective1 = filterDirective1,
+                FilterDirective2 = filterDirective2,
+                AccessibleSystems = accessibleSystems,
+                InaccessibleSystems = inaccessibleSystems,
+                CurrentPage1 = page1,
+                TotalPages1 = (int)Math.Ceiling(totalAccessible / (double)Constants.ItemsPerPage),
+                CurrentPage2 = page2,
+                TotalPages2 = (int)Math.Ceiling(totalInaccessible / (double)Constants.ItemsPerPage)
+            };
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        public IActionResult UpdateAccess(string username, string? selectedAccessibleUnitIds, string? selectedInaccessibleUnitIds, 
+            string? directiveToRevokeAccess, string? directiveToGrantAccess)
+            {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            if(string.IsNullOrWhiteSpace(directiveToRevokeAccess) || string.IsNullOrWhiteSpace(directiveToGrantAccess))
+            {
+                ModelState.AddModelError("Directive", "Трябва да изберете директива за отнемане и предоставяне на достъп.");
+                return RedirectToAction("MapUserAccess", new { username });
+            }
+            if (_accessService.ExistsDirectiveWithId(directiveToRevokeAccess) == false || _accessService.ExistsDirectiveWithId(directiveToGrantAccess) == false)
+            {
+                ModelState.AddModelError("Directive", "Невалидна директива.");
+                return RedirectToAction("MapUserAccess", new { username });
+            }
+
+            var user = _userService.GetUser(username);
+            if (user == null) return NotFound();
+
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full || loggedUser.WritingAccess > user.WritingAccess;
+
+            var removeIds = (selectedAccessibleUnitIds ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(Guid.Parse)
+                .ToList();
+
+            var addIds = (selectedInaccessibleUnitIds ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(Guid.Parse)
+                .ToList();
+
+            if(removeIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
+            {
+                user.WritingAccess = AuthorityType.Restricted;
+                user.ReadingAccess = AuthorityType.Restricted;
+            }
+
+            _accessService.AddAccess(user.Id, addIds, directiveToGrantAccess);
+            _accessService.RevokeAccess(user.Id, removeIds, directiveToRevokeAccess);
 
             return RedirectToAction("MapUserUnitAccess", new { username });
         }

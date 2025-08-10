@@ -1,20 +1,27 @@
-﻿using AccessManager.Data.Entities;
-using AccessManager.ViewModels.InformationSystem;
-using System.ComponentModel.DataAnnotations;
+﻿using AccessManager.ViewModels.InformationSystem;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AccessManager.ViewModels.User
 {
     public class MapUserAccessViewModel
     {
-        [Required]
-        public string UserName { get; set; } = null!;
-        [Required]
-        public string FirstName { get; set; } = null!;
-        [Required]
-        public string MiddleName { get; set; } = null!;
-        [Required]
-        public string LastName { get; set; } = null!;
-        public List<Directive> Directives { get; set; } = [];
-        // TO DO
+        public string UserName { get; set; } = "";
+        public string FirstName { get; set; } = "";
+        public string LastName { get; set; } = "";
+        public string Department { get; set; } = "";
+        public string Unit { get; set; } = "";
+        public List<SelectListItem> FilterDirectives { get; set; } = [];
+        public string FilterDirective1 { get; set; } = String.Empty;
+        public string FilterDirective2 { get; set; } = String.Empty;
+        public List<AccessViewModel> AccessibleSystems { get; set; } = [];
+        public List<AccessViewModel> InaccessibleSystems { get; set; } = [];
+        public string? DirectiveToRevokeAccess { get; set; }
+        public string? SelectedAccessibleSystemIds { get; set; }
+        public string? DirectiveToGrantAccess { get; set; }
+        public string? SelectedInaccessibleSystemIds { get; set; }
+        public int CurrentPage1 { get; set; } = 1;
+        public int TotalPages1 { get; set; } = 1;
+        public int CurrentPage2 { get; set; } = 1;
+        public int TotalPages2 { get; set; } = 1;
     }
 }
