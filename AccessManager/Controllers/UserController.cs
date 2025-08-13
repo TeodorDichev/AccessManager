@@ -520,17 +520,6 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            if (string.IsNullOrWhiteSpace(directiveToRevokeAccess) || string.IsNullOrWhiteSpace(directiveToGrantAccess))
-            {
-                ModelState.AddModelError("Directive", "Трябва да изберете директива за отнемане и предоставяне на достъп.");
-                return RedirectToAction("MapUserAccess", new { username });
-            }
-            if (_accessService.ExistsDirectiveWithId(directiveToRevokeAccess) == false || _accessService.ExistsDirectiveWithId(directiveToGrantAccess) == false)
-            {
-                ModelState.AddModelError("Directive", "Невалидна директива.");
-                return RedirectToAction("MapUserAccess", new { username });
-            }
-
             var user = _userService.GetUser(username);
             if (user == null) return NotFound();
 
@@ -552,10 +541,10 @@ namespace AccessManager.Controllers
                 user.ReadingAccess = AuthorityType.Restricted;
             }
 
-            _accessService.AddAccess(user.Id, addIds, directiveToGrantAccess);
+            _accessService.AddUserAccess(user.Id, addIds, directiveToGrantAccess);
             _accessService.RevokeAccess(user.Id, removeIds, directiveToRevokeAccess);
 
-            return RedirectToAction("MapUserUnitAccess", new { username });
+            return RedirectToAction("MapUserAccess", new { username });
         }
     }
 }

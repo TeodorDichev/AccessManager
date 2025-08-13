@@ -13,7 +13,7 @@
 <div class="d-flex justify-content-start gap-2 mb-3">
     @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
     {
-        <a asp-controller="Access" asp-action="CreateNewAccess" class="btn btn-success">
+        <a asp-controller="Access" asp-action="CreateAccess" class="btn btn-success">
             Добави нов достъп
         </a>
     }
@@ -60,7 +60,7 @@
                     </td>
                     <td>
                         <form asp-controller="Access" asp-action="SoftDeleteAccess" method="post" asp-route-id="@access.AccessId">
-                            <button type="submit" class="btn btn-danger me-2">
+                            <button type="submit" class="btn btn-sm btn-danger">
                                 Изтрий
                             </button>
                         </form>

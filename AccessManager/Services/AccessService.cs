@@ -44,14 +44,9 @@ namespace AccessManager.Services
             return _context.Directives.Select(d => d.Name).Distinct().ToList();
         }
 
-        internal List<AccessListItemViewModel> GetAccesses()
+        internal List<Access> GetAccesses()
         {
-            return _context.Accesses.Where(a => a.DeletedOn == null).ToList()
-                .Select(a => new AccessListItemViewModel
-                {
-                    AccessId = a.Id,
-                    Description = GetAccessDescription(a),
-                }).OrderBy(a => a.Description).ToList();
+            return _context.Accesses.Where(a => a.DeletedOn == null).ToList();
         }
 
         internal Access? GetAccess(string id)
@@ -139,7 +134,7 @@ namespace AccessManager.Services
             return _context.Directives.Any(d => d.Id == Guid.Parse(directiveToRevokeAccess));
         }
 
-        internal void AddAccess(Guid userId, List<Guid> addIds, string directiveToGrantAccess)
+        internal void AddUserAccess(Guid userId, List<Guid> addIds, string directiveToGrantAccess)
         {
             foreach (var id in addIds)
             {
@@ -156,6 +151,12 @@ namespace AccessManager.Services
                     _context.UserAccesses.Add(userAccess);
                 }
             }
+            _context.SaveChanges();
+        }
+
+        internal void AddAccess(Access acc)
+        {
+            _context.Accesses.Add(acc);
             _context.SaveChanges();
         }
 

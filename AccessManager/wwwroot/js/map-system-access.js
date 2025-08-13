@@ -120,3 +120,25 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function (e) {
+            // For accessible checkboxes
+            const accessibleChecked = Array.from(form.querySelectorAll('input[name="selectedAccessibleSystemIds"]:checked'));
+            const hiddenAccessible = form.querySelector('input[name="selectedAccessibleUnitIds"]');
+            if (hiddenAccessible) {
+                hiddenAccessible.value = accessibleChecked.map(cb => cb.value).join(',');
+            }
+
+            // For inaccessible checkboxes
+            const inaccessibleChecked = Array.from(form.querySelectorAll('input[name="selectedInaccessibleUnitIds"]:checked'));
+            const hiddenInaccessible = form.querySelector('input[name="selectedInaccessibleUnitIds"]');
+            if (hiddenInaccessible) {
+                hiddenInaccessible.value = inaccessibleChecked.map(cb => cb.value).join(',');
+            }
+
+            // Remove individual checkboxes to avoid sending duplicates
+            form.querySelectorAll('input[name="selectedAccessibleSystemIds"], input[name="selectedInaccessibleSystemIds"]').forEach(cb => cb.remove());
+        });
+    });
+});

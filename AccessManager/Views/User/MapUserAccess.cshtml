@@ -54,14 +54,16 @@
                                 <input type="checkbox" name="selectedAccessibleSystemIds" value="@acc.AccessId" />
                             </td>
                             <td>@acc.Description</td>
+                            <td>                                
                                 <select name="directiveToRevokeAccessInner" id="directiveToRevokeAccessInner" class="form-select" data-accessid="@acc.AccessId" data-username="@Model.UserName">
                                 @foreach (var directive in Model.FilterDirectives)
                                 {
-                                    <option value="@directive.Value" selected="@(directive.Text == acc.DirectiveId.ToString() ? "selected" : null)">
+                                    <option value="@directive.Value" selected="@(directive.Value == acc.DirectiveId.ToString() ? "selected" : null)">
                                         @directive.Text
                                     </option>
                                 }
                                 </select>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -134,9 +136,10 @@
                             <td>@acc.Description</td>
                             <td>
                                 <select name="directiveToGrantAccessInner" id="directiveToGrantAccessInner" class="form-select" data-accessid="@acc.AccessId" data-username="@Model.UserName">
+                                <option value=""></option>
                                 @foreach (var directive in Model.FilterDirectives)
                                 {
-                                    <option value="@directive.Value" selected="@(directive.Text == acc.DirectiveId.ToString() ? "selected" : null)">
+                                    <option value="@directive.Value" selected="@(directive.Value == acc.DirectiveId.ToString() ? "selected" : null)">
                                         @directive.Text
                                     </option>
                                 }
