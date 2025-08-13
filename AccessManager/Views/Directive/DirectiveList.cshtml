@@ -1,0 +1,67 @@
+﻿@model AccessManager.ViewModels.Directive.DirectiveListViewModel
+
+@{
+    ViewData["Title"] = "Заповеди";
+}
+
+<h2>Заповеди</h2>
+
+<form style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<table class="table table-bordered table-striped wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+    <thead class="table-light">
+        <tr>
+            <th>Име</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var dir in Model.Directives)
+        {
+            <tr data-id="@dir.Id">
+                <td>
+                    <input type="text" class="form-control directive-name" value="@dir.Name" />
+                </td>
+                <td>
+                    <form asp-controller="Directive" asp-action="DeleteDirective" method="post" asp-route-id="@dir.Id">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger me-2">Изтрий</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        <form asp-controller="Directive" asp-action="CreateDirective" method="post">
+            <tr>
+                @Html.AntiForgeryToken()
+                <td>
+                    <input type="text" name="Name" class="form-control" placeholder="Въведи нова заповед" required />
+                </td>
+                <td colspan="2">
+                    <button type="submit" class="btn btn-success">Добави</button>
+                </td>
+            </tr>
+        </form>
+    </tbody>
+</table>
+
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center mt-4">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="?page=@i">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
+    <script src="~/js/update-directive-name.js" asp-append-version="true"></script>
+}

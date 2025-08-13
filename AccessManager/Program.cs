@@ -18,6 +18,7 @@ namespace AccessManager
             builder.Services.AddScoped<PasswordService>();
             builder.Services.AddScoped<DepartmentUnitService>();
             builder.Services.AddScoped<AccessService>();
+            builder.Services.AddScoped<DirectiveService>();
 
             // Add services to the container.
             builder.Services.AddSession();

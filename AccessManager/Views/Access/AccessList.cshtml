@@ -16,9 +16,6 @@
         <a asp-controller="Access" asp-action="CreateNewAccess" class="btn btn-success">
             Добави нов достъп
         </a>
-        <a asp-controller="Directive" asp-action="CreateNewDirective" class="btn btn-success">
-            Добави нова заповед
-        </a>
     }
     @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.SuperAdmin)
     {

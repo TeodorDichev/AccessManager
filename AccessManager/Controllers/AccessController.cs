@@ -3,10 +3,7 @@ using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
 using AccessManager.ViewModels.Access;
-using AccessManager.ViewModels.InformationSystem;
-using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Controllers
 {
@@ -14,14 +11,14 @@ namespace AccessManager.Controllers
     {
         private readonly UserService _userService;
         private readonly AccessService _accessService;
-        private readonly DepartmentUnitService _departmentUnitService;
+        private readonly DirectiveService _directiveService;
 
         public AccessController(Context context, UserService userService,
-            AccessService accessService, DepartmentUnitService departmentUnitService)
+            AccessService accessService, DirectiveService directiveService)
         {
             _userService = userService;
             _accessService = accessService;
-            _departmentUnitService = departmentUnitService;
+            _directiveService = directiveService;
         }
 
         [HttpGet]
@@ -71,21 +68,6 @@ namespace AccessManager.Controllers
             return RedirectToAction("AccessList");
         }
 
-        [HttpPost]
-        public IActionResult UpdateDirective([FromBody] UpdateUserAccessDirectiveViewModel model)
-        {
-            // Validate model
-            if (model == null || model.AccessId == Guid.Empty || string.IsNullOrEmpty(model.DirectiveId))
-                return Json(new { success = false, message = "Невалидни данни" });
-
-            var access = _accessService.GetUserAccess(model.AccessId.ToString(), model.Username);
-            if (access == null)
-                return Json(new { success = false, message = "Достъпът не е намерен" });
-
-            _accessService.UpdateAccessDirective(access, model.DirectiveId);
-
-            return Json(new { success = true, message = "Заповедта е обновена успешно" });
-        }
         [HttpGet]
         public IActionResult AccessUsersList(int page = 1)
         {

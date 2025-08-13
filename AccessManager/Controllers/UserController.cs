@@ -7,7 +7,6 @@ using AccessManager.ViewModels.UnitDepartment;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Controllers
 {
@@ -15,16 +14,18 @@ namespace AccessManager.Controllers
     {
         private readonly UserService _userService;
         private readonly AccessService _accessService;
+        private readonly DirectiveService _directiveService;
         private readonly PasswordService _passwordService;
         private readonly DepartmentUnitService _departmentUnitService;
 
         public UserController(Context context, PasswordService passwordService, UserService userService,
-            AccessService accessService, DepartmentUnitService departmentUnitService)
+            AccessService accessService, DepartmentUnitService departmentUnitService, DirectiveService directiveService)
         {
             _passwordService = passwordService;
             _userService = userService;
             _accessService = accessService;
             _departmentUnitService = departmentUnitService;
+            _directiveService = directiveService;
         }
 
         [HttpGet]
@@ -424,7 +425,7 @@ namespace AccessManager.Controllers
 
         [HttpPost]
         public IActionResult UpdateUnitAccess(string username, string? selectedAccessibleUnitIds, string? selectedInaccessibleUnitIds)
-            {
+        {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
@@ -443,7 +444,7 @@ namespace AccessManager.Controllers
                 .Select(Guid.Parse)
                 .ToList();
 
-            if(removeIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
+            if (removeIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
             {
                 user.WritingAccess = AuthorityType.Restricted;
                 user.ReadingAccess = AuthorityType.Restricted;
@@ -464,7 +465,7 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(username);
             if (user == null) return NotFound();
 
-            var directives = _accessService.GetDirectives();
+            var directives = _directiveService.GetDirectives().Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name }).ToList();
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
@@ -513,13 +514,13 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        public IActionResult UpdateAccess(string username, string? selectedAccessibleUnitIds, string? selectedInaccessibleUnitIds, 
+        public IActionResult UpdateAccess(string username, string? selectedAccessibleUnitIds, string? selectedInaccessibleUnitIds,
             string? directiveToRevokeAccess, string? directiveToGrantAccess)
-            {
+        {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            if(string.IsNullOrWhiteSpace(directiveToRevokeAccess) || string.IsNullOrWhiteSpace(directiveToGrantAccess))
+            if (string.IsNullOrWhiteSpace(directiveToRevokeAccess) || string.IsNullOrWhiteSpace(directiveToGrantAccess))
             {
                 ModelState.AddModelError("Directive", "Трябва да изберете директива за отнемане и предоставяне на достъп.");
                 return RedirectToAction("MapUserAccess", new { username });
@@ -545,7 +546,7 @@ namespace AccessManager.Controllers
                 .Select(Guid.Parse)
                 .ToList();
 
-            if(removeIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
+            if (removeIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
             {
                 user.WritingAccess = AuthorityType.Restricted;
                 user.ReadingAccess = AuthorityType.Restricted;

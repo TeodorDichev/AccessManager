@@ -28,8 +28,8 @@
 
         <form asp-action="UpdateAccess" method="post">
             <label for="directiveToRevokeAccess" class="form-label">Заповед за спиране на достъп:</label>
-            <select name="directiveToRevokeAccess" id="directiveToRevokeAccess" class="form-select">
-            <option value="">""</option>
+            <select name="directiveToRevokeAccess" id="directiveToRevokeAccess" class="form-select mb-2">
+            <option value=""></option>
             @foreach (var directive in Model.FilterDirectives)
             {
                 <option value="@directive.Value" selected="@(directive.Value == Model.DirectiveToRevokeAccess ? "selected" : null)">
@@ -85,7 +85,7 @@
     </div>
 
     <div class="col-md-6">
-        <h4>Недостъпни отдели</h4>
+        <h4>Недостъпни системи</h4>
         <form method="get" asp-action="MapUserAccess" class="mb-2">
             <input type="hidden" name="username" value="@Model.UserName" />
             <input type="hidden" name="FilterDepartment1" value="@Model.FilterDirective1" />
@@ -94,7 +94,7 @@
             
             <label for="filterDirective2" class="form-label">Филтър по заповед:</label>
             <select name="filterDirective2" id="filterDirective2" class="form-select" onchange="this.form.submit()">
-            <option value="">""</option>
+            <option value="">"Всички"</option>
             @foreach (var directive in Model.FilterDirectives)
             {
                 <option value="@directive.Value" selected="@(directive.Value == Model.FilterDirective2 ? "selected" : null)">
@@ -106,8 +106,8 @@
 
         <form asp-action="UpdateAccess" method="post">
             <label for="directiveToGrantAccess" class="form-label">Заповед за даване на достъп:</label>
-            <select name="directiveToGrantAccess" id="directiveToGrantAccess" class="form-select">
-            <option value="">Всички</option>
+            <select name="directiveToGrantAccess" id="directiveToGrantAccess" class="form-select mb-2">
+            <option value=""></option>
             @foreach (var directive in Model.FilterDirectives)
             {
                 <option value="@directive.Value" selected="@(directive.Value == Model.DirectiveToGrantAccess ? "selected" : null)">

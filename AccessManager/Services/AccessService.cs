@@ -2,7 +2,6 @@
 using AccessManager.Data.Entities;
 using AccessManager.ViewModels.Access;
 using AccessManager.ViewModels.InformationSystem;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AccessManager.Services
 {
@@ -92,23 +91,6 @@ namespace AccessManager.Services
             return _context.UserAccesses.FirstOrDefault(ua => ua.Id == Guid.Parse(v) && ua.User.UserName == username);
         }
 
-        internal void UpdateAccessDirective(UserAccess access, string directiveId)
-        {
-            if (_context.Directives.Any(d => d.Id == Guid.Parse(directiveId)))
-                access.GrantedByDirectiveId = Guid.Parse(directiveId);
-
-        }
-
-        internal List<SelectListItem> GetDirectives()
-        {
-            return _context.Directives
-                .Select(d => new SelectListItem
-                {
-                    Value = d.Id.ToString(),
-                    Text = d.Name
-                }).ToList();
-        }
-
         internal List<AccessViewModel> GetRevokedAndNotGrantedAccesses(User user)
         {
             var userId = user.Id;
@@ -116,11 +98,11 @@ namespace AccessManager.Services
             var revokedQuery =
                 from ua in _context.UserAccesses
                 where ua.UserId == userId && ua.RevokedOn != null
-                select new AccessViewModel
+                select new
                 {
                     AccessId = ua.AccessId,
-                    Description = GetAccessDescription(ua.Access),
-                    DirectiveId = ua.GrantedByDirectiveId,
+                    Description = ua.Access.Description,
+                    DirectiveId = (Guid?)ua.GrantedByDirectiveId,
                     DirectiveDescription = ua.GrantedByDirective.Name
                 };
 
@@ -128,16 +110,25 @@ namespace AccessManager.Services
                 from a in _context.Accesses
                 where a.DeletedOn == null
                    && !_context.UserAccesses.Any(ua => ua.UserId == userId && ua.AccessId == a.Id)
-                select new AccessViewModel
+                select new
                 {
                     AccessId = a.Id,
-                    Description = GetAccessDescription(a),
-                    DirectiveId = Guid.Empty,
-                    DirectiveDescription = string.Empty
+                    Description = a.Description,
+                    DirectiveId = (Guid?)null,
+                    DirectiveDescription = (string)null
                 };
 
             var result = revokedQuery
                 .Union(neverGrantedQuery)
+                .AsEnumerable() // switch to in-memory so we can call C# methods
+                .Select(x => new AccessViewModel
+                {
+                    AccessId = x.AccessId,
+                    Description = GetAccessDescription(GetAccess(x.AccessId.ToString())), // now safe
+                    DirectiveId = x.DirectiveId ?? Guid.Empty,
+                    DirectiveDescription = x.DirectiveDescription ?? string.Empty
+                })
+                .OrderBy(av => av.Description)
                 .ToList();
 
             return result.OrderBy(av => av.Description).ToList();
@@ -181,5 +172,6 @@ namespace AccessManager.Services
             }
             _context.SaveChanges();
         }
+
     }
 }
