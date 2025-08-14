@@ -96,7 +96,7 @@
             
             <label for="filterDirective2" class="form-label">Филтър по заповед:</label>
             <select name="filterDirective2" id="filterDirective2" class="form-select" onchange="this.form.submit()">
-            <option value="">"Всички"</option>
+            <option value="">Всички</option>
             @foreach (var directive in Model.FilterDirectives)
             {
                 <option value="@directive.Value" selected="@(directive.Value == Model.FilterDirective2 ? "selected" : null)">

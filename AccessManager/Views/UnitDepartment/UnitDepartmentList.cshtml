@@ -8,28 +8,42 @@
     @Html.AntiForgeryToken()
 </form>
 
-<h2>Дирекции</h2>
+<h2>Дирекции и отдели</h2>
 
-<div class="d-flex justify-content-start gap-2 mb-3">
-    @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
-    {
-        <a asp-controller="UnitDepartment" asp-action="CreateNewDepartment" class="btn btn-success">
-            Добави новa дирекция
-        </a>
-    }
-    @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.SuperAdmin)
-    {
-        <form asp-controller="UnitDepartment" asp-action="HardDeleteUnitDepartmentс" method="post" onsubmit="return confirm('Наистина ли искате да изтриете всички деактивирани отдели?');">
-            <button type="submit" class="btn btn-danger">
-                Изтрий всички деактивирани отдели
+<form method="get" class="mb-3 d-flex align-items-end gap-3">
+    <div class="d-flex justify-content-start gap-2 mb-3 align-items-end">
+        <label for="filterDepartment" class="form-label">Филтър по Дирекция:</label>
+        <select name="filterDepartment" id="filterDepartment" class="form-select" onchange="this.form.submit()">
+            <option value="">Всички</option>
+            @foreach (var department in Model.FilterDepartments)
+            {
+                <option value="@department" selected="@(department == Model.SelectedFilterDepartment ? "selected" : null)">
+                    @department
+                </option>
+            }
+        </select>
+    </div>
+
+    <div class="d-flex justify-content-start gap-2 mb-3 align-items-end">
+        @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
+        {
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createDepartmentModal">
+                Добави новa дирекция
             </button>
-        </form>
+            <a asp-controller="UnitDepartment" asp-action="CreateUnit" class="btn btn-success">
+                Добави нов отдел
+            </a>
 
-        <a asp-controller="UnitDepartment" asp-action="ViewDeactivatedUnits" class="btn btn-primary">
-            Виж изтритите отдели
-        </a>
-    }
-</div>
+        }
+        @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.SuperAdmin)
+        {
+            <a asp-controller="UnitDepartment" asp-action="ViewDeactivatedUnits" class="btn btn-danger">
+                Виж изтритите отдели
+            </a>
+        }
+    </div>
+</form>
+
 
 
 <table class="table table-bordered table-striped wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
@@ -53,8 +67,9 @@
                         </a>
                     </td>
                     <td>
-                        <form asp-controller="UnitDepartment" asp-action="SoftDeleteDepartment" method="post" asp-route-id="@dep.DepartmentId">
-                        <button type="submit" class="btn btn-danger btn-sm">
+                        <form asp-controller="UnitDepartment" asp-action="SoftDeleteDepartment" method="post" asp-route-departmentid="@dep.DepartmentId">
+                        <button type="submit" class="btn btn-danger btn-sm 
+                            onclick="return confirm('Изтриваенето на дирекция изтрива: всички нейни отдели, всички служители от тези отдели, всички достъпи на служители до тези отдели'">
                                 Изтрий
                             </button>
                         </form>
@@ -71,8 +86,9 @@
                             </a>
                         </td>
                         <td>
-                        <form asp-controller="UnitDepartment" asp-action="SoftDeleteUnit" method="post" asp-route-id="@unit.UnitId">
-                            <button type="submit" class="btn btn-danger btn-sm">
+                        <form asp-controller="UnitDepartment" asp-action="SoftDeleteUnit" method="post" asp-route-unitid="@unit.UnitId">
+                            <button type="submit" class="btn btn-danger btn-sm"
+                                    onclick="return confirm('Изтриваенето на отдел изтрива: всички служители от този отдели, всички достъпи на служители до този отдели'">
                                     Изтрий
                                 </button>
                         </form>
@@ -98,6 +114,32 @@
         </ul>
     </nav>
 }
+
+<!-- Modal -->
+<div class="modal fade" id="createDepartmentModal" tabindex="-1" aria-labelledby="createDepartmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createDepartmentModalLabel">Нова дирекция</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+            </div>
+            <form asp-controller="UnitDepartment" asp-action="CreateNewDepartment" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="DepartmentName" class="form-label">Име на дирекция</label>
+                        <input type="text" name="DepartmentName" id="DepartmentName" class="form-control" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Откажи</button>
+                    <button type="submit" class="btn btn-success">Запази</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

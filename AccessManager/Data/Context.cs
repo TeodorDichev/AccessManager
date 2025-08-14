@@ -105,6 +105,8 @@ namespace AccessManager.Data
                       .WithOne(a => a.Department)
                       .HasForeignKey(a => a.DepartmentId)
                       .IsRequired();
+
+                entity.HasQueryFilter(e => e.DeletedOn == null);
             });
         }
 
@@ -134,6 +136,8 @@ namespace AccessManager.Data
                     .WithOne(uu => uu.Unit)
                     .HasForeignKey(uu => uu.UnitId)
                     .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasQueryFilter(e => e.DeletedOn == null);
             });
         }
 

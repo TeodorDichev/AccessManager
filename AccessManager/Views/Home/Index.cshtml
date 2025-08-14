@@ -7,23 +7,22 @@
 
 <div id="menuCarousel" class="carousel slide mt-5" data-bs-ride="false">
     <div class="carousel-inner">
-
         <div class="carousel-item active">
             <div class="d-flex justify-content-center">
                 <div class="col-8 col-md-3 m-3">
                     @if (isLoggedIn)
                     {
                         <a asp-controller="User" asp-action="UserList" class="text-decoration-none w-100">
-                            <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen;">
-                                <img src="~/images/users.png" alt="Users" class="mb-3 img-fluid" />
+                            <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100">
+                                <img src="~/images/users.png" alt="Users" class="mb-3 img-fluid" style="filter: invert(1)" />
                                 <h3 class="mb-0">Потребители</h3>
                             </div>
                         </a>
                     }
                     else
                     {
-                        <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen; cursor: not-allowed;">
-                            <img src="~/images/users.png" alt="Users" class="mb-3 img-fluid" />
+                        <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100" style="cursor: not-allowed;">
+                            <img src="~/images/users.png" alt="Users" class="mb-3 img-fluid" style="filter: invert(1)" />
                             <h3 class="mb-0">Потребители</h3>
                             <div class="mt-2 text-danger">@errorMsg</div>
                         </div>
@@ -33,16 +32,16 @@
                     @if (isLoggedIn)
                     {
                         <a asp-controller="Access" asp-action="AccessList" class="text-decoration-none w-100">
-                            <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen;">
-                                <img src="~/images/systems.png" alt="Systems" class="mb-3 img-fluid" />
+                            <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100">
+                                <img src="~/images/systems.png" alt="Systems" class="mb-3 img-fluid" style="filter: invert(1)" />
                                 <h3 class="mb-0">Достъпи</h3>
                             </div>
                         </a>
                     }
                     else
                     {
-                        <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen; cursor: not-allowed;">
-                            <img src="~/images/systems.png" alt="Systems" class="mb-3 img-fluid" />
+                        <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100" style="cursor: not-allowed;">
+                            <img src="~/images/systems.png" alt="Systems" class="mb-3 img-fluid" style="filter: invert(1)" />
                             <h3 class="mb-0">Достъпи</h3>
                             <div class="mt-2 text-danger">@errorMsg</div>
                         </div>
@@ -51,22 +50,22 @@
             </div>
         </div>
 
-        <div class="carousel-item active">
+        <div class="carousel-item">
             <div class="d-flex justify-content-center">
                 <div class="col-8 col-md-3 m-3">
                     @if (isLoggedIn)
                     {
                         <a asp-controller="Access" asp-action="AccessUsersList" class="text-decoration-none w-100">
-                            <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen;">
-                                <img src="~/images/user_access.png" alt="AccessUsers" class="mb-3 img-fluid" />
+                            <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100">
+                                <img src="~/images/user_access.png" alt="AccessUsers" class="mb-3 img-fluid" style="filter: invert(1)" />
                                 <h3 class="mb-0">Потребителски достъпи</h3>
                             </div>
                         </a>
                     }
                     else
                     {
-                        <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen; cursor: not-allowed;">
-                            <img src="~/images/user_access.png" alt="AccessUsers" class="mb-3 img-fluid" />
+                        <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100" style="cursor: not-allowed;">
+                            <img src="~/images/user_access.png" alt="AccessUsers" class="mb-3 img-fluid" style="filter: invert(1)" />
                             <h3 class="mb-0">Потребителски достъпи</h3>
                             <div class="mt-2 text-danger">@errorMsg</div>
                         </div>
@@ -76,16 +75,16 @@
                     @if (isLoggedIn)
                     {
                         <a asp-controller="Directive" asp-action="DirectiveList" class="text-decoration-none w-100">
-                            <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen;">
-                                <img src="~/images/directive.png" alt="Logs" class="mb-3 img-fluid" />
+                            <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100">
+                                <img src="~/images/directive.png" alt="Logs" class="mb-3 img-fluid" style="filter: invert(1)" />
                                 <h3 class="mb-0">Заповеди</h3>
                             </div>
                         </a>
                     }
                     else
                     {
-                        <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen; cursor: not-allowed;">
-                            <img src="~/images/directive.png" alt="Logs" class="mb-3 img-fluid" />
+                        <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100" style="cursor: not-allowed;">
+                            <img src="~/images/directive.png" alt="Logs" class="mb-3 img-fluid" style="filter: invert(1)" />
                             <h3 class="mb-0">Заповеди</h3>
                             <div class="mt-2 text-danger">@errorMsg</div>
                         </div>
@@ -94,32 +93,46 @@
             </div>
         </div>
 
-        <div class="carousel-item active">
+        <div class="carousel-item">
             <div class="d-flex justify-content-center">
                 <div class="col-8 col-md-3 m-3">
                     @if (isLoggedIn)
                     {
                         <a asp-controller="UnitDepartment" asp-action="UnitDepartmentList" class="text-decoration-none w-100">
-                            <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen;">
-                                <img src="~/images/unit.png" alt="Units" class="mb-3 img-fluid" />
+                            <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100">
+                                <img src="~/images/unit.png" alt="Units" class="mb-3 img-fluid" style="filter: invert(1)" />
                                 <h3 class="mb-0">Дирекции</h3>
                             </div>
                         </a>
                     }
                     else
                     {
-                        <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen; cursor: not-allowed;">
-                            <img src="~/images/unit.png" alt="Units" class="mb-3 img-fluid" />
+                        <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100" style="cursor: not-allowed;">
+                            <img src="~/images/unit.png" alt="Units" class="mb-3 img-fluid" style="filter: invert(1)" />
                             <h3 class="mb-0">Дирекции</h3>
                             <div class="mt-2 text-danger">@errorMsg</div>
                         </div>
                     }
                 </div>
                 <div class="col-8 col-md-3 m-3">
-                        <div class="card text-white text-center p-5 rounded shadow-lg h-100" style="background-color: darkolivegreen; cursor: not-allowed;">
-                            <img src="~/images/development.png" alt="Development" class="mb-3 img-fluid" />
-                            <h3 class="mb-0">Разработва се</h3>
+                    @if (isLoggedIn)
+                    {
+                        <a asp-controller="Log" asp-action="LogList" class="text-decoration-none w-100">
+                            <div class="card text-white bg-dark text-center p-5 rounded shadow-lg h-100">
+                                <img src="~/images/log.png" alt="Units" class="mb-3 img-fluid" style="filter: invert(1)"/>
+                                <h3 class="mb-0">Справка</h3>
+                            </div>
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100" style="cursor: not-allowed;">
+                            <img src="~/images/log.png" alt="Units" class="mb-3 img-fluid" style="filter: invert(1)" />
+                            <h3 class="mb-0">Справка</h3>
+                            <div class="mt-2 text-danger">@errorMsg</div>
                         </div>
+                    }
+                </div>
                 </div>
             </div>
         </div>

@@ -17,6 +17,11 @@ html {
   min-height: 100%;
 }
 
+header {
+    position: relative;
+    z-index: 1050; /* higher than carousel controls */
+}
+
 body {
   margin-bottom: 60px;
 }
@@ -33,6 +38,9 @@ body {
 .carousel-control-prev-icon,
 .carousel-control-next-icon {
     filter: brightness(0) saturate(100%);
+    top: 50%; /* only in middle */
+    transform: translateY(-50%);
+    height: auto; /* no full height click area */
 }
 
 .carousel-item > .d-flex {

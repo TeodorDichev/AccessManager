@@ -19,12 +19,6 @@
     }
     @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.SuperAdmin)
     {
-        <form asp-controller="Access" asp-action="HardDeleteAccesses" method="post" onsubmit="return confirm('Наистина ли искате да изтриете всички деактивирани достъпи?');">
-            <button type="submit" class="btn btn-danger">
-                Изтрий всички деактивирани достъпи
-            </button>
-        </form>
-
         <a asp-controller="Access" asp-action="ViewDeactivatedAccesses" class="btn btn-primary">
             Виж изтритите достъпи
         </a>

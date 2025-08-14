@@ -1,5 +1,31 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model AccessManager.ViewModels.UnitDepartment.CreateUnitViewModel
+
 @{
+    ViewData["Title"] = "Създаване на отдел";
+}
+
+<h2>Създаване на отдел</h2>
+
+<form asp-action="CreateUnit" asp-controller="UnitDepartment" method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label asp-for="DepartmentId" class="form-label">Дирекция</label>
+        <select asp-for="DepartmentId" class="form-select" asp-items="Model.Departments" required>
+            <option value="">-- Изберете дирекция --</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="UnitName" class="form-label">Име на отдел</label>
+        <input asp-for="UnitName" class="form-control" placeholder="Въведете име" required />
+        <span asp-validation-for="UnitName" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-success">Създай</button>
+    <a asp-action="Index" class="btn btn-secondary">Отказ</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
 }

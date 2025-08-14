@@ -19,7 +19,7 @@
         <input asp-for="DepartmentName" type="hidden" />
         <input asp-for="WriteAuthority" type="hidden" />
     </form>
-    <a asp-controller="UnitDepartment" asp-action="AddUnit" asp-route-id="@Model.DepartmentId" class="btn btn-primary m-3">
+    <a asp-controller="UnitDepartment" asp-action="CreateUnit" asp-route-departmentId="@Model.DepartmentId" class="btn btn-primary m-3">
         Добави нов отдел
     </a>
 </div>

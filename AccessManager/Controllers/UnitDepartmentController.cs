@@ -4,6 +4,7 @@ using AccessManager.Utills;
 using AccessManager.ViewModels.UnitDepartment;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AccessManager.Controllers
 {
@@ -18,18 +19,18 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public ActionResult UnitDepartmentList(int page = 1)
+        public ActionResult UnitDepartmentList(string filterDepartment, int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            List<DepartmentViewModel> list = _userService.GetUserAllowedUnits(loggedUser)
-                .GroupBy(u => new { u.DepartmentId, u.Department.Description })
+
+            List<DepartmentViewModel> list = _userService.GetAllowedDepartments(loggedUser)
                 .Select(g => new DepartmentViewModel
                 {
-                    DepartmentId = g.Key.DepartmentId,
-                    DepartmentName = g.Key.Description,
-                    Units = g.Select(u => new UnitViewModel
+                    DepartmentId = g.Id,
+                    DepartmentName = g.Description,
+                    Units = g.Units.Select(u => new UnitViewModel
                     {
                         UnitId = u.Id,
                         UnitName = u.Description,
@@ -37,6 +38,12 @@ namespace AccessManager.Controllers
                     }).ToList()
                 })
                 .ToList();
+
+            if(!string.IsNullOrEmpty(filterDepartment))
+            {
+                list = list.Where(d => d.DepartmentName == filterDepartment).ToList();
+            }
+
             int totalUsers = list.Count;
             if (loggedUser.WritingAccess < Data.Enums.AuthorityType.Full)
             {
@@ -48,7 +55,10 @@ namespace AccessManager.Controllers
                 Departments = list,
                 WriteAuthority = loggedUser.WritingAccess,
                 CurrentPage = page,
-                TotalPages = (int)Math.Ceiling((double)totalUsers / Constants.ItemsPerPage)
+                TotalPages = (int)Math.Ceiling((double)totalUsers / Constants.ItemsPerPage),
+                FilterDepartments = loggedUser.AccessibleUnits.Select(u => u.Unit.Department.Description).Distinct().ToList(),
+                SelectedFilterDepartment = filterDepartment,
+
             };
 
             return View(model);
@@ -120,8 +130,8 @@ namespace AccessManager.Controllers
                         UserName = u.User.UserName, 
                         FirstName = u.User.FirstName, 
                         LastName = u.User.LastName, 
-                        Department = u.Unit.Department.Description,
-                        Unit = u.Unit.Description,
+                        Department = u.User.Unit.Department.Description,
+                        Unit = u.User.Unit.Description,
                         ReadAccess = u.User.ReadingAccess,
                         WriteAccess = u.User.WritingAccess
                     }).ToList(),
@@ -194,6 +204,58 @@ namespace AccessManager.Controllers
                 .ToList();
 
             return Json(departments);
+        }
+
+        [HttpGet]
+        public IActionResult CreateUnit(string departmentId)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            CreateUnitViewModel model = new CreateUnitViewModel();
+
+            if (!string.IsNullOrEmpty(departmentId)) {
+                model.DepartmentId = Guid.Parse(departmentId);
+            }
+
+            var departments = _userService.GetAllowedDepartments(loggedUser).Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList();
+
+            model.Departments = departments;
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CreateUnit(CreateUnitViewModel model)
+        {
+            if(!ModelState.IsValid) return View(model);
+
+            _departmentUnitService.CreateUnit(model.UnitName, model.DepartmentId);
+            return RedirectToAction("UnitDepartmentList");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CreateNewDepartment(string DepartmentName)
+        {
+            _departmentUnitService.CreateDepartment(DepartmentName);
+            return RedirectToAction("UnitDepartmentList");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SoftDeleteDepartment(string departmentId)
+        {
+            _departmentUnitService.SoftDeleteDepartment(departmentId);
+            return RedirectToAction("UnitDepartmentList");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SoftDeleteUnit(string unitId)
+        {
+            _departmentUnitService.SoftDeleteUnit(unitId);
+            return RedirectToAction("UnitDepartmentList");
         }
     }
 }

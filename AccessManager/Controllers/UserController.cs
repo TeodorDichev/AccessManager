@@ -101,7 +101,6 @@ namespace AccessManager.Controllers
                 Users = users,
                 SortOptions = _userService.GetSortOptions(),
                 SelectedSortOption = sortBy,
-                FilterUnits = loggedUser.AccessibleUnits.Select(au => au.Unit.Description).ToList(),
                 SelectedFilterUnit = filterUnit,
                 FilterDepartments = loggedUser.AccessibleUnits.Select(u => u.Unit.Department.Description).Distinct().ToList(),
                 SelectedFilterDepartment = filterDepartment,
@@ -109,6 +108,15 @@ namespace AccessManager.Controllers
                 CurrentPage = page,
                 TotalPages = (int)Math.Ceiling((double)totalUsers / Constants.ItemsPerPage)
             };
+
+            if(string.IsNullOrEmpty(filterDepartment))
+            {
+                model.FilterUnits = loggedUser.AccessibleUnits.Select(au => au.Unit.Description).ToList();
+            }
+            else
+            {
+                model.FilterUnits = loggedUser.AccessibleUnits.Where(au => au.Unit.Department.Description == filterDepartment).Select(au => au.Unit.Description).ToList();
+            }
 
             return View(model);
         }

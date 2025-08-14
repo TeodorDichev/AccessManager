@@ -32,12 +32,12 @@ namespace AccessManager.Services
 
         public List<Unit> GetUnits()
         {
-            return _context.Units.Where(u => u.DeletedOn == null).ToList();
+            return _context.Units.ToList();
         }
 
         public List<Department> GetDepartments()
         {
-            return _context.Departments.Where(d => d.DeletedOn == null).ToList();
+            return _context.Departments.ToList();
         }
 
         internal void RemoveUserUnit(Guid userId, Guid unitId)
@@ -96,6 +96,88 @@ namespace AccessManager.Services
             }
 
             _context.SaveChanges();
+        }
+
+        internal void CreateUnit(string unitName, Guid departmentId)
+        {
+            Unit unit = new Unit
+            {
+                Description = unitName,
+                DepartmentId = departmentId,
+            };
+
+            _context.Units.Add(unit);
+
+            var users = _context.Users
+                .Where(u => u.WritingAccess >= Data.Enums.AuthorityType.Restricted &&
+                       u.ReadingAccess >= Data.Enums.AuthorityType.Restricted &&
+                       u.Unit.DepartmentId == departmentId
+                       || u.ReadingAccess >= Data.Enums.AuthorityType.Full)
+                .ToList();
+
+            foreach (var user in users)
+            {
+                _context.UnitUser.Add(new UnitUser { UserId = user.Id, UnitId = unit.Id });
+            }
+
+            _context.SaveChanges();
+        }
+
+        internal void CreateDepartment(string departmentName)
+        {
+            Department department = new Department
+            {
+                Description = departmentName,
+            };
+
+            _context.Departments.Add(department);
+            _context.SaveChanges();
+        }
+
+        internal void SoftDeleteDepartment(string departmentId)
+        {
+            if (_context.Departments.Any(d => d.Id == Guid.Parse(departmentId)))
+            {
+                var department = _context.Departments.FirstOrDefault(d => d.Id == Guid.Parse(departmentId));
+                if (department != null)
+                {
+                    department.DeletedOn = DateTime.UtcNow;
+                    foreach (var unit in department.Units)
+                    {
+                        unit.DeletedOn = DateTime.UtcNow;
+                        foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
+                        {
+                            _context.UnitUser.Remove(unitUser);
+                        }
+                        foreach (var user in unit.UsersFromUnit)
+                        {
+                            user.DeletedOn = DateTime.UtcNow;
+                        }
+                    }
+                    _context.SaveChanges();
+                }
+            }
+        }
+
+        internal void SoftDeleteUnit(string unitId)
+        {
+            if (_context.Units.Any(d => d.Id == Guid.Parse(unitId)))
+            {
+                var unit = _context.Units.FirstOrDefault(d => d.Id == Guid.Parse(unitId));
+                if (unit != null)
+                {
+                    unit.DeletedOn = DateTime.UtcNow;
+                    foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
+                    {
+                        _context.UnitUser.Remove(unitUser);
+                    }
+                    foreach (var user in unit.UsersFromUnit)
+                    {
+                        user.DeletedOn = DateTime.UtcNow;
+                    }
+                    _context.SaveChanges();
+                }
+            }
         }
     }
 }

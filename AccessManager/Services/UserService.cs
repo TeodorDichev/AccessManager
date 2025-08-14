@@ -128,8 +128,8 @@ namespace AccessManager.Services
             var accessibleUnitIds = loggedUser.AccessibleUnits.Select(au => au.UnitId).ToList();
             var filteredUsers = _context.Users.Where(u => u.DeletedOn == null && accessibleUnitIds.Contains(u.UnitId));
 
-            if (!string.IsNullOrEmpty(filterUnit)) filteredUsers = filteredUsers.Where(u => u.Unit.Description == filterUnit);
             if (!string.IsNullOrEmpty(filterDepartment)) filteredUsers = filteredUsers.Where(u => u.Unit.Department.Description == filterDepartment);
+            if (!string.IsNullOrEmpty(filterUnit)) filteredUsers = filteredUsers.Where(u => u.Unit.Description == filterUnit);
 
             filteredUsers = sortBy switch
             {
@@ -165,17 +165,20 @@ namespace AccessManager.Services
 
         internal void UpdateUser(MyProfileViewModel model, User loggedUser)
         {
-            UpdateUserFromModel(loggedUser, model.FirstName, model.MiddleName, model.LastName, model.EGN, model.Phone, model.SelectedUnitId);
+            UpdateUserFromModel(loggedUser, model.FirstName, model.MiddleName, model.LastName, model.EGN, model.Phone, 
+                model.SelectedUnitId, model.WritingAccess, model.ReadingAccess);
             _context.SaveChanges();
         }
 
         internal void UpdateUser(EditUserViewModel model, User user)
         {
-            UpdateUserFromModel(user, model.FirstName, model.MiddleName, model.LastName, model.EGN, model.Phone, model.SelectedUnitId);
+            UpdateUserFromModel(user, model.FirstName, model.MiddleName, model.LastName, model.EGN, model.Phone
+                , model.SelectedUnitId, model.WritingAccess, model.ReadingAccess);
             _context.SaveChanges();
         }
 
-        internal void UpdateUserFromModel(User user, string firstName, string middleName, string lastName, string? egn, string? phone, Guid unitId)
+        internal void UpdateUserFromModel(User user, string firstName, string middleName, 
+            string lastName, string? egn, string? phone, Guid unitId, AuthorityType write, AuthorityType read)
         {
             if (user == null) return;
 
@@ -184,6 +187,8 @@ namespace AccessManager.Services
             user.LastName = lastName;
             user.EGN = egn;
             user.Phone = phone;
+            user.WritingAccess = write;
+            user.ReadingAccess = read;
 
             if (unitId != user.UnitId)
             {
