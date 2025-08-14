@@ -1,7 +1,7 @@
 ﻿using AccessManager.Data.Enums;
 using AccessManager.Utills;
 using AccessManager.ViewModels.InformationSystem;
-using AccessManager.ViewModels.UnitDepartment;
+using AccessManager.ViewModels.Unit;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 

@@ -3,7 +3,7 @@ using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
-using AccessManager.ViewModels.UnitDepartment;
+using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -16,16 +16,18 @@ namespace AccessManager.Controllers
         private readonly AccessService _accessService;
         private readonly DirectiveService _directiveService;
         private readonly PasswordService _passwordService;
-        private readonly DepartmentUnitService _departmentUnitService;
+        private readonly DepartmentService _departmentService;
+        private readonly UnitService _unitService;
 
         public UserController(Context context, PasswordService passwordService, UserService userService,
-            AccessService accessService, DepartmentUnitService departmentUnitService, DirectiveService directiveService)
+            AccessService accessService, DepartmentService departmentService, DirectiveService directiveService, UnitService unitService)
         {
             _passwordService = passwordService;
             _userService = userService;
             _accessService = accessService;
-            _departmentUnitService = departmentUnitService;
+            _departmentService = departmentService;
             _directiveService = directiveService;
+            _unitService = unitService;
         }
 
         [HttpGet]
@@ -109,7 +111,7 @@ namespace AccessManager.Controllers
                 TotalPages = (int)Math.Ceiling((double)totalUsers / Constants.ItemsPerPage)
             };
 
-            if(string.IsNullOrEmpty(filterDepartment))
+            if (string.IsNullOrEmpty(filterDepartment))
             {
                 model.FilterUnits = loggedUser.AccessibleUnits.Select(au => au.Unit.Description).ToList();
             }
@@ -192,7 +194,7 @@ namespace AccessManager.Controllers
             _userService.AddUser(user);
 
             if (model.SelectedReadingAccess >= AuthorityType.Full)
-                _departmentUnitService.AddFullUnitAccess(user.Id);
+                _unitService.AddFullUnitAccess(user.Id);
 
             if (redirectTo == "MapUserAccess")
                 return RedirectToAction(redirectTo, new { username = model.UserName });
@@ -358,201 +360,6 @@ namespace AccessManager.Controllers
             };
 
             return View(model);
-        }
-
-        [HttpGet]
-        public IActionResult MapUserUnitAccess(string username, string filterDepartment1, string filterDepartment2, int page1 = 1, int page2 = 1)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var user = _userService.GetUser(username);
-            if (user == null) return NotFound();
-
-            var departments = _userService.GetAllowedDepartments(loggedUser).OrderBy(d => d.Description)
-                                    .Select(d => new SelectListItem(d.Description, d.Id.ToString()))
-                                    .ToList();
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
-
-            var accessibleUnitsQuery = _userService.GetUserAccessibleUnits(user, loggedUser);
-            var inaccessibleUnitsQuery = _userService.GetUserInaccessibleUnits(user, loggedUser);
-
-            if (!string.IsNullOrEmpty(filterDepartment1))
-                accessibleUnitsQuery = accessibleUnitsQuery.Where(u => u.Department.Id == Guid.Parse(filterDepartment1)).ToList();
-            if (!string.IsNullOrEmpty(filterDepartment2))
-                inaccessibleUnitsQuery = inaccessibleUnitsQuery.Where(u => u.Department.Id == Guid.Parse(filterDepartment2)).ToList();
-
-            var totalAccessible = accessibleUnitsQuery.Count();
-            var totalInaccessible = inaccessibleUnitsQuery.Count();
-
-            var accessibleUnits = accessibleUnitsQuery
-                .OrderBy(u => u.Description)
-                .Skip((page1 - 1) * Constants.ItemsPerPage)
-                .Take(Constants.ItemsPerPage)
-                .Select(u => new UnitViewModel
-                {
-                    UnitId = u.Id,
-                    UnitName = u.Description,
-                    DepartmentName = u.Department.Description
-                })
-                .ToList();
-
-            var inaccessibleUnits = inaccessibleUnitsQuery
-                .OrderBy(u => u.Description)
-                .Skip((page2 - 1) * Constants.ItemsPerPage)
-                .Take(Constants.ItemsPerPage)
-                .Select(u => new UnitViewModel
-                {
-                    UnitId = u.Id,
-                    UnitName = u.Description,
-                    DepartmentName = u.Department.Description
-                })
-                .ToList();
-
-            var vm = new MapUserUnitAccessViewModel
-            {
-                UserName = user.UserName,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Department = user.Unit.Department.Description,
-                Unit = user.Unit.Description,
-                FilterDepartments = departments,
-                FilterDepartment1 = filterDepartment1,
-                FilterDepartment2 = filterDepartment2,
-                AccessibleUnits = accessibleUnits,
-                InaccessibleUnits = inaccessibleUnits,
-                CurrentPage1 = page1,
-                TotalPages1 = (int)Math.Ceiling(totalAccessible / (double)Constants.ItemsPerPage),
-                CurrentPage2 = page2,
-                TotalPages2 = (int)Math.Ceiling(totalInaccessible / (double)Constants.ItemsPerPage)
-            };
-
-            return View(vm);
-        }
-
-        [HttpPost]
-        public IActionResult UpdateUnitAccess(string username, string? selectedAccessibleUnitIds, string? selectedInaccessibleUnitIds)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var user = _userService.GetUser(username);
-            if (user == null) return NotFound();
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full || loggedUser.WritingAccess > user.WritingAccess;
-
-            var removeIds = (selectedAccessibleUnitIds ?? "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(Guid.Parse)
-                .ToList();
-
-            var addIds = (selectedInaccessibleUnitIds ?? "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(Guid.Parse)
-                .ToList();
-
-            if (removeIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
-            {
-                user.WritingAccess = AuthorityType.Restricted;
-                user.ReadingAccess = AuthorityType.Restricted;
-            }
-
-            _departmentUnitService.AddUnitAccess(user.Id, addIds);
-            _departmentUnitService.RemoveUnitAccess(user.Id, removeIds);
-
-            return RedirectToAction("MapUserUnitAccess", new { username });
-        }
-
-        [HttpGet]
-        public IActionResult MapUserAccess(string username, string filterDirective1, string filterDirective2, int page1 = 1, int page2 = 1)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var user = _userService.GetUser(username);
-            if (user == null) return NotFound();
-
-            var directives = _directiveService.GetDirectives().Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name }).ToList();
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
-
-            var accessibleSystemsQuery = _accessService.GetGrantedUserAccesses(user);
-            var inaccessibleSystemsQuery = _accessService.GetRevokedAndNotGrantedAccesses(user);
-
-            if (!string.IsNullOrEmpty(filterDirective1))
-                accessibleSystemsQuery = accessibleSystemsQuery.Where(u => u.DirectiveId == Guid.Parse(filterDirective1)).ToList();
-            if (!string.IsNullOrEmpty(filterDirective2))
-                inaccessibleSystemsQuery = inaccessibleSystemsQuery.Where(u => u.DirectiveId == Guid.Parse(filterDirective2)).ToList();
-
-            var totalAccessible = accessibleSystemsQuery.Count();
-            var totalInaccessible = inaccessibleSystemsQuery.Count();
-
-            var accessibleSystems = accessibleSystemsQuery
-                .OrderBy(u => u.Description)
-                .Skip((page1 - 1) * Constants.ItemsPerPage)
-                .Take(Constants.ItemsPerPage)
-                .ToList();
-
-            var inaccessibleSystems = inaccessibleSystemsQuery
-                .OrderBy(u => u.Description)
-                .Skip((page2 - 1) * Constants.ItemsPerPage)
-                .Take(Constants.ItemsPerPage)
-                .ToList();
-
-            var vm = new MapUserAccessViewModel
-            {
-                UserName = user.UserName,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Department = user.Unit.Department.Description,
-                Unit = user.Unit.Description,
-                FilterDirectives = directives,
-                FilterDirective1 = filterDirective1,
-                FilterDirective2 = filterDirective2,
-                AccessibleSystems = accessibleSystems,
-                InaccessibleSystems = inaccessibleSystems,
-                CurrentPage1 = page1,
-                TotalPages1 = (int)Math.Ceiling(totalAccessible / (double)Constants.ItemsPerPage),
-                CurrentPage2 = page2,
-                TotalPages2 = (int)Math.Ceiling(totalInaccessible / (double)Constants.ItemsPerPage)
-            };
-
-            return View(vm);
-        }
-
-        [HttpPost]
-        public IActionResult UpdateAccess(string username, string? selectedAccessibleUnitIds, string? selectedInaccessibleUnitIds,
-            string? directiveToRevokeAccess, string? directiveToGrantAccess)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var user = _userService.GetUser(username);
-            if (user == null) return NotFound();
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full || loggedUser.WritingAccess > user.WritingAccess;
-
-            var removeIds = (selectedAccessibleUnitIds ?? "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(Guid.Parse)
-                .ToList();
-
-            var addIds = (selectedInaccessibleUnitIds ?? "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(Guid.Parse)
-                .ToList();
-
-            if (removeIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
-            {
-                user.WritingAccess = AuthorityType.Restricted;
-                user.ReadingAccess = AuthorityType.Restricted;
-            }
-
-            _accessService.AddUserAccess(user.Id, addIds, directiveToGrantAccess);
-            _accessService.RevokeAccess(user.Id, removeIds, directiveToRevokeAccess);
-
-            return RedirectToAction("MapUserAccess", new { username });
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿@model AccessManager.ViewModels.User.MapUserAccessViewModel
+﻿@model AccessManager.ViewModels.Access.MapUserAccessViewModel
 
 <h2 class="text-center">@Model.FirstName @Model.LastName</h2>
 <h4 class="text-center">@Model.Department - @Model.Unit</h4>
@@ -165,7 +165,7 @@
             <button type="button" class="btn btn-secondary mt-2" id="selectAllInaccessibleBtn">Избери всички</button>
         </form>
     </div>
-    <a asp-controller="User" asp-action="MapUserUnitAccess" asp-route-username="@Model.UserName" class="btn btn-primary m-2">
+    <a asp-controller="Unit" asp-action="MapUserUnitAccess" asp-route-username="@Model.UserName" class="btn btn-primary m-2">
          Достъпи до отдели
     </a>
 </div>

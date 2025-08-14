@@ -12,10 +12,10 @@ namespace AccessManager.Controllers
         private readonly UserService _userService;
         private readonly AccessService _accessService;
         private readonly DirectiveService _directiveService;
-        private readonly DepartmentUnitService _departmentUnitService;
+        private readonly DepartmentService _departmentUnitService;
 
         public DirectiveController(Context context, UserService userService,
-            AccessService accessService, DepartmentUnitService departmentUnitService, DirectiveService directiveService)
+            AccessService accessService, DepartmentService departmentUnitService, DirectiveService directiveService)
         {
             _userService = userService;
             _accessService = accessService;
