@@ -1,7 +1,7 @@
 ﻿using AccessManager.Data.Enums;
 using AccessManager.ViewModels.User;
 
-namespace AccessManager.ViewModels.UnitDepartment
+namespace AccessManager.ViewModels.Unit
 {
     public class UnitEditViewModel
     {

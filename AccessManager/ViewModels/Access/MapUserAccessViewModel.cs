@@ -1,7 +1,7 @@
 ﻿using AccessManager.ViewModels.InformationSystem;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace AccessManager.ViewModels.User
+namespace AccessManager.ViewModels.Access
 {
     public class MapUserAccessViewModel
     {

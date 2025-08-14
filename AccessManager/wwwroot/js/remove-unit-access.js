@@ -4,7 +4,7 @@
             let username = this.dataset.username;
             let unitId = this.dataset.unitid;
 
-            fetch(`/UnitDepartment/RemoveUnitAccess?username=${encodeURIComponent(username)}&unitId=${encodeURIComponent(unitId)}`, {
+            fetch(`/Unit/RemoveUnitAccess?username=${encodeURIComponent(username)}&unitId=${encodeURIComponent(unitId)}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

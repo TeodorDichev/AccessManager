@@ -1,4 +1,4 @@
-﻿@model AccessManager.ViewModels.UnitDepartment.UnitDepartmentListViewModel
+﻿@model AccessManager.ViewModels.Department.UnitDepartmentListViewModel
 
 @{
     ViewData["Title"] = "Дирекции";
@@ -30,14 +30,14 @@
             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createDepartmentModal">
                 Добави новa дирекция
             </button>
-            <a asp-controller="UnitDepartment" asp-action="CreateUnit" class="btn btn-success">
+            <a asp-controller="Unit" asp-action="CreateUnit" class="btn btn-success">
                 Добави нов отдел
             </a>
 
         }
         @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.SuperAdmin)
         {
-            <a asp-controller="UnitDepartment" asp-action="ViewDeactivatedUnits" class="btn btn-danger">
+            <a asp-controller="Unit" asp-action="ViewDeactivatedUnits" class="btn btn-danger">
                 Виж изтритите отдели
             </a>
         }
@@ -62,13 +62,13 @@
                 <td>@dep.DepartmentName</td>
                 <td>-</td>
                     <td>
-                        <a asp-controller="UnitDepartment" asp-action="EditDepartment" asp-route-id="@dep.DepartmentId" class="btn btn-sm btn-info">
+                        <a asp-controller="Department" asp-action="EditDepartment" asp-route-id="@dep.DepartmentId" class="btn btn-sm btn-info">
                             Редактирай
                         </a>
                     </td>
                     <td>
-                        <form asp-controller="UnitDepartment" asp-action="SoftDeleteDepartment" method="post" asp-route-departmentid="@dep.DepartmentId">
-                        <button type="submit" class="btn btn-danger btn-sm 
+                        <form asp-controller="Department" asp-action="SoftDeleteDepartment" method="post" asp-route-departmentid="@dep.DepartmentId">
+                        <button type="submit" class="btn btn-danger btn-sm"
                             onclick="return confirm('Изтриваенето на дирекция изтрива: всички нейни отдели, всички служители от тези отдели, всички достъпи на служители до тези отдели'">
                                 Изтрий
                             </button>
@@ -81,12 +81,12 @@
                     <td>@unit.DepartmentName</td>
                     <td>@unit.UnitName</td>
                         <td>
-                            <a asp-controller="UnitDepartment" asp-action="EditUnit" asp-route-id="@unit.UnitId" class="btn btn-sm btn-info">
+                            <a asp-controller="Unit" asp-action="EditUnit" asp-route-id="@unit.UnitId" class="btn btn-sm btn-info">
                                 Редактирай
                             </a>
                         </td>
                         <td>
-                        <form asp-controller="UnitDepartment" asp-action="SoftDeleteUnit" method="post" asp-route-unitid="@unit.UnitId">
+                        <form asp-controller="Unit" asp-action="SoftDeleteUnit" method="post" asp-route-unitid="@unit.UnitId">
                             <button type="submit" class="btn btn-danger btn-sm"
                                     onclick="return confirm('Изтриваенето на отдел изтрива: всички служители от този отдели, всички достъпи на служители до този отдели'">
                                     Изтрий
@@ -96,7 +96,6 @@
 
                 </tr>
             }
-
         }
     </tbody>
 </table>
@@ -123,7 +122,7 @@
                 <h5 class="modal-title" id="createDepartmentModalLabel">Нова дирекция</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
             </div>
-            <form asp-controller="UnitDepartment" asp-action="CreateNewDepartment" method="post">
+            <form asp-controller="Department" asp-action="CreateNewDepartment" method="post">
                 @Html.AntiForgeryToken()
                 <div class="modal-body">
                     <div class="mb-3">

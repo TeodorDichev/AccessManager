@@ -1,5 +1,5 @@
 ﻿@using AccessManager.Data.Enums
-@model AccessManager.ViewModels.UnitDepartment.DepartmentEditViewModel
+@model AccessManager.ViewModels.Department.DepartmentEditViewModel
 @{
     ViewData["Title"] = $"{Model.DepartmentName}";
 }
@@ -19,7 +19,7 @@
         <input asp-for="DepartmentName" type="hidden" />
         <input asp-for="WriteAuthority" type="hidden" />
     </form>
-    <a asp-controller="UnitDepartment" asp-action="CreateUnit" asp-route-departmentId="@Model.DepartmentId" class="btn btn-primary m-3">
+    <a asp-controller="Unit" asp-action="CreateUnit" asp-route-departmentId="@Model.DepartmentId" class="btn btn-primary m-3">
         Добави нов отдел
     </a>
 </div>
@@ -41,14 +41,14 @@
                 <tr>
                     <td>@unit.UnitName</td>
                     <td>
-                        <form asp-controller="UnitDepartment" asp-action="SoftDeleteUnit" method="post">
+                        <form asp-controller="Unit" asp-action="SoftDeleteUnit" method="post">
                             <button type="submit" class="btn btn-danger">
                                 Изтрий
                             </button>
                         </form>
                     </td>
                     <td>
-                        <a asp-controller="UnitDepartment" asp-action="EditUnit" asp-route-id="@unit.UnitId" class="btn btn-primary">
+                        <a asp-controller="Unit" asp-action="EditUnit" asp-route-id="@unit.UnitId" class="btn btn-primary">
                             Редактирай
                         </a>
                     </td>

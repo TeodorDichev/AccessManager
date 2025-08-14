@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace AccessManager.ViewModels.UnitDepartment
+namespace AccessManager.ViewModels.Unit
 {
     public class CreateUnitViewModel
     {

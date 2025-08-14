@@ -2,7 +2,7 @@
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Utills;
-using AccessManager.ViewModels.UnitDepartment;
+using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;

@@ -2,7 +2,7 @@
 using AccessManager.Services;
 using AccessManager.Utills;
 using AccessManager.ViewModels.Unit;
-using AccessManager.ViewModels.UnitDepartment;
+using AccessManager.ViewModels.Department;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccessManager.Controllers

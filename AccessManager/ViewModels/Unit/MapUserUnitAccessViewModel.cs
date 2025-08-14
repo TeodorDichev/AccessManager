@@ -1,7 +1,6 @@
-﻿using AccessManager.ViewModels.UnitDepartment;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace AccessManager.ViewModels.User
+namespace AccessManager.ViewModels.Unit
 {
     public class MapUserUnitAccessViewModel
     {

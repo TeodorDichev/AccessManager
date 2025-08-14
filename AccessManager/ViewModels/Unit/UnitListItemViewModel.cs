@@ -1,4 +1,4 @@
-﻿namespace AccessManager.ViewModels.UnitDepartment
+﻿namespace AccessManager.ViewModels.Unit
 {
     public class UnitListItemViewModel
     {

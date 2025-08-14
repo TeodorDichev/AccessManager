@@ -2,7 +2,7 @@
 using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
-using AccessManager.ViewModels.UnitDepartment;
+using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -110,7 +110,7 @@ namespace AccessManager.Controllers
             if (!ModelState.IsValid) return View(model);
 
             _unitService.CreateUnit(model.UnitName, model.DepartmentId);
-            return RedirectToAction("UnitDepartmentList");
+            return RedirectToAction("UnitDepartmentList", "Department");
         }
 
         [HttpPost]
@@ -118,7 +118,7 @@ namespace AccessManager.Controllers
         public IActionResult SoftDeleteUnit(string unitId)
         {
             _unitService.SoftDeleteUnit(unitId);
-            return RedirectToAction("UnitDepartmentList");
+            return RedirectToAction("UnitDepartmentList", "Department");
         }
         [HttpGet]
         public IActionResult MapUserUnitAccess(string username, string filterDepartment1, string filterDepartment2, int page1 = 1, int page2 = 1)
