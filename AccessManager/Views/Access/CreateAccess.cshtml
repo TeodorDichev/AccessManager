@@ -29,7 +29,7 @@
             <label class="form-label">Родителски достъп (ако има)</label>
 
             <!-- visible search field for typing (autocomplete) -->
-            <input type="text" id="ParentSearch" class="form-control" placeholder="Търсене родител (пишете, за да филтрирате)" autocomplete="off" />
+            <input type="text" id="ParentSearch" class="form-control" placeholder="Избор на родител" autocomplete="off" />
             <input type="hidden" asp-for="ParentAccessId" id="ParentAccessId" />
             <div id="parentCandidates" class="list-group" style="position:relative; z-index:2000;"></div>
             <span asp-validation-for="ParentAccessId" class="text-danger"></span>

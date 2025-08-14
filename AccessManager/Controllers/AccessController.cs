@@ -4,10 +4,9 @@ using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
 using AccessManager.ViewModels.Access;
-using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Controllers
 {
@@ -26,29 +25,68 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult AccessList(int page = 1)
+        public IActionResult AccessList(int page = 1, int level = 0, Guid? filterAccessId = null)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            List<AccessListItemViewModel> allAccesses = _accessService.GetAccesses().Select(a => new AccessListItemViewModel
-            {
-                AccessId = a.Id,
-                Description = _accessService.GetAccessDescription(a),
-            }).OrderBy(a => a.Description).ToList();
-            ;
-            int totalUsers = allAccesses.Count();
+            var query = _accessService.GetAccesses().AsQueryable();
 
-            List<AccessListItemViewModel> accesses = allAccesses.Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).ToList();
+            if (level == 1)
+            {
+                query = query.Where(a => a.ParentAccessId == null);
+            }
+            else if (level >= 2 && filterAccessId.HasValue)
+            {
+                var allAccessesList = _accessService.GetAccesses().ToList();
+
+                var lookup = allAccessesList
+                    .Where(a => a.ParentAccessId.HasValue)
+                    .GroupBy(a => a.ParentAccessId.Value)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                var collectedIds = new HashSet<Guid>();
+                void Collect(Guid parentId)
+                {
+                    if (!lookup.ContainsKey(parentId)) return;
+                    foreach (var child in lookup[parentId])
+                    {
+                        if (collectedIds.Add(child.Id))
+                            Collect(child.Id);
+                    }
+                }
+                Collect(filterAccessId.Value);
+
+                query = query.Where(a => collectedIds.Contains(a.Id));
+            }
+
+            var allAccesses = query
+                .Select(a => new AccessListItemViewModel
+                {
+                    AccessId = a.Id,
+                    Description = _accessService.GetAccessDescription(a),
+                })
+                .OrderBy(a => a.Description)
+                .ToList();
+
+            int total = allAccesses.Count;
+            var accesses = allAccesses.Skip((page - 1) * Constants.ItemsPerPage)
+                                      .Take(Constants.ItemsPerPage)
+                                      .ToList();
 
             var model = new AccessListViewModel
             {
                 Accesses = accesses,
                 WriteAuthority = loggedUser.WritingAccess,
                 CurrentPage = page,
-                TotalPages = (int)Math.Ceiling((double)totalUsers / Constants.ItemsPerPage)
+                TotalPages = (int)Math.Ceiling((double)total / Constants.ItemsPerPage),
+                Level = level,
+                FilterAccessId = filterAccessId,
             };
 
+            if (filterAccessId.HasValue) {
+                model.FilterDescription = _accessService.GetAccess(filterAccessId.Value.ToString()).Description;
+            }
             return View(model);
         }
 
@@ -99,14 +137,12 @@ namespace AccessManager.Controllers
                 return View("CreateAccess", model);
             }
 
-            // validation: parent required for level > 0
             if (model.Level > 0 && !model.ParentAccessId.HasValue)
             {
                 ModelState.AddModelError(nameof(model.ParentAccessId), "Моля изберете родителски достъп за това ниво.");
                 return View("CreateAccess", model);
             }
 
-            // if parent specified ensure its depth == model.Level - 1
             if (model.ParentAccessId.HasValue)
             {
                 var all = _accessService.GetAccesses();
@@ -147,22 +183,18 @@ namespace AccessManager.Controllers
             return RedirectToAction("AccessList"); // or whichever list action you have
         }
 
-        // Autocomplete / candidates endpoint
         [HttpGet]
         public IActionResult GetParentCandidates(int level = 1, string q = "")
         {
             if (level <= 0)
                 return Json(new object[0]);
 
-            // load all active accesses (small admin set usually)
             var all = _accessService.GetAccesses()
                 .Select(a => new { a.Id, a.Description, a.ParentAccessId })
                 .ToList();
 
-            // build lookup for parent traversal
             var dict = all.ToDictionary(x => x.Id, x => x);
 
-            // compute depth for each access (distance from root)
             var depths = new Dictionary<Guid, int>();
             foreach (var a in all)
             {
@@ -173,7 +205,7 @@ namespace AccessManager.Controllers
                     var pid = cur.ParentAccessId!.Value;
                     if (!dict.TryGetValue(pid, out cur))
                     {
-                        depth = -1; // broken parent chain
+                        depth = -1;
                         break;
                     }
                     depth++;
@@ -189,7 +221,7 @@ namespace AccessManager.Controllers
                 .Where(a => depths.TryGetValue(a.Id, out var d) && d == desiredParentDepth)
                 .Where(a => string.IsNullOrEmpty(qLower) || a.Description.ToLowerInvariant().Contains(qLower))
                 .OrderBy(a => a.Description)
-                .Take(30) // cap
+                .Take(30)
                 .Select(a => new { id = a.Id, text = a.Description })
                 .ToList();
 
