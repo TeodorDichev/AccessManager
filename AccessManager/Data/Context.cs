@@ -46,12 +46,14 @@ namespace AccessManager.Data
                 entity.HasOne(e => e.Unit)
                       .WithMany(u => u.UsersWithAccess)
                       .HasForeignKey(e => e.UnitId)
-                      .OnDelete(DeleteBehavior.NoAction);
+                      .OnDelete(DeleteBehavior.NoAction)
+                      .IsRequired(false);
 
                 entity.HasOne(e => e.User)
                       .WithMany(u => u.AccessibleUnits)
                       .HasForeignKey(e => e.UserId)
-                      .OnDelete(DeleteBehavior.NoAction);
+                      .OnDelete(DeleteBehavior.NoAction)
+                      .IsRequired(false);
 
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.AccessibleUnits)

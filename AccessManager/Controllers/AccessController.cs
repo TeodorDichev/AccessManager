@@ -4,6 +4,8 @@ using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
 using AccessManager.ViewModels.Access;
+using AccessManager.ViewModels.InformationSystem;
+using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -227,6 +229,7 @@ namespace AccessManager.Controllers
 
             return Json(candidates);
         }
+
         [HttpGet]
         public IActionResult MapUserAccess(string username, string filterDirective1, string filterDirective2, int page1 = 1, int page2 = 1)
         {
@@ -240,8 +243,39 @@ namespace AccessManager.Controllers
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            var accessibleSystemsQuery = _accessService.GetGrantedUserAccesses(user);
-            var inaccessibleSystemsQuery = _accessService.GetRevokedAndNotGrantedAccesses(user);
+            var accessibleSystemsQuery = _accessService.GetGrantedUserAccesses(user).Select(ua => new AccessViewModel
+            {
+                AccessId = ua.Id,
+                Description = _accessService.GetAccessDescription(ua.Access),
+                DirectiveId = ua.GrantedByDirectiveId,
+                DirectiveDescription = ua.GrantedByDirective.Name
+            }).ToList();
+
+            var notGrantedVm = _accessService
+                .GetNotGrantedAccesses(user)
+                .Select(a => new AccessViewModel
+                {
+                    AccessId = a.Id,
+                    Description = _accessService.GetAccessDescription(a),
+                    DirectiveId = Guid.Empty,
+                    DirectiveDescription = ""
+                });
+
+            var revokedVm = _accessService
+                .GetRevokedUserAccesses(user)
+                .Select(ua => new AccessViewModel
+                {
+                    AccessId = ua.AccessId,
+                    Description = _accessService.GetAccessDescription(ua.Access),
+                    DirectiveId = ua.GrantedByDirectiveId,
+                    DirectiveDescription = ua.RevokedByDirective != null ? ua.GrantedByDirective.Name : ""
+                });
+
+            var inaccessibleSystemsQuery =
+                notGrantedVm
+                    .Union(revokedVm)
+                    .OrderBy(vm => vm.Description)
+                    .ToList();
 
             if (!string.IsNullOrEmpty(filterDirective1))
                 accessibleSystemsQuery = accessibleSystemsQuery.Where(u => u.DirectiveId == Guid.Parse(filterDirective1)).ToList();
@@ -285,7 +319,7 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        public IActionResult UpdateAccess(string username, string? selectedAccessibleUnitIds, string? selectedInaccessibleUnitIds,
+        public IActionResult UpdateAccess(string username, string? selectedAccessibleSystemIds, string? selectedInaccessibleSystemIds,
             string? directiveToRevokeAccess, string? directiveToGrantAccess)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
@@ -296,27 +330,172 @@ namespace AccessManager.Controllers
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full || loggedUser.WritingAccess > user.WritingAccess;
 
-            var removeIds = (selectedAccessibleUnitIds ?? "")
+            var removeIds = (selectedAccessibleSystemIds ?? "")
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(Guid.Parse)
                 .ToList();
 
-            var addIds = (selectedInaccessibleUnitIds ?? "")
+            var addIds = (selectedInaccessibleSystemIds ?? "")
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(Guid.Parse)
                 .ToList();
 
-            if (removeIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
-            {
-                user.WritingAccess = AuthorityType.Restricted;
-                user.ReadingAccess = AuthorityType.Restricted;
-            }
+            foreach (var accId in addIds)
+                _accessService.AddUserAccess(user.Id, accId, directiveToGrantAccess);
 
-            _accessService.AddUserAccess(user.Id, addIds, directiveToGrantAccess);
-            _accessService.RevokeAccess(user.Id, removeIds, directiveToRevokeAccess);
+            foreach (var accId in removeIds)
+                _accessService.RevokeAccess(user.Id, accId, directiveToRevokeAccess);
 
             return RedirectToAction("MapUserAccess", new { username });
         }
 
+        [HttpGet]
+        public IActionResult EditAccess(Guid accessId, string? filterDirective1, string? filterDirective2, int page1 = 1, int page2 = 1)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var access = _accessService.GetAccess(accessId);
+            if (access == null) return NotFound();
+
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
+
+            var usersWithAccess = _accessService.GetGrantedUserAccesses(access)
+                .Where(ua => ua.AccessId == accessId)
+                .Select(ua => new UserAccessViewModel
+                {
+                    UserId = ua.UserId,
+                    UserName = ua.User.UserName,
+                    FirstName = ua.User.FirstName,
+                    LastName = ua.User.LastName,
+                    Department = ua.User.Unit.Department.Description,
+                    Unit = ua.User.Unit.Description,
+                    WriteAccess = ua.User.WritingAccess,
+                    ReadAccess = ua.User.ReadingAccess,
+                    DirectiveId = ua.GrantedByDirectiveId,
+                    DirectiveDescription = ua.GrantedByDirective.Name
+                })
+                .ToList();
+
+            var usersWithRevokedAccess = _accessService.GetRevokedUserAccesses(access)
+                .Where(ua => ua.AccessId == accessId)
+                    .Select(ua => new UserAccessViewModel
+                    {
+                        UserId = ua.UserId,
+                        UserName = ua.User.UserName,
+                        FirstName = ua.User.FirstName,
+                        LastName = ua.User.LastName,
+                        Department = ua.User.Unit.Department.Description,
+                        Unit = ua.User.Unit.Description,
+                        WriteAccess = ua.User.WritingAccess,
+                        ReadAccess = ua.User.ReadingAccess,
+                        DirectiveId = ua.GrantedByDirectiveId,
+                        DirectiveDescription = ua.GrantedByDirective.Name
+                    })
+                    .ToList();
+            
+            var usersNotGrantedTheAccess = _accessService.GetNotGrantedUsers(access)
+                .Select(u => new UserAccessViewModel
+                {
+                    UserId = u.Id,
+                    UserName = u.UserName,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Department = u.Unit.Department.Description,
+                    Unit = u.Unit.Description,
+                    WriteAccess = u.WritingAccess,
+                    ReadAccess = u.ReadingAccess,
+                    DirectiveId = Guid.Empty,
+                    DirectiveDescription = ""
+                })
+                .ToList();
+
+            var usersWithoutAccess =
+                usersWithRevokedAccess
+                .Union(usersNotGrantedTheAccess)
+                .OrderBy(vm => vm.UserName)
+                .ToList();
+
+            var model = new EditAccessViewModel
+            {
+                AccessId = accessId,
+                Name = access.Description,
+                Description = _accessService.GetAccessDescription(access),
+                FilterDirectives = _directiveService.GetDirectives()
+                    .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Name })
+                    .ToList(),
+                FilterDirective1 = filterDirective1,
+                FilterDirective2 = filterDirective2,
+                CurrentPage1 = page1,
+                CurrentPage2 = page2,
+                TotalPages1 = (int)Math.Ceiling(usersWithAccess.Count / (double)Constants.ItemsPerPage),
+                TotalPages2 = (int)Math.Ceiling(usersWithoutAccess.Count / (double)Constants.ItemsPerPage),
+                UsersWithAccess = usersWithAccess
+                    .OrderBy(vm => vm.UserName)
+                    .Skip((page1 - 1) * Constants.ItemsPerPage)
+                    .Take(Constants.ItemsPerPage)
+                    .ToList(),
+                UsersWithoutAccess = usersWithoutAccess
+                    .OrderBy(vm => vm.UserName)
+                    .Skip((page2 - 1) * Constants.ItemsPerPage)
+                    .Take(Constants.ItemsPerPage)
+                    .ToList(),
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public IActionResult GrantAccessToUsers(EditAccessViewModel model)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var access = _accessService.GetAccess(model.AccessId);
+            if (access == null) return NotFound();
+
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
+
+            if(string.IsNullOrEmpty(model.DirectiveToGrantAccess))
+            {
+                TempData["ErrorMessage"] = "Please select a directive before adding access!";
+                return RedirectToAction("EditAccess", new { accessId = model.AccessId });
+            }
+
+            foreach (var userId in model.SelectedUsersWithoutAccessIds)
+                _accessService.AddUserAccess(userId, access.Id, model.DirectiveToGrantAccess);
+
+            return RedirectToAction("EditAccess", new { accessId = model.AccessId });
+        }
+
+        [HttpPost]
+        public IActionResult RevokeAccessFromUsers(EditAccessViewModel model)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var access = _accessService.GetAccess(model.AccessId);
+            if (access == null) return NotFound();
+
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
+
+            if (string.IsNullOrEmpty(model.DirectiveToRevokeAccess))
+            {
+                TempData["ErrorMessage"] = "Please select a directive before revoking access!";
+                return RedirectToAction("EditAccess", new { accessId = model.AccessId });
+            }
+
+            foreach (var userId in model.SelectedUsersWithAccessIds)
+                _accessService.RevokeAccess(userId, access.Id, model.DirectiveToRevokeAccess);
+
+            return RedirectToAction("EditAccess", new { accessId = model.AccessId });
+        }
+
+        [HttpPost]
+        public IActionResult UpdateUserDirective([FromBody] UpdateUserDirectiveViewModel dto)
+        {
+            // TODO: Update directive for user-access mapping
+            return Ok();
+        }
     }
 }

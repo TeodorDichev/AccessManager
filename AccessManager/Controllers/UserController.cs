@@ -3,6 +3,7 @@ using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
+using AccessManager.ViewModels.InformationSystem;
 using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
@@ -58,7 +59,13 @@ namespace AccessManager.Controllers
                     .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList(),
                 SelectedDepartmentId = loggedUser.Unit.Department.Id,
                 SelectedUnitId = loggedUser.Unit.Id,
-                UserAccesses = _accessService.GetGrantedUserAccesses(loggedUser)
+                UserAccesses = _accessService.GetGrantedUserAccesses(loggedUser).Select(ua => new AccessViewModel
+                {
+                    AccessId = ua.Access.Id,
+                    Description = _accessService.GetAccessDescription(ua.Access),
+                    DirectiveId =ua.GrantedByDirectiveId,
+                    DirectiveDescription = _directiveService.GetDirective(ua.GrantedByDirectiveId)?.Name ?? string.Empty,
+                }).ToList(),
             };
 
             return View(model);
