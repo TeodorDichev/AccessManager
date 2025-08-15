@@ -25,3 +25,21 @@ const selectAllInaccessible = document.getElementById('selectAllWithoutAccessBtn
             document.querySelectorAll('input[name="SelectedUsersWithoutAccessIds"]').forEach(cb => cb.checked = this.checked);
         });
     }
+
+document.querySelectorAll("select[name='directiveToRevokeAccessInner'], select[name='directiveToGrantAccessInner']")
+    .forEach(select => {
+        select.addEventListener("change", function () {
+            const userId = this.dataset.userid;
+            const accessId = this.dataset.accessid;
+            const directiveId = this.value;
+
+            fetch(`/Access/UpdateUserDirective`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": document.querySelector("input[name='__RequestVerificationToken']").value
+                },
+                body: JSON.stringify({ userId, accessId, directiveId })
+            });
+        });
+    });

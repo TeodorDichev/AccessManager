@@ -245,7 +245,7 @@ namespace AccessManager.Controllers
 
             var accessibleSystemsQuery = _accessService.GetGrantedUserAccesses(user).Select(ua => new AccessViewModel
             {
-                AccessId = ua.Id,
+                AccessId = ua.Access.Id,
                 Description = _accessService.GetAccessDescription(ua.Access),
                 DirectiveId = ua.GrantedByDirectiveId,
                 DirectiveDescription = ua.GrantedByDirective.Name
@@ -316,37 +316,6 @@ namespace AccessManager.Controllers
             };
 
             return View(vm);
-        }
-
-        [HttpPost]
-        public IActionResult UpdateAccess(string username, string? selectedAccessibleSystemIds, string? selectedInaccessibleSystemIds,
-            string? directiveToRevokeAccess, string? directiveToGrantAccess)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var user = _userService.GetUser(username);
-            if (user == null) return NotFound();
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full || loggedUser.WritingAccess > user.WritingAccess;
-
-            var removeIds = (selectedAccessibleSystemIds ?? "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(Guid.Parse)
-                .ToList();
-
-            var addIds = (selectedInaccessibleSystemIds ?? "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(Guid.Parse)
-                .ToList();
-
-            foreach (var accId in addIds)
-                _accessService.AddUserAccess(user.Id, accId, directiveToGrantAccess);
-
-            foreach (var accId in removeIds)
-                _accessService.RevokeAccess(user.Id, accId, directiveToRevokeAccess);
-
-            return RedirectToAction("MapUserAccess", new { username });
         }
 
         [HttpGet]
@@ -446,17 +415,51 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        public IActionResult GrantAccessToUsers(EditAccessViewModel model)
+        public IActionResult GrantAccessToUsers(MapUserAccessViewModel model)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var user = _userService.GetUser(model.UserName);
+            if (user == null || string.IsNullOrEmpty(model.DirectiveToGrantAccess))
+            {
+                TempData["ErrorMessage"] = "Please select a directive before adding access!";
+                return RedirectToAction("EditAccess", new { username = model.UserName });
+            }
+
+            foreach (var accId in model.SelectedInaccessibleSystemIds)
+                _accessService.AddUserAccess(user.Id, accId, model.DirectiveToGrantAccess);
+
+            return RedirectToAction("MapUserAccess", new { username = model.UserName });
+        }
+
+        [HttpPost]
+        public IActionResult RevokeAccessFromUsers(MapUserAccessViewModel model)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var user = _userService.GetUser(model.UserName);
+            if (user == null || string.IsNullOrEmpty(model.DirectiveToRevokeAccess))
+            {
+                TempData["ErrorMessage"] = "Please select a directive before revoking access!";
+                return RedirectToAction("MapUserAccess", new { username = model.UserName });
+            }
+
+            foreach (var accId in model.SelectedAccessibleSystemIds)
+                _accessService.RevokeAccess(user.Id, accId, model.DirectiveToRevokeAccess);
+
+            return RedirectToAction("MapUserAccess", new { username = model.UserName });
+        }
+
+        [HttpPost]
+        public IActionResult GrantUserAccess(EditAccessViewModel model)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var access = _accessService.GetAccess(model.AccessId);
-            if (access == null) return NotFound();
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
-
-            if(string.IsNullOrEmpty(model.DirectiveToGrantAccess))
+            if(access == null || string.IsNullOrEmpty(model.DirectiveToGrantAccess))
             {
                 TempData["ErrorMessage"] = "Please select a directive before adding access!";
                 return RedirectToAction("EditAccess", new { accessId = model.AccessId });
@@ -469,17 +472,13 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        public IActionResult RevokeAccessFromUsers(EditAccessViewModel model)
+        public IActionResult RevokeUserAccess(EditAccessViewModel model)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var access = _accessService.GetAccess(model.AccessId);
-            if (access == null) return NotFound();
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
-
-            if (string.IsNullOrEmpty(model.DirectiveToRevokeAccess))
+            if (access == null || string.IsNullOrEmpty(model.DirectiveToRevokeAccess))
             {
                 TempData["ErrorMessage"] = "Please select a directive before revoking access!";
                 return RedirectToAction("EditAccess", new { accessId = model.AccessId });
@@ -492,10 +491,34 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        public IActionResult UpdateUserDirective([FromBody] UpdateUserDirectiveViewModel dto)
+        public IActionResult UpdateUserDirective([FromBody] UpdateUserDirectiveViewModel model)
         {
-            // TODO: Update directive for user-access mapping
-            return Ok();
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var access = _accessService.GetAccess(model.AccessId);
+            if (access == null) return NotFound();
+
+
+            _accessService.UpdateAccessDirective(model.UserId, access.Id, model.DirectiveId);
+
+            return RedirectToAction("EditAccess", new { accessId = model.AccessId });
+        }
+
+        [HttpPost]
+        public IActionResult EditAccessName(EditAccessViewModel model)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var access = _accessService.GetAccess(model.AccessId);
+            if (access == null) return NotFound();
+
+            if (!string.IsNullOrEmpty(model.Name)) {
+                _accessService.UpdateAccessName(model.Name, access);
+            }
+
+            return RedirectToAction("EditAccess", new { accessId = model.AccessId });
         }
     }
 }

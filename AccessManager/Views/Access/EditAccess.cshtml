@@ -1,13 +1,21 @@
 ﻿@model AccessManager.ViewModels.Access.EditAccessViewModel
 
 <h2 class="text-center">@Model.Description</h2>
+
 @if (TempData["ErrorMessage"] != null)
 {
     <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
 }
 
+<div class="row wrapper mb-2">
+    <form method="post" asp-action="EditAccessName" class="mb-2">
+      <input type="hidden" name="accessId" value="@Model.AccessId" /> 
+      <label asp-for="Name" class="form-label">Ново име</label>
+      <input asp-for="Name" class="form-control" onchange="this.form.submit()"/>
+    </form>
+</div>
+
 <div class="row wrapper mt-5">
-    <!-- Users with Access -->
     <div class="col-md-6">
         <h4>Потребители с достъп</h4>
 
@@ -29,7 +37,7 @@
             </select>
         </form>
 
-        <form asp-action="RevokeAccessFromUsers" method="post">
+        <form asp-action="RevokeUserAccess" method="post">
             <label for="directiveToRevokeAccess" class="form-label">Заповед за спиране на достъп:</label>
             <select name="directiveToRevokeAccess" id="directiveToRevokeAccess" class="form-select mb-2">
                 <option value=""></option>
@@ -58,8 +66,7 @@
                             <td>@user.FirstName @user.LastName (@user.UserName)</td>
                             <td>@user.Department - @user.Unit</td>
                             <td>
-                                <select name="directiveToRevokeAccessInner" class="form-select" 
-                                        data-userid="@user.UserId" data-accessid="@Model.AccessId">
+                                <select name="directiveToRevokeAccessInner" class="form-select" data-userid="@user.UserId" data-accessid="@Model.AccessId">
                                     @foreach (var directive in Model.FilterDirectives)
                                     {
                                         <option value="@directive.Value" selected="@(directive.Value == user.DirectiveId.ToString() ? "selected" : null)">
@@ -81,14 +88,11 @@
                     filterDirective2 = Model.FilterDirective2 }))
 
             <input type="hidden" name="accessId" value="@Model.AccessId" /> 
-            <input type="hidden" id="allSelectedWithAccess" name="SelectedUsersWithAccessIds" />
-
             <button type="submit" class="btn btn-danger mt-2">Премахни избраните</button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllWithAccessBtn">Избери всички</button>
         </form>
     </div>
 
-    <!-- Users without Access -->
     <div class="col-md-6">
         <h4>Потребители без достъп</h4>
 
@@ -110,7 +114,7 @@
             </select>
         </form>
 
-        <form asp-controller="Access" asp-action="GrantAccessToUsers" method="post">
+        <form asp-controller="Access" asp-action="GrantUserAccess" method="post">
             <label for="directiveToGrantAccess" class="form-label">Заповед за даване на достъп:</label>
             <select name="directiveToGrantAccess" id="directiveToGrantAccess" class="form-select mb-2">
                 <option value=""></option>
@@ -162,8 +166,6 @@
                     filterDirective2 = Model.FilterDirective2 }))
 
             <input type="hidden" name="accessId" value="@Model.AccessId" /> 
-            <input type="hidden" id="allSelectedWithoutAccess" name="SelectedUsersWithoutAccessIds" />
-
             <button type="submit" class="btn btn-success mt-2">Добави избраните</button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllWithoutAccessBtn">Избери всички</button>
         </form>
@@ -172,4 +174,5 @@
 
 @section Scripts {
     <script src="~/js/edit-access.js" asp-append-version="true"></script>
+    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
 }

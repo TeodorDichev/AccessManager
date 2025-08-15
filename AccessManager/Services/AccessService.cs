@@ -165,5 +165,24 @@ namespace AccessManager.Services
                 _context.SaveChanges();
             }
         }
+
+        internal void UpdateAccessName(string name, Access access)
+        {
+            access.Description = name;
+            _context.SaveChanges();
+        }
+
+        internal void UpdateAccessDirective(Guid userId, Guid accessId, Guid directiveId)
+        {
+            UserAccess? userAccess = _context.UserAccesses.FirstOrDefault(ua => ua.UserId == userId && ua.AccessId == accessId);
+            if (userAccess != null)
+            {
+                if(userAccess.RevokedByDirective != null) userAccess.RevokedByDirectiveId = directiveId;
+                else userAccess.GrantedByDirectiveId = directiveId;
+
+                _context.SaveChanges();
+            }
+
+        }
     }
 }

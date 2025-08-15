@@ -3,7 +3,10 @@
 <h2 class="text-center">@Model.FirstName @Model.LastName</h2>
 <h4 class="text-center">@Model.Department - @Model.Unit</h4>
 
-
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
 
 <div class="row wrapper mt-5">
     <div class="col-md-6">
@@ -26,16 +29,16 @@
                 </select>
         </form>
 
-        <form asp-action="UpdateAccess" method="post">
+        <form asp-action="RevokeAccessFromUsers" method="post">
             <label for="directiveToRevokeAccess" class="form-label">Заповед за спиране на достъп:</label>
             <select name="directiveToRevokeAccess" id="directiveToRevokeAccess" class="form-select mb-2">
-            <option value=""></option>
-            @foreach (var directive in Model.FilterDirectives)
-            {
-                <option value="@directive.Value" selected="@(directive.Value == Model.DirectiveToRevokeAccess ? "selected" : null)">
-                    @directive.Text
-                </option>
-            }
+                <option value=""></option>
+                @foreach (var directive in Model.FilterDirectives)
+                {
+                    <option value="@directive.Value" selected="@(directive.Value == Model.DirectiveToRevokeAccess ? "selected" : null)">
+                        @directive.Text
+                    </option>
+                }
             </select>
 
             <table class="table table-bordered table-hover">
@@ -50,18 +53,16 @@
                     @foreach(var acc in Model.AccessibleSystems)
                     {
                         <tr>
-                            <td>
-                                <input type="checkbox" name="selectedAccessibleSystemIds" value="@acc.AccessId" />
-                            </td>
+                            <td><input type="checkbox" name="SelectedAccessibleSystemIds" value="@acc.AccessId" /></td>
                             <td>@acc.Description</td>
                             <td>                                
-                                <select name="directiveToRevokeAccessInner" id="directiveToRevokeAccessInner" class="form-select" data-accessid="@acc.AccessId" data-username="@Model.UserName">
-                                @foreach (var directive in Model.FilterDirectives)
-                                {
-                                    <option value="@directive.Value" selected="@(directive.Value == acc.DirectiveId.ToString() ? "selected" : null)">
-                                        @directive.Text
-                                    </option>
-                                }
+                                <select name="directiveToRevokeAccessInner" class="form-select" data-accessid="@acc.AccessId" data-username="@Model.UserName">
+                                    @foreach (var directive in Model.FilterDirectives)
+                                    {
+                                        <option value="@directive.Value" selected="@(directive.Value == acc.DirectiveId.ToString() ? "selected" : null)">
+                                            @directive.Text
+                                        </option>
+                                    }
                                 </select>
                             </td>
                         </tr>
@@ -76,11 +77,7 @@
             filterDept1 = Model.FilterDirective1, 
             filterDept2 = Model.FilterDirective2}))
 
-             <input type="hidden" name="username" value="@Model.UserName" /> 
-
-            <input type="hidden" id="allSelectedAccessible" name="SelectedAccessibleSystemIds" />
-            <input type="hidden" id="allSelectedInaccessible" name="SelectedInaccessibleSystemIds" />
-
+            <input type="hidden" name="username" value="@Model.UserName" /> 
             <button type="submit" class="btn btn-danger mt-2">Премахни избраните</button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllAccessibleBtn">Избери всички</button>
         </form>
@@ -106,7 +103,7 @@
             </select>
         </form>
 
-        <form asp-action="UpdateAccess" method="post">
+        <form asp-action="GrantAccessToUsers" method="post">
             <label for="directiveToGrantAccess" class="form-label">Заповед за даване на достъп:</label>
             <select name="directiveToGrantAccess" id="directiveToGrantAccess" class="form-select mb-2">
             <option value=""></option>
@@ -130,9 +127,7 @@
                     @foreach(var acc in Model.InaccessibleSystems)
                     {
                         <tr>
-                            <td>
-                                <input type="checkbox" name="selectedInaccessibleUnitIds" value="@acc.AccessId" />
-                            </td>
+                            <td><input type="checkbox" name="SelectedInaccessibleSystemIds" value="@acc.AccessId" /></td>
                             <td>@acc.Description</td>
                             <td>
                                 <select name="directiveToGrantAccessInner" id="directiveToGrantAccessInner" class="form-select" data-accessid="@acc.AccessId" data-username="@Model.UserName">
@@ -156,11 +151,8 @@
             page2 = Model.CurrentPage2, 
             filterDept1 = Model.FilterDirective1, 
             filterDept2 = Model.FilterDirective2 }))
+
             <input type="hidden" name="username" value="@Model.UserName" /> 
-
-            <input type="hidden" id="allSelectedAccessible" name="SelectedAccessibleSystemIds" />
-            <input type="hidden" id="allSelectedInaccessible" name="SelectedInaccessibleSystemIds" />
-
             <button type="submit" class="btn btn-success mt-2">Добави избраните</button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllInaccessibleBtn">Избери всички</button>
         </form>
