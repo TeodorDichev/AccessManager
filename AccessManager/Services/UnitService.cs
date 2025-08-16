@@ -11,22 +11,6 @@ namespace AccessManager.Services
             _context = context;
         }
 
-        public string GetUnitDescription(Guid? unitId)
-        {
-            if (unitId == null) return string.Empty;
-            var unit = _context.Units.FirstOrDefault(u => u.Id == unitId.Value);
-            return unit?.Description ?? string.Empty;
-        }
-
-        public List<Unit> GetUnitsForDepartment(Guid departmentId)
-        {
-            return _context.Units.Where(u => u.DepartmentId == departmentId && u.DeletedOn == null).ToList();
-        }
-
-        public List<Unit> GetUnits()
-        {
-            return _context.Units.ToList();
-        }
         internal void RemoveUserUnit(Guid userId, Guid unitId)
         {
             var uu = _context.UnitUser.FirstOrDefault(u => u.UserId == userId && u.UnitId == unitId);
@@ -37,23 +21,19 @@ namespace AccessManager.Services
             }
         }
 
-        internal void AddUnitAccess(Guid userId, List<Guid> selectedUnitIds)
+        internal void AddUnitAccess(Guid userId, Guid unitId)
         {
-            foreach (var unitId in selectedUnitIds)
+            if (!_context.UnitUser.Any(uu => uu.UserId == userId && uu.UnitId == unitId))
             {
-                bool exists = _context.UnitUser.Any(uu => uu.UserId == userId && uu.UnitId == unitId);
-                if (!exists)
-                {
-                    _context.UnitUser.Add(new UnitUser { UserId = userId, UnitId = unitId });
-                }
+                _context.UnitUser.Add(new UnitUser { UserId = userId, UnitId = unitId });
+                _context.SaveChanges();
             }
-
-            _context.SaveChanges();
         }
 
         internal void AddFullUnitAccess(Guid userId)
         {
-            AddUnitAccess(userId, _context.Units.Select(u => u.Id).ToList());
+            foreach (var unit in _context.Units)
+                AddUnitAccess(userId, unit.Id);
         }
 
         internal Unit? GetUnit(string id)
@@ -79,12 +59,11 @@ namespace AccessManager.Services
                 .ToList();
 
             foreach (var user in users)
-            {
                 _context.UnitUser.Add(new UnitUser { UserId = user.Id, UnitId = unit.Id });
-            }
 
             _context.SaveChanges();
         }
+
         internal void SoftDeleteUnit(string unitId)
         {
             if (_context.Units.Any(d => d.Id == Guid.Parse(unitId)))
@@ -94,29 +73,23 @@ namespace AccessManager.Services
                 {
                     unit.DeletedOn = DateTime.UtcNow;
                     foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
-                    {
                         _context.UnitUser.Remove(unitUser);
-                    }
+
                     foreach (var user in unit.UsersFromUnit)
-                    {
                         user.DeletedOn = DateTime.UtcNow;
-                    }
                     _context.SaveChanges();
                 }
             }
         }
-        internal void RemoveUnitAccess(Guid userId, List<Guid> removeIds)
-        {
-            foreach (var unitId in removeIds)
-            {
-                var uu = _context.UnitUser.FirstOrDefault(uu => uu.UserId == userId && uu.UnitId == unitId);
-                if (uu != null)
-                {
-                    _context.UnitUser.Remove(uu);
-                }
-            }
 
-            _context.SaveChanges();
+        internal void RemoveUnitAccess(Guid userId, Guid unitId)
+        {
+            var uu = _context.UnitUser.FirstOrDefault(uu => uu.UserId == userId && uu.UnitId == unitId);
+            if (uu != null)
+            {
+                _context.UnitUser.Remove(uu);
+                _context.SaveChanges();
+            }
         }
     }
 }

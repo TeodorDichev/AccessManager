@@ -4,7 +4,14 @@
 <h2 class="text-center">@Model.FirstName @Model.LastName</h2>
 <h4 class="text-center">@Model.Department - @Model.Unit</h4>
 
-
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="text-success">@TempData["Success"]</div>
+}
 
 <div class="row wrapper mt-5">
     <div class="col-md-6">
@@ -27,7 +34,7 @@
                 </select>
         </form>
 
-        <form asp-action="UpdateUnitAccess" method="post">
+        <form asp-action="RevokeUnitAccess" method="post">
             <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
@@ -40,9 +47,7 @@
                     @foreach(var unit in Model.AccessibleUnits)
                     {
                         <tr>
-                            <td>
-                                <input type="checkbox" name="selectedAccessibleUnitIds" value="@unit.UnitId" />
-                            </td>
+                            <td><input type="checkbox" name="SelectedAccessibleUnitIds" value="@unit.UnitId" /></td>
                             <td>@unit.UnitName</td>
                             <td>@unit.DepartmentName</td>
                         </tr>
@@ -57,10 +62,7 @@
             filterDept1 = Model.FilterDepartment1, 
             filterDept2 = Model.FilterDepartment2}))
 
-             <input type="hidden" name="username" value="@Model.UserName" /> 
-
-            <input type="hidden" id="allSelectedAccessible" name="SelectedAccessibleUnitIds" />
-            <input type="hidden" id="allSelectedInaccessible" name="SelectedInaccessibleUnitIds" />
+            <input type="hidden" name="username" value="@Model.UserName" /> 
 
             <button type="submit" class="btn btn-danger mt-2">Премахни избраните</button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllAccessibleBtn">Избери всички</button>
@@ -87,7 +89,7 @@
             </select>
         </form>
 
-        <form asp-action="UpdateUnitAccess" method="post">
+        <form asp-action="GrantUnitAccess" method="post">
             <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
@@ -100,9 +102,7 @@
                     @foreach(var unit in Model.InaccessibleUnits)
                     {
                         <tr>
-                            <td>
-                                <input type="checkbox" name="selectedInaccessibleUnitIds" value="@unit.UnitId" />
-                            </td>
+                            <td><input type="checkbox" name="SelectedInaccessibleUnitIds" value="@unit.UnitId" /></td>
                             <td>@unit.UnitName</td>
                             <td>@unit.DepartmentName</td>
                         </tr>
@@ -116,15 +116,14 @@
             page2 = Model.CurrentPage2, 
             filterDept1 = Model.FilterDepartment1, 
             filterDept2 = Model.FilterDepartment2 }))
-            <input type="hidden" name="username" value="@Model.UserName" /> 
 
-            <input type="hidden" id="allSelectedAccessible" name="SelectedAccessibleUnitIds" />
-            <input type="hidden" id="allSelectedInaccessible" name="SelectedInaccessibleUnitIds" />
+            <input type="hidden" name="username" value="@Model.UserName" /> 
 
             <button type="submit" class="btn btn-success mt-2">Добави избраните</button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllInaccessibleBtn">Избери всички</button>
         </form>
     </div>
+
     <a asp-controller="Access" asp-action="MapUserAccess" asp-route-username="@Model.UserName" class="btn btn-primary m-2">
          АИС достъпи
     </a>

@@ -11,19 +11,6 @@ namespace AccessManager.Services
             _context = context;
         }
 
-        public string GetDepartmentDescription(Guid? unitId)
-        {
-            if (unitId == null) return string.Empty;
-            var unit = _context.Units.FirstOrDefault(u => u.Id == unitId.Value);
-            return unit?.Department?.Description ?? string.Empty;
-        }
-
-        public List<Department> GetDepartments()
-        {
-            return _context.Departments.ToList();
-        }
-
-
         internal Department? GetDepartment(string id)
         {
             return _context.Departments.FirstOrDefault(u => u.Id == Guid.Parse(id));
@@ -33,7 +20,6 @@ namespace AccessManager.Services
         {
             return _context.Departments.Select(d => d.Description).Contains(departmentName);
         }
-
 
         internal void CreateDepartment(string departmentName)
         {
@@ -58,13 +44,10 @@ namespace AccessManager.Services
                     {
                         unit.DeletedOn = DateTime.UtcNow;
                         foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
-                        {
                             _context.UnitUser.Remove(unitUser);
-                        }
+
                         foreach (var user in unit.UsersFromUnit)
-                        {
                             user.DeletedOn = DateTime.UtcNow;
-                        }
                     }
                     _context.SaveChanges();
                 }

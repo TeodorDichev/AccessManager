@@ -14,8 +14,8 @@ namespace AccessManager.ViewModels.Unit
         public string FilterDepartment2 { get; set; } = String.Empty;
         public List<UnitViewModel> AccessibleUnits { get; set; } = [];
         public List<UnitViewModel> InaccessibleUnits { get; set; } = [];
-        public string? SelectedAccessibleUnitIds { get; set; }
-        public string? SelectedInaccessibleUnitIds { get; set; }
+        public List<Guid> SelectedAccessibleUnitIds { get; set; } = [];
+        public List<Guid> SelectedInaccessibleUnitIds { get; set; } = [];
         public int CurrentPage1 { get; set; } = 1;
         public int TotalPages1 { get; set; } = 1;
         public int CurrentPage2 { get; set; } = 1;

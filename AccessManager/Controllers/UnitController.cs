@@ -27,7 +27,11 @@ namespace AccessManager.Controllers
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
             Unit? unit = _unitService.GetUnit(id);
-            if (unit == null) return NotFound();
+            if (unit == null)
+            {
+                TempData["Error"] = "Отделът не е намерена";
+                return RedirectToAction("UnitDepartmentList", "Department");
+            }
 
             UnitEditViewModel model = new UnitEditViewModel
             {
@@ -62,7 +66,11 @@ namespace AccessManager.Controllers
             if (!ModelState.IsValid) return View(model);
 
             Unit? unit = _unitService.GetUnit(model.UnitId.ToString());
-            if (unit == null) return NotFound();
+            if (unit == null)
+            {
+                TempData["Error"] = "Отделът не е намерен";
+                return RedirectToAction("EditUnit", new { model.UnitId });
+            }
 
             unit.Description = model.UnitName;
             _userService.SaveChanges();
@@ -90,12 +98,11 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
+
             CreateUnitViewModel model = new CreateUnitViewModel();
 
-            if (!string.IsNullOrEmpty(departmentId))
-            {
-                model.DepartmentId = Guid.Parse(departmentId);
-            }
+            if (!string.IsNullOrEmpty(departmentId)) model.DepartmentId = Guid.Parse(departmentId);
 
             var departments = _userService.GetAllowedDepartments(loggedUser).Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList();
 
@@ -117,9 +124,13 @@ namespace AccessManager.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult SoftDeleteUnit(string unitId)
         {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
             _unitService.SoftDeleteUnit(unitId);
             return RedirectToAction("UnitDepartmentList", "Department");
         }
+
         [HttpGet]
         public IActionResult MapUserUnitAccess(string username, string filterDepartment1, string filterDepartment2, int page1 = 1, int page2 = 1)
         {
@@ -127,7 +138,11 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var user = _userService.GetUser(username);
-            if (user == null) return NotFound();
+            if (user == null)
+            {
+                TempData["Error"] = "Потребителят не е намерен";
+                return RedirectToAction("EditUser", new { username });
+            }
 
             var departments = _userService.GetAllowedDepartments(loggedUser).OrderBy(d => d.Description)
                                     .Select(d => new SelectListItem(d.Description, d.Id.ToString()))
@@ -192,36 +207,48 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        public IActionResult UpdateUnitAccess(string username, string? selectedAccessibleUnitIds, string? selectedInaccessibleUnitIds)
+        public IActionResult GrantUnitAccess(MapUserUnitAccessViewModel model)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var user = _userService.GetUser(username);
-            if (user == null) return NotFound();
+            var user = _userService.GetUser(model.UserName);
+            if (user == null)
+            {
+                TempData["Error"] = "Потребителят не е намерен";
+                return RedirectToAction("MapUserUnitAccess", new { model.UserName });
+            }
 
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full || loggedUser.WritingAccess > user.WritingAccess;
+            foreach (var unitId in model.SelectedInaccessibleUnitIds)
+                _unitService.AddUnitAccess(user.Id, unitId);
 
-            var removeIds = (selectedAccessibleUnitIds ?? "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(Guid.Parse)
-                .ToList();
+            return RedirectToAction("MapUserUnitAccess", new { model.UserName });
+        }
 
-            var addIds = (selectedInaccessibleUnitIds ?? "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(Guid.Parse)
-                .ToList();
+        [HttpPost]
+        public IActionResult RevokeUnitAccess(MapUserUnitAccessViewModel model)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            if (removeIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
+            var user = _userService.GetUser(model.UserName);
+            if (user == null)
+            {
+                TempData["Error"] = "Потребителят не е намерен";
+                return RedirectToAction("MapUserUnitAccess", new { model.UserName });
+            }
+
+            if (model.SelectedAccessibleUnitIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
             {
                 user.WritingAccess = AuthorityType.Restricted;
                 user.ReadingAccess = AuthorityType.Restricted;
             }
 
-            _unitService.AddUnitAccess(user.Id, addIds);
-            _unitService.RemoveUnitAccess(user.Id, removeIds);
 
-            return RedirectToAction("MapUserUnitAccess", new { username });
+            foreach (var unitId in model.SelectedAccessibleUnitIds)
+                _unitService.RemoveUnitAccess(user.Id, unitId);
+
+            return RedirectToAction("MapUserUnitAccess", new { model.UserName });
         }
     }
 }

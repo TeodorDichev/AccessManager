@@ -3,9 +3,13 @@
 <h2 class="text-center">@Model.FirstName @Model.LastName</h2>
 <h4 class="text-center">@Model.Department - @Model.Unit</h4>
 
-@if (TempData["ErrorMessage"] != null)
+@if (TempData["Error"] != null)
 {
-    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="text-success">@TempData["Success"]</div>
 }
 
 <div class="row wrapper mt-5">

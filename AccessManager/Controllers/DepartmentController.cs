@@ -23,6 +23,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
             List<DepartmentViewModel> list = _userService.GetAllowedDepartments(loggedUser)
                 .Select(g => new DepartmentViewModel
@@ -38,16 +39,10 @@ namespace AccessManager.Controllers
                 })
                 .ToList();
 
-            if (!string.IsNullOrEmpty(filterDepartment))
-            {
+            if (!string.IsNullOrEmpty(filterDepartment)) 
                 list = list.Where(d => d.DepartmentName == filterDepartment).ToList();
-            }
 
             int totalUsers = list.Count;
-            if (loggedUser.WritingAccess < Data.Enums.AuthorityType.Full)
-            {
-                ViewBag.IsReadOnly = true;
-            }
 
             UnitDepartmentListViewModel model = new UnitDepartmentListViewModel
             {
@@ -57,7 +52,6 @@ namespace AccessManager.Controllers
                 TotalPages = (int)Math.Ceiling((double)totalUsers / Constants.ItemsPerPage),
                 FilterDepartments = loggedUser.AccessibleUnits.Select(u => u.Unit.Department.Description).Distinct().ToList(),
                 SelectedFilterDepartment = filterDepartment,
-
             };
 
             return View(model);
@@ -69,12 +63,13 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            Department? dep = _departmentService.GetDepartment(id);
-            if (dep == null) return NotFound();
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            if (loggedUser.WritingAccess < Data.Enums.AuthorityType.Full)
+            Department? dep = _departmentService.GetDepartment(id);
+            if (dep == null)
             {
-                ViewBag.IsReadOnly = true;
+                TempData["Error"] = "Дирекцията не е намерена";
+                return RedirectToAction("UnitDepartmentList");
             }
 
             DepartmentEditViewModel model = new DepartmentEditViewModel
@@ -93,14 +88,21 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
             if (!ModelState.IsValid) return View(model);
 
             Department? dep = _departmentService.GetDepartment(model.DepartmentId.ToString());
-            if (dep == null) return NotFound();
+            if (dep == null)
+            {
+                TempData["Error"] = "Дирекцията не е намерена";
+                return RedirectToAction("EditDepartment", new { model.DepartmentId });
+            }
 
-            if (_departmentService.DepartmentWithDescriptionExists(model.DepartmentName)) ModelState.AddModelError("", "Дирекция с това име съществува");
+            if (_departmentService.DepartmentWithDescriptionExists(model.DepartmentName)) {
+                TempData["Error"] = "Дирекция с това име вече съществува";
+                return View(model);
+            }
+
             dep.Description = model.DepartmentName;
             _userService.SaveChanges();
 
@@ -144,6 +146,15 @@ namespace AccessManager.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult CreateNewDepartment(string DepartmentName)
         {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            if (_departmentService.DepartmentWithDescriptionExists(DepartmentName))
+            {
+                TempData["Error"] = "Дирекция с това име вече същестува!";
+                return RedirectToAction("UnitDepartmentList");
+            }
+
             _departmentService.CreateDepartment(DepartmentName);
             return RedirectToAction("UnitDepartmentList");
         }
@@ -152,6 +163,9 @@ namespace AccessManager.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult SoftDeleteDepartment(string departmentId)
         {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
             _departmentService.SoftDeleteDepartment(departmentId);
             return RedirectToAction("UnitDepartmentList");
         }

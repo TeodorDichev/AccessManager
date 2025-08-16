@@ -8,6 +8,15 @@
 <h2 class="text-center fw-bold">@ViewData["Title"]</h2>
 <h4 class="text-center fw-bold">@Model.DepartmentName</h4>
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="text-success">@TempData["Success"]</div>
+}
+
 <div class="d-flex align-items-bottom">
     <form asp-action="EditUnit" method="post" class="wrapper m-3" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
         <div class="p-0">
