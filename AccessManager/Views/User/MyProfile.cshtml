@@ -142,13 +142,13 @@
 
             <div class="mb-3">
                 <label class="form-label">Достъп за четене</label>
-                <input class="form-control" value="@AuthorityTypeLocalization.GetBulgarianAuthorityType(Model.ReadingAccess)" readonly />
+                <input class="form-control" value="@BulgarianLocalization.GetBulgarianAuthorityType(Model.ReadingAccess)" readonly />
                 <input type="hidden" asp-for="ReadingAccess" />
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Достъп за писане</label>
-                <input class="form-control" value="@AuthorityTypeLocalization.GetBulgarianAuthorityType(Model.WritingAccess)" readonly />
+                <input class="form-control" value="@BulgarianLocalization.GetBulgarianAuthorityType(Model.WritingAccess)" readonly />
                 <input type="hidden" asp-for="WritingAccess" />
             </div>
         </div>

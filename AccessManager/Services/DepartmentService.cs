@@ -21,7 +21,7 @@ namespace AccessManager.Services
             return _context.Departments.Select(d => d.Description).Contains(departmentName);
         }
 
-        internal void CreateDepartment(string departmentName)
+        internal Department CreateDepartment(string departmentName)
         {
             Department department = new Department
             {
@@ -30,27 +30,25 @@ namespace AccessManager.Services
 
             _context.Departments.Add(department);
             _context.SaveChanges();
+
+            return department;
         }
 
-        internal void SoftDeleteDepartment(string departmentId)
+        internal void SoftDeleteDepartment(Department dep)
         {
-            if (_context.Departments.Any(d => d.Id == Guid.Parse(departmentId)))
+            if (dep != null)
             {
-                var department = _context.Departments.FirstOrDefault(d => d.Id == Guid.Parse(departmentId));
-                if (department != null)
+                dep.DeletedOn = DateTime.UtcNow;
+                foreach (var unit in dep.Units)
                 {
-                    department.DeletedOn = DateTime.UtcNow;
-                    foreach (var unit in department.Units)
-                    {
-                        unit.DeletedOn = DateTime.UtcNow;
-                        foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
-                            _context.UnitUser.Remove(unitUser);
+                    unit.DeletedOn = DateTime.UtcNow;
+                    foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
+                        _context.UnitUser.Remove(unitUser);
 
-                        foreach (var user in unit.UsersFromUnit)
-                            user.DeletedOn = DateTime.UtcNow;
-                    }
-                    _context.SaveChanges();
+                    foreach (var user in unit.UsersFromUnit)
+                        user.DeletedOn = DateTime.UtcNow;
                 }
+                _context.SaveChanges();
             }
         }
     }

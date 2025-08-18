@@ -1,5 +1,6 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
+using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
 using AccessManager.ViewModels.Access;
@@ -7,18 +8,21 @@ using AccessManager.ViewModels.InformationSystem;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Text;
 
 namespace AccessManager.Controllers
 {
     public class AccessController : BaseController
     {
+        private readonly LogService _logService;
         private readonly UserService _userService;
         private readonly AccessService _accessService;
         private readonly DirectiveService _directiveService;
 
-        public AccessController(Context context, UserService userService,
+        public AccessController(Context context, UserService userService, LogService logService,
             AccessService accessService, DirectiveService directiveService)
         {
+            _logService = logService;
             _userService = userService;
             _accessService = accessService;
             _directiveService = directiveService;
@@ -88,6 +92,7 @@ namespace AccessManager.Controllers
             var accessToDelete = _accessService.GetAccess(id);
             if (accessToDelete != null)
             {
+                _logService.AddLog(loggedUser, LogAction.Delete, accessToDelete);
                 _accessService.SoftDeleteAccess(accessToDelete);
                 TempData["Success"] = "Достъпът е успешно изтрит.";
                 return RedirectToAction("AccessList");
@@ -113,6 +118,9 @@ namespace AccessManager.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Create(CreateAccessViewModel model)
         {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
             if (!ModelState.IsValid) return View("CreateAccess", model);
 
             if (model.Level > 0 && !model.ParentAccessId.HasValue)
@@ -160,7 +168,7 @@ namespace AccessManager.Controllers
             };
 
             _accessService.AddAccess(access);
-
+            _logService.AddLog(loggedUser, LogAction.Add, access);
             TempData["Success"] = "Достъпът е създаден успешно.";
             return RedirectToAction("AccessList");
         }
@@ -205,6 +213,7 @@ namespace AccessManager.Controllers
 
             return Json(candidates);
         }
+
         [HttpGet]
         public IActionResult GetAccesses(string q = "")
         {
@@ -390,7 +399,10 @@ namespace AccessManager.Controllers
             }
 
             foreach (var accId in model.SelectedInaccessibleSystemIds)
-                _accessService.AddUserAccess(user.Id, accId, model.DirectiveToGrantAccess);
+            {
+                UserAccess ua = _accessService.AddUserAccess(user.Id, accId, model.DirectiveToGrantAccess);
+                _logService.AddLog(loggedUser, LogAction.Add, ua);
+            }
 
             return RedirectToAction("MapUserAccess", new { username = model.UserName });
         }
@@ -409,7 +421,10 @@ namespace AccessManager.Controllers
             }
 
             foreach (var accId in model.SelectedAccessibleSystemIds)
-                _accessService.RevokeAccess(user.Id, accId, model.DirectiveToRevokeAccess);
+            {
+                UserAccess ua = _accessService.RevokeAccess(user.Id, accId, model.DirectiveToRevokeAccess);
+                _logService.AddLog(loggedUser, LogAction.Add, ua);
+            }
 
             return RedirectToAction("MapUserAccess", new { username = model.UserName });
         }
@@ -428,7 +443,10 @@ namespace AccessManager.Controllers
             }
 
             foreach (var userId in model.SelectedUsersWithoutAccessIds)
-                _accessService.AddUserAccess(userId, access.Id, model.DirectiveToGrantAccess);
+            {
+                UserAccess ua = _accessService.AddUserAccess(userId, access.Id, model.DirectiveToGrantAccess);
+                _logService.AddLog(loggedUser, LogAction.Add, ua);
+            }
 
             return RedirectToAction("EditAccess", new { accessId = model.AccessId });
         }
@@ -447,7 +465,10 @@ namespace AccessManager.Controllers
             }
 
             foreach (var userId in model.SelectedUsersWithAccessIds)
-                _accessService.RevokeAccess(userId, access.Id, model.DirectiveToRevokeAccess);
+            {
+                UserAccess ua = _accessService.RevokeAccess(userId, access.Id, model.DirectiveToRevokeAccess);
+                _logService.AddLog(loggedUser, LogAction.Add, ua);
+            }
 
             return RedirectToAction("EditAccess", new { accessId = model.AccessId });
         }
@@ -465,7 +486,9 @@ namespace AccessManager.Controllers
             {
                 model.UserId = _userService.GetUser(model.username)?.Id ?? Guid.Empty;
             }
-            _accessService.UpdateAccessDirective(model.UserId, access.Id, model.DirectiveId);
+
+            UserAccess ua = _accessService.UpdateAccessDirective(model.UserId, access.Id, model.DirectiveId);
+            _logService.AddLog(loggedUser, LogAction.Edit, ua);
 
             return RedirectToAction("EditAccess", new { accessId = model.AccessId });
         }
@@ -482,6 +505,7 @@ namespace AccessManager.Controllers
             if (!string.IsNullOrEmpty(model.Name))
             {
                 _accessService.UpdateAccessName(model.Name, access);
+                _logService.AddLog(loggedUser, LogAction.Edit, access);
             }
 
             return RedirectToAction("EditAccess", new { accessId = model.AccessId });

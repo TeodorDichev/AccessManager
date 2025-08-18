@@ -1,5 +1,6 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
+using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
 using AccessManager.ViewModels.Directive;
@@ -9,14 +10,16 @@ namespace AccessManager.Controllers
 {
     public class DirectiveController : BaseController
     {
+        private readonly LogService _logService;
         private readonly UserService _userService;
         private readonly AccessService _accessService;
         private readonly DirectiveService _directiveService;
         private readonly DepartmentService _departmentUnitService;
 
-        public DirectiveController(Context context, UserService userService,
+        public DirectiveController(Context context, UserService userService, LogService logService,
             AccessService accessService, DepartmentService departmentUnitService, DirectiveService directiveService)
         {
+            _logService = logService;
             _userService = userService;
             _accessService = accessService;
             _departmentUnitService = departmentUnitService;
@@ -57,7 +60,14 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            _directiveService.CreateDirective(name);
+            if(_directiveService.ExistsDirectiveWithName(name))
+            {
+                TempData["Error"] = "Вече съществува заповед с това име";
+                return RedirectToAction("DirectiveList");
+            }
+
+            Directive dir = _directiveService.CreateDirective(name);
+            _logService.AddLog(loggedUser, LogAction.Add, dir);
 
             return RedirectToAction("DirectiveList");
         }
@@ -72,9 +82,11 @@ namespace AccessManager.Controllers
             Directive? directive = _directiveService.GetDirective(id);
             if(directive != null)
             {
+                _logService.AddLog(loggedUser, LogAction.Delete, directive);
                 _directiveService.DeleteDirective(directive);
             }
 
+            else TempData["Error"] = "Не съществува такава заповед";
             return RedirectToAction("DirectiveList");
         }
 
@@ -92,6 +104,7 @@ namespace AccessManager.Controllers
             }
 
             _directiveService.UpdateDirectiveName(directive, model.Name);
+            _logService.AddLog(loggedUser, LogAction.Edit, directive);
 
             return Json(new { success = true });
         }
@@ -106,14 +119,14 @@ namespace AccessManager.Controllers
             if (model == null || model.AccessId == Guid.Empty || model.DirectiveId == Guid.Empty)
                 return Json(new { success = false, message = "Невалидни данни" });
 
-            var access = _accessService.GetUserAccess(model.AccessId.ToString(), model.Username);
-            if (access == null)
+            var userAccess = _accessService.GetUserAccess(model.AccessId.ToString(), model.Username);
+            if (userAccess == null)
                 return Json(new { success = false, message = "Достъпът не е намерен" });
 
-            _directiveService.UpdateAccessDirective(access, model.DirectiveId);
+            _directiveService.UpdateAccessDirective(userAccess, model.DirectiveId);
+            _logService.AddLog(loggedUser, LogAction.Edit, userAccess);
 
             return Json(new { success = true, message = "Заповедта е обновена успешно" });
         }
-
     }
 }

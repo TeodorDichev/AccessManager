@@ -93,7 +93,7 @@
                     {
                         @if (level <= Model.LoggedUserReadingAccess)
                         {
-                            <option value="@((int)level)">@AuthorityTypeLocalization.GetBulgarianAuthorityType(level)</option>
+                            <option value="@((int)level)">@BulgarianLocalization.GetBulgarianAuthorityType(level)</option>
                         }
                     }
                 </select>
@@ -106,7 +106,7 @@
                     {
                         @if(level <= Model.LoggedUserWritingAccess)
                         {
-                            <option value="@((int)level)">@AuthorityTypeLocalization.GetBulgarianAuthorityType(level)</option>
+                            <option value="@((int)level)">@BulgarianLocalization.GetBulgarianAuthorityType(level)</option>
                         }
                     }
                 </select>

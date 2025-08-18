@@ -11,12 +11,14 @@ namespace AccessManager.Controllers
 {
     public class UnitController : BaseController
     {
+        private readonly LogService _logService;
         private readonly UnitService _unitService;
         private readonly UserService _userService;
-        public UnitController(UnitService unitService, UserService userService)
+        public UnitController(UnitService unitService, UserService userService, LogService logService)
         {
             _unitService = unitService;
             _userService = userService;
+            _logService = logService;
         }
 
         [HttpGet]
@@ -74,6 +76,7 @@ namespace AccessManager.Controllers
 
             unit.Description = model.UnitName;
             _userService.SaveChanges();
+            _logService.AddLog(loggedUser, LogAction.Edit, unit);
 
             return View(model);
         }
@@ -81,14 +84,22 @@ namespace AccessManager.Controllers
         [HttpPost]
         public IActionResult RemoveUnitAccess(string username, Guid unitId)
         {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
             var user = _userService.GetUser(username);
             if (user == null) return Json(new { success = false, message = "User not found" });
-            else if (user.WritingAccess == Data.Enums.AuthorityType.SuperAdmin) return Json(new { success = false, message = "Cannot remove unit access from superadmin" });
+
+            var uu = _unitService.GetUnitUser(user.Id, unitId);
+
+            if(uu == null) return Json(new { success = false, message = "Not Found" });
+            if (user.WritingAccess == Data.Enums.AuthorityType.SuperAdmin) return Json(new { success = false, message = "Cannot remove unit access from superadmin" });
 
             if (user.WritingAccess == Data.Enums.AuthorityType.Full) user.WritingAccess = Data.Enums.AuthorityType.Restricted;
             if (user.ReadingAccess == Data.Enums.AuthorityType.Full) user.ReadingAccess = Data.Enums.AuthorityType.Restricted;
 
-            _unitService.RemoveUserUnit(user.Id, unitId);
+            _logService.AddLog(loggedUser, LogAction.Delete, uu);
+            _unitService.RemoveUnitUser(uu);
             return Json(new { success = true, message = "Достъпът е премахнат успешно" });
         }
 
@@ -114,9 +125,13 @@ namespace AccessManager.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult CreateUnit(CreateUnitViewModel model)
         {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
             if (!ModelState.IsValid) return View(model);
 
-            _unitService.CreateUnit(model.UnitName, model.DepartmentId);
+            Unit uu = _unitService.CreateUnit(model.UnitName, model.DepartmentId);
+            _logService.AddLog(loggedUser, LogAction.Add, uu);
             return RedirectToAction("UnitDepartmentList", "Department");
         }
 
@@ -127,7 +142,14 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            _unitService.SoftDeleteUnit(unitId);
+            Unit? unit = _unitService.GetUnit(unitId);
+            if(unit != null)
+            {
+                _logService.AddLog(loggedUser, LogAction.Delete, unit);
+                _unitService.SoftDeleteUnit(unitId);
+            }
+            else TempData["Error"] = "Отделът не е изтрит успешно";
+
             return RedirectToAction("UnitDepartmentList", "Department");
         }
 
@@ -220,7 +242,10 @@ namespace AccessManager.Controllers
             }
 
             foreach (var unitId in model.SelectedInaccessibleUnitIds)
-                _unitService.AddUnitAccess(user.Id, unitId);
+            {
+                var uu = _unitService.AddUnitAccess(user.Id, unitId);
+                _logService.AddLog(loggedUser, LogAction.Add, uu);
+            }
 
             return RedirectToAction("MapUserUnitAccess", new { model.UserName });
         }
@@ -246,7 +271,14 @@ namespace AccessManager.Controllers
 
 
             foreach (var unitId in model.SelectedAccessibleUnitIds)
-                _unitService.RemoveUnitAccess(user.Id, unitId);
+            {
+                var uu = _unitService.GetUnitUser(user.Id, unitId);
+                if(uu != null)
+                {
+                    _logService.AddLog(loggedUser, LogAction.Add, uu);
+                    _unitService.RemoveUnitUser(uu);
+                }
+            }
 
             return RedirectToAction("MapUserUnitAccess", new { model.UserName });
         }

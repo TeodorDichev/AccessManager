@@ -60,8 +60,8 @@
                     <td>@user.LastName</td>
                     <td>@user.Department</td>
                     <td>@user.Unit</td>
-                    <td>@AuthorityTypeLocalization.GetBulgarianAuthorityType(user.WriteAccess)</td>
-                    <td>@AuthorityTypeLocalization.GetBulgarianAuthorityType(user.ReadAccess)</td>
+                    <td>@BulgarianLocalization.GetBulgarianAuthorityType(user.WriteAccess)</td>
+                    <td>@BulgarianLocalization.GetBulgarianAuthorityType(user.ReadAccess)</td>
                     <td>
                         <button class="btn btn-danger remove-access-btn" data-username="@user.UserName" data-unitid="@Model.UnitId">
                             Премахни достъпа

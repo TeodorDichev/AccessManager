@@ -12,7 +12,7 @@
     <div class="text-success">@TempData["Success"]</div>
 }
 
-<div class="row wrapper mt-5">
+<div class="row wrapper mt-5" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
     <div class="col-md-6">
         <h4>Достъпни системи</h4>
         <form method="get" asp-action="MapUserAccess" class="mb-2" as>

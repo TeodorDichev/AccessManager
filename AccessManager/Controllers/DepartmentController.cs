@@ -1,20 +1,22 @@
 ﻿using AccessManager.Data.Entities;
 using AccessManager.Services;
 using AccessManager.Utills;
-using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.Department;
+using AccessManager.ViewModels.Unit;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccessManager.Controllers
 {
     public class DepartmentController : BaseController
     {
-        private readonly DepartmentService _departmentService;
+        private readonly LogService _logService;
         private readonly UserService _userService;
-        public DepartmentController(DepartmentService departmentUnitService, UserService userService)
+        private readonly DepartmentService _departmentService;
+        public DepartmentController(DepartmentService departmentUnitService, UserService userService, LogService logService)
         {
             _departmentService = departmentUnitService;
             _userService = userService;
+            _logService = logService;
         }
 
         [HttpGet]
@@ -39,7 +41,7 @@ namespace AccessManager.Controllers
                 })
                 .ToList();
 
-            if (!string.IsNullOrEmpty(filterDepartment)) 
+            if (!string.IsNullOrEmpty(filterDepartment))
                 list = list.Where(d => d.DepartmentName == filterDepartment).ToList();
 
             int totalUsers = list.Count;
@@ -98,13 +100,15 @@ namespace AccessManager.Controllers
                 return RedirectToAction("EditDepartment", new { model.DepartmentId });
             }
 
-            if (_departmentService.DepartmentWithDescriptionExists(model.DepartmentName)) {
+            if (_departmentService.DepartmentWithDescriptionExists(model.DepartmentName))
+            {
                 TempData["Error"] = "Дирекция с това име вече съществува";
                 return View(model);
             }
 
             dep.Description = model.DepartmentName;
             _userService.SaveChanges();
+            _logService.AddLog(loggedUser, Data.Enums.LogAction.Edit, dep);
 
             return View(model);
         }
@@ -155,7 +159,9 @@ namespace AccessManager.Controllers
                 return RedirectToAction("UnitDepartmentList");
             }
 
-            _departmentService.CreateDepartment(DepartmentName);
+            Department dep = _departmentService.CreateDepartment(DepartmentName);
+            _logService.AddLog(loggedUser, Data.Enums.LogAction.Add, dep);
+
             return RedirectToAction("UnitDepartmentList");
         }
 
@@ -166,7 +172,15 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            _departmentService.SoftDeleteDepartment(departmentId);
+            Department? dep = _departmentService.GetDepartment(departmentId);
+            if (dep == null)
+            {
+                TempData["Error"] = "Дирекцията не е намерена";
+                return RedirectToAction("UnitDepartmentList");
+            }
+
+            _departmentService.SoftDeleteDepartment(dep);
+            _logService.AddLog(loggedUser, Data.Enums.LogAction.Delete, dep);
             return RedirectToAction("UnitDepartmentList");
         }
     }

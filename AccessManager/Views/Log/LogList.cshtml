@@ -1,6 +1,69 @@
-﻿@{
-    ViewData["Title"] = "Logs";
-}
-<h1>Одити</h1>
+﻿@using AccessManager.Utills;
+@model AccessManager.ViewModels.Log.LogListViewModel
 
-<p>Тази страница все още е в разработка</p>
+@{
+    ViewData["Title"] = "Справки";
+}
+
+<form style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<h2>Справки</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="text-success">@TempData["Success"]</div>
+}
+
+<div class="wrapper mb-2" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+    <form asp-controller="Log" asp-action="DeleteAllLogs" method="post">
+        <button type="submit" class="btn btn-sm btn-danger">
+            Изтрий всички записи
+        </button>
+    </form>
+
+</div>
+
+<table class="wrapper table table-bordered table-striped" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+    <thead class="table-light">
+        <tr>
+            <th>Вид</th>
+            <th>Действие</th>
+            <th>Дата</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var log in Model.Logs)
+        {
+            <tr>
+                <td>@BulgarianLocalization.GetBulgarianLogAction(log.ActionType)</td>
+                <td>@log.Description</td>
+                <td>@log.Date</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center mt-4">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="?page=@i">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/wrapper-is-readonly.js asp-append-version="true"></script>
+}

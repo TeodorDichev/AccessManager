@@ -120,14 +120,12 @@ namespace AccessManager.Services
             return _context.Directives.Any(d => d.Id == Guid.Parse(directiveToRevokeAccess));
         }
 
-        internal void AddUserAccess(Guid userId, Guid accessId, string directiveToGrantAccess)
+        internal UserAccess AddUserAccess(Guid userId, Guid accessId, string directiveToGrantAccess)
         {
-            if(!_context.Accesses.Any(a => a.Id == accessId) && _context.Users.Any(u => u.Id == userId)) return;
-
             UserAccess? userAccess = _context.UserAccesses.FirstOrDefault(ua => ua.UserId == userId && ua.AccessId == accessId);
             if (userAccess == null)
             {
-                var toAdd = new UserAccess
+                userAccess = new UserAccess
                 {
                     UserId = userId,
                     AccessId = accessId,
@@ -135,7 +133,7 @@ namespace AccessManager.Services
                     GrantedOn = DateTime.UtcNow
                 };
 
-                _context.UserAccesses.Add(toAdd);
+                _context.UserAccesses.Add(userAccess);
             }
             else
             {
@@ -145,6 +143,7 @@ namespace AccessManager.Services
             }
 
             _context.SaveChanges();
+            return userAccess;
         }
 
         internal void AddAccess(Access acc)
@@ -153,7 +152,7 @@ namespace AccessManager.Services
             _context.SaveChanges();
         }
 
-        internal void RevokeAccess(Guid userId, Guid accessId, string directiveToRevokeAccess)
+        internal UserAccess RevokeAccess(Guid userId, Guid accessId, string directiveToRevokeAccess)
         {
             UserAccess? userAccess = _context.UserAccesses.FirstOrDefault(ua => ua.UserId == userId && ua.AccessId == accessId);
 
@@ -164,6 +163,8 @@ namespace AccessManager.Services
 
                 _context.SaveChanges();
             }
+
+            return userAccess;
         }
 
         internal void UpdateAccessName(string name, Access access)
@@ -172,7 +173,7 @@ namespace AccessManager.Services
             _context.SaveChanges();
         }
 
-        internal void UpdateAccessDirective(Guid userId, Guid accessId, Guid directiveId)
+        internal UserAccess UpdateAccessDirective(Guid userId, Guid accessId, Guid directiveId)
         {
             UserAccess? userAccess = _context.UserAccesses.FirstOrDefault(ua => ua.UserId == userId && ua.AccessId == accessId);
             if (userAccess != null)
@@ -183,6 +184,7 @@ namespace AccessManager.Services
                 _context.SaveChanges();
             }
 
+            return userAccess;
         }
     }
 }

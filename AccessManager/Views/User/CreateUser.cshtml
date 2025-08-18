@@ -67,7 +67,7 @@
             <select asp-for="SelectedReadingAccess" class="form-select" id="SelectedReadingAccess">
                 @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
                 {
-                    <option value="@((int)level)">@AuthorityTypeLocalization.GetBulgarianAuthorityType(level)</option>
+                    <option value="@((int)level)">@BulgarianLocalization.GetBulgarianAuthorityType(level)</option>
                 }
             </select>
             <span asp-validation-for="SelectedReadingAccess" class="text-danger"></span>
@@ -77,7 +77,7 @@
             <select asp-for="SelectedWritingAccess" class="form-select" id="SelectedWritingAccess">
                 @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
                 {
-                    <option value="@((int)level)">@AuthorityTypeLocalization.GetBulgarianAuthorityType(level)</option>
+                    <option value="@((int)level)">@BulgarianLocalization.GetBulgarianAuthorityType(level)</option>
                 }
             </select>
             <span asp-validation-for="SelectedWritingAccess" class="text-danger"></span>

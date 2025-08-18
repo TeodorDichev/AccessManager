@@ -19,10 +19,12 @@ namespace AccessManager.Controllers
         private readonly PasswordService _passwordService;
         private readonly DepartmentService _departmentService;
         private readonly UnitService _unitService;
+        private readonly LogService _logService;
 
-        public UserController(Context context, PasswordService passwordService, UserService userService,
+        public UserController(Context context, PasswordService passwordService, UserService userService, LogService logService,
             AccessService accessService, DepartmentService departmentService, DirectiveService directiveService, UnitService unitService)
         {
+            _logService = logService;
             _passwordService = passwordService;
             _userService = userService;
             _accessService = accessService;
@@ -91,6 +93,7 @@ namespace AccessManager.Controllers
             }
 
             _userService.UpdateUser(model, loggedUser);
+            _logService.AddLog(loggedUser, LogAction.Edit, loggedUser);
             return RedirectToAction("MyProfile");
         }
 
@@ -99,6 +102,8 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
             List<UserListItemViewModel> allUsers = _userService.GetFilteredUsers(sortBy, filterUnit, filterDepartment, loggedUser);
             int totalUsers = allUsers.Count();
@@ -203,6 +208,8 @@ namespace AccessManager.Controllers
             if (model.SelectedReadingAccess >= AuthorityType.Full)
                 _unitService.AddFullUnitAccess(user.Id);
 
+            _logService.AddLog(loggedUser, LogAction.Add, user);
+
             if (redirectTo == "MapUserAccess")
                 return RedirectToAction(redirectTo, new { username = model.UserName });
             else if (redirectTo == "MapUserUnitAccess")
@@ -275,6 +282,8 @@ namespace AccessManager.Controllers
             }
 
             _userService.UpdateUser(model, user);
+            _logService.AddLog(loggedUser, LogAction.Edit, user);
+
             return RedirectToAction("UserList");
         }
 
@@ -290,8 +299,13 @@ namespace AccessManager.Controllers
 
             if (loggedUser.WritingAccess < AuthorityType.Full
                 || userToDelete.WritingAccess >= loggedUser.WritingAccess
-                || userToDelete.ReadingAccess >= loggedUser.WritingAccess) return BadRequest();
+                || userToDelete.ReadingAccess >= loggedUser.WritingAccess)
+            {
+                TempData["Error"] = "Недостатъчен достъп!";
+                return RedirectToAction("UserList");
+            }
 
+            _logService.AddLog(loggedUser, LogAction.Delete, userToDelete);
             _userService.SoftDeleteUser(userToDelete);
             return RedirectToAction("UserList");
         }
@@ -301,15 +315,29 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-            if (string.IsNullOrWhiteSpace(username)) return BadRequest();
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                TempData["Error"] = "Потребителят не е намерен";
+                return RedirectToAction("UserList");
+            }
 
             var userToDelete = _userService.GetDeletedUser(username);
-            if (userToDelete == null) return NotFound();
+            if (userToDelete == null)
+            {
+                TempData["Error"] = "Потребителят не е намерен";
+                return RedirectToAction("UserList");
+            }
 
             if (loggedUser.WritingAccess < AuthorityType.Full
                 || userToDelete.WritingAccess >= loggedUser.WritingAccess
-                || userToDelete.ReadingAccess >= loggedUser.WritingAccess) return BadRequest();
+                || userToDelete.ReadingAccess >= loggedUser.WritingAccess)
+            {
+                TempData["Error"] = "Недостатъчен достъп!";
+                return RedirectToAction("UserList");
+            }
 
+            _logService.AddLog(loggedUser, LogAction.Delete, userToDelete);
             _userService.HardDeleteUser(userToDelete);
             return RedirectToAction("DeletedUsers");
         }
@@ -331,9 +359,15 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var userToRestore = _userService.GetDeletedUser(username);
-            if (userToRestore == null) return NotFound();
+            if (userToRestore == null)
+            {
+                TempData["Error"] = "Потребителят не е намерен";
+                return RedirectToAction("UserList");
+            }
 
             _userService.RestoreUser(userToRestore);
+            _logService.AddLog(loggedUser, LogAction.Edit, userToRestore);
+
             return RedirectToAction("DeletedUsers");
         }
 
