@@ -31,6 +31,14 @@
         </div>
 
         <div>
+            <label>Филтър по заповед</label>
+            <input type="text" id="FilterDirectiveSearch" class="form-control" placeholder="Избор на заповед" autocomplete="off" value="@Model.FilterDirectiveDescription" />
+            <input type="hidden" asp-for="FilterDirectiveId" name="filterDirectiveId" id="FilterDirectiveId" onchange="this.form.submit()" />
+            <div id="filterDirectiveCandidates" class="list-group" style="position:relative; z-index:2000;"></div>
+            <span asp-validation-for="FilterDirectiveId" class="text-danger"></span>
+        </div>
+
+        <div>
             <button type="button" id="clearFiltersBtn" class="btn btn-secondary btn-sm">
                 Изчисти
             </button>

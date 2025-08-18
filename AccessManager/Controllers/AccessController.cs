@@ -217,7 +217,7 @@ namespace AccessManager.Controllers
         [HttpGet]
         public IActionResult GetAccesses(string q = "")
         {
-            var all = _accessService.GetAccesses().Select(a => new { a.Id, a.Description}).ToList();
+            var all = _accessService.GetAccesses().Select(a => new { a.Id, a.Description }).ToList();
             var qLower = (q ?? "").Trim().ToLowerInvariant();
 
             var candidates = all
@@ -337,15 +337,15 @@ namespace AccessManager.Controllers
             var usersWithRevokedAccess = _accessService.GetRevokedUserAccesses(access).Select(ua => new UserAccessViewModel
             {
                 UserId = ua.UserId,
-                UserName = ua.User.UserName,
-                FirstName = ua.User.FirstName,
-                LastName = ua.User.LastName,
-                Department = ua.User.Unit.Department.Description,
-                Unit = ua.User.Unit.Description,
-                WriteAccess = ua.User.WritingAccess,
-                ReadAccess = ua.User.ReadingAccess,
-                DirectiveId = ua.GrantedByDirectiveId,
-                DirectiveDescription = ua.GrantedByDirective.Name
+                UserName = ua.User?.UserName ?? "",
+                FirstName = ua.User?.FirstName ?? "",
+                LastName = ua.User?.LastName ?? "",
+                Department = ua.User?.Unit?.Department?.Description ?? "",
+                Unit = ua.User?.Unit?.Description ?? "",
+                WriteAccess = ua.User?.WritingAccess ?? AuthorityType.None,
+                ReadAccess = ua.User?.ReadingAccess ?? AuthorityType.None,
+                DirectiveId = ua.RevokedByDirectiveId ?? Guid.Empty,
+                DirectiveDescription = ua.RevokedByDirective?.Name ?? ""
             }).ToList();
 
             var usersNotGrantedTheAccess = _accessService.GetNotGrantedUsers(access).Select(u => new UserAccessViewModel
@@ -520,29 +520,38 @@ namespace AccessManager.Controllers
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
             List<UserAccess> userAccesses = new List<UserAccess>();
 
-            if (model.FilterUserId.HasValue) {
+            if (model.FilterUserId.HasValue)
+            {
                 var user = _userService.GetUser(model.FilterUserId.Value);
-                if (user != null) {
+                if (user != null)
+                {
+                    model.FilterUserName = user.UserName;
                     userAccesses = user.UserAccesses.ToList();
                 }
             }
             else
-            {
                 foreach (var user in _userService.GetAccessibleUsers(loggedUser).Append(loggedUser).ToList())
-                {
                     userAccesses.AddRange(user.UserAccesses.ToList());
-                }
-            }
 
             if (model.FilterAccessId.HasValue)
             {
                 var access = _accessService.GetAccess(model.FilterAccessId.Value);
                 if (access != null)
                 {
+                    model.FilterAccessDescription = _accessService.GetAccessDescription(access);
                     userAccesses = userAccesses.Where(ua => ua.AccessId == model.FilterAccessId).ToList();
                 }
             }
 
+            if (model.FilterDirectiveId.HasValue)
+            {
+                var directive = _directiveService.GetDirective(model.FilterDirectiveId.Value);
+                if (directive != null)
+                {
+                    model.FilterDirectiveDescription = directive.Name;
+                    userAccesses = userAccesses.Where(ua => ua.GrantedByDirectiveId == model.FilterDirectiveId || ua.RevokedByDirectiveId == model.FilterDirectiveId).ToList();
+                }
+            }
 
             model.UserAccessList = userAccesses.Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).Select(ua =>
                 new UserAccessListItemViewModel
@@ -558,16 +567,9 @@ namespace AccessManager.Controllers
                     GrantDirectiveDescription = ua.GrantedByDirective.Name,
                     RevokeDirectiveDescription = ua.RevokedByDirective != null ? ua.RevokedByDirective.Name : "-",
                 }).OrderBy(u => u.UserName).ToList();
+
             model.CurrentPage = page;
             model.TotalPages = (int)Math.Ceiling(userAccesses.Count / (double)Constants.ItemsPerPage);
-            if(model.FilterUserId.HasValue)
-            {
-                model.FilterUserName = _userService.GetUser(model.FilterUserId)?.UserName;
-            }
-            if (model.FilterAccessId.HasValue)
-            {
-                model.FilterAccessDescription = _accessService.GetAccessDescription(_accessService.GetAccess(model.FilterAccessId.Value));
-            }
             return View(model);
         }
     }

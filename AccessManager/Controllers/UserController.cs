@@ -371,16 +371,6 @@ namespace AccessManager.Controllers
             return RedirectToAction("DeletedUsers");
         }
 
-        [HttpPost]
-        public IActionResult RestoreAllUsers()
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            _userService.RestoreAllUsers();
-            return RedirectToAction("DeletedUsers");
-        }
-
         [HttpGet]
         public IActionResult DeletedUsers(int page = 1)
         {

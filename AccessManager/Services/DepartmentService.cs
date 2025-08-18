@@ -1,5 +1,6 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Services
 {
@@ -36,20 +37,35 @@ namespace AccessManager.Services
 
         internal void SoftDeleteDepartment(Department dep)
         {
-            if (dep != null)
+            dep.DeletedOn = DateTime.Now;
+            foreach (var unit in dep.Units)
             {
-                dep.DeletedOn = DateTime.UtcNow;
-                foreach (var unit in dep.Units)
-                {
-                    unit.DeletedOn = DateTime.UtcNow;
-                    foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
-                        _context.UnitUser.Remove(unitUser);
+                foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
+                    unitUser.DeletedOn = DateTime.Now;
 
-                    foreach (var user in unit.UsersFromUnit)
-                        user.DeletedOn = DateTime.UtcNow;
-                }
-                _context.SaveChanges();
-            }
+                foreach (var user in unit.UsersFromUnit)
+                    user.DeletedOn = DateTime.Now;
+
+                unit.DeletedOn = DateTime.Now;
+			}
+            _context.SaveChanges();
+        }
+
+        internal void HardDeleteDepartment(Department dep)
+        {
+			foreach (var unit in dep.Units)
+            {
+				var unitUsers = _context.UnitUser.IgnoreQueryFilters().Where(uu => uu.UnitId == unit.Id);
+				_context.UnitUser.RemoveRange(unitUsers);
+
+				var users = _context.Users.IgnoreQueryFilters().Where(uu => uu.UnitId == unit.Id);
+				_context.Users.RemoveRange(users);
+
+                _context.Units.Remove(unit);
+			}
+
+            _context.Departments.Remove(dep);
+			_context.SaveChanges();
         }
     }
 }

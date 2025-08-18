@@ -15,7 +15,7 @@ namespace AccessManager.Services
 
         public List<Log> GetLogs(int page)
         {
-            return _context.Logs.Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).OrderBy(l => l.Date).ToList();
+            return _context.Logs.Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).OrderByDescending(l => l.Date).ToList();
         }
         public int GetLogsCount()
         {

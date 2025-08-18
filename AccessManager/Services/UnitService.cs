@@ -1,5 +1,6 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Services
 {
@@ -11,14 +12,20 @@ namespace AccessManager.Services
             _context = context;
         }
 
-        internal void RemoveUnitUser(UnitUser uu)
+        internal void SoftDeleteUnitUser(UnitUser uu)
         {
             if (uu != null)
             {
-                _context.UnitUser.Remove(uu);
+                uu.DeletedOn = DateTime.Now;
                 _context.SaveChanges();
             }
         }
+
+        internal void HardDeleteUnitUser(UnitUser uu)
+        {
+            _context.UnitUser.Remove(uu);
+            _context.SaveChanges();
+		}
 
         internal UnitUser? GetUnitUser(Guid userId, Guid unitId)
         {
@@ -70,20 +77,30 @@ namespace AccessManager.Services
 
         internal void SoftDeleteUnit(string unitId)
         {
-            if (_context.Units.Any(d => d.Id == Guid.Parse(unitId)))
+            var unit = _context.Units.FirstOrDefault(d => d.Id == Guid.Parse(unitId));
+            if (unit != null)
             {
-                var unit = _context.Units.FirstOrDefault(d => d.Id == Guid.Parse(unitId));
-                if (unit != null)
-                {
-                    unit.DeletedOn = DateTime.UtcNow;
-                    foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
-                        _context.UnitUser.Remove(unitUser);
+                unit.DeletedOn = DateTime.Now;
+                foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
+                    unitUser.DeletedOn = DateTime.Now;
 
-                    foreach (var user in unit.UsersFromUnit)
-                        user.DeletedOn = DateTime.UtcNow;
-                    _context.SaveChanges();
-                }
+                foreach (var user in unit.UsersFromUnit)
+                    user.DeletedOn = DateTime.Now;
+
+                _context.SaveChanges();
             }
+        }
+
+        internal void HardDeleteUnit(Unit unit)
+        {
+			var unitUsers = _context.UnitUser.IgnoreQueryFilters().Where(uu => uu.UnitId == unit.Id);
+			_context.UnitUser.RemoveRange(unitUsers);
+
+			var users = _context.Users.IgnoreQueryFilters().Where(uu => uu.UnitId == unit.Id);
+			_context.Users.RemoveRange(users);
+
+			_context.Units.Remove(unit);
+			_context.SaveChanges();
         }
     }
 }

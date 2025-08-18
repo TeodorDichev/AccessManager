@@ -99,7 +99,7 @@ namespace AccessManager.Controllers
             if (user.ReadingAccess == Data.Enums.AuthorityType.Full) user.ReadingAccess = Data.Enums.AuthorityType.Restricted;
 
             _logService.AddLog(loggedUser, LogAction.Delete, uu);
-            _unitService.RemoveUnitUser(uu);
+            _unitService.SoftDeleteUnitUser(uu);
             return Json(new { success = true, message = "Достъпът е премахнат успешно" });
         }
 
@@ -276,7 +276,7 @@ namespace AccessManager.Controllers
                 if(uu != null)
                 {
                     _logService.AddLog(loggedUser, LogAction.Add, uu);
-                    _unitService.RemoveUnitUser(uu);
+                    _unitService.SoftDeleteUnitUser(uu);
                 }
             }
 

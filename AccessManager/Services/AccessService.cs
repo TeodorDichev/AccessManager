@@ -1,5 +1,6 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Services
 {
@@ -58,16 +59,18 @@ namespace AccessManager.Services
 
         internal void SoftDeleteAccess(Access accessToDelete)
         {
-            accessToDelete.DeletedOn = DateTime.UtcNow;
-            SoftDeleteRecursively(accessToDelete, DateTime.UtcNow);
+            accessToDelete.DeletedOn = DateTime.Now;
+            SoftDeleteRecursively(accessToDelete, DateTime.Now);
             _context.SaveChanges();
         }
 
-        internal void HardDeleteAccesses()
+        internal void HardDeleteAccess(Access accessToDelete)
         {
-            _context.Accesses.Where(a => a.DeletedOn != null).ToList().ForEach(a => _context.Accesses.Remove(a));
+            HardDeleteRecursively(accessToDelete);
+            _context.Accesses.Remove(accessToDelete);
             _context.SaveChanges();
         }
+
         private void SoftDeleteRecursively(Access access, DateTime timestamp)
         {
             if (access == null) return;
@@ -78,7 +81,29 @@ namespace AccessManager.Services
             {
                 foreach (var subAccess in access.SubAccesses)
                 {
+                    foreach(var ua in _context.UserAccesses.Where(ua => ua.AccessId == subAccess.Id))
+                    {
+                        ua.DeletedOn = timestamp;
+                    }
+
                     SoftDeleteRecursively(subAccess, timestamp);
+                }
+            }
+        }
+
+        private void HardDeleteRecursively(Access access)
+        {
+            if (access == null) return;
+
+            if (access.SubAccesses != null && access.SubAccesses.Any())
+            {
+                foreach (var subAccess in access.SubAccesses)
+                {
+                    var ua = _context.UserAccesses.IgnoreQueryFilters().Where(ua => ua.AccessId == subAccess.Id).ToList();
+                    _context.UserAccesses.RemoveRange(ua);
+                    _context.Accesses.Remove(subAccess);
+
+                    HardDeleteRecursively(subAccess);
                 }
             }
         }
@@ -130,7 +155,7 @@ namespace AccessManager.Services
                     UserId = userId,
                     AccessId = accessId,
                     GrantedByDirectiveId = Guid.Parse(directiveToGrantAccess),
-                    GrantedOn = DateTime.UtcNow
+                    GrantedOn = DateTime.Now
                 };
 
                 _context.UserAccesses.Add(userAccess);
@@ -159,7 +184,7 @@ namespace AccessManager.Services
             if (userAccess != null)
             {
                 userAccess.RevokedByDirectiveId = Guid.Parse(directiveToRevokeAccess);
-                userAccess.RevokedOn = DateTime.UtcNow;
+                userAccess.RevokedOn = DateTime.Now;
 
                 _context.SaveChanges();
             }

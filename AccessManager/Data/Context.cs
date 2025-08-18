@@ -60,6 +60,8 @@ namespace AccessManager.Data
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.NoAction)
                     .IsRequired(false);
+
+                entity.HasQueryFilter(e => e.DeletedOn == null);
             });
         }
 
@@ -249,6 +251,8 @@ namespace AccessManager.Data
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.NoAction)
                     .IsRequired(false);
+
+                entity.HasQueryFilter(e => e.DeletedOn == null);
             });
         }
     }

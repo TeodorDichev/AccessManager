@@ -205,20 +205,23 @@ namespace AccessManager.Services
 
         internal void SoftDeleteUser(User userToDelete)
         {
-            userToDelete.DeletedOn = DateTime.UtcNow;
+            userToDelete.DeletedOn = DateTime.Now;
 
             foreach (var userAccess in userToDelete.UserAccesses)
-                userAccess.DeletedOn = DateTime.UtcNow;
+                userAccess.DeletedOn = DateTime.Now;
+
+            foreach (var unitUser in userToDelete.AccessibleUnits)
+                unitUser.DeletedOn = DateTime.Now;
 
             _context.SaveChanges();
         }
 
         internal void HardDeleteUser(User userToDelete)
         {
-            var userAccesses = _context.UserAccesses.Where(ua => ua.UserId == userToDelete.Id);
+            var userAccesses = _context.UserAccesses.IgnoreQueryFilters().Where(ua => ua.UserId == userToDelete.Id);
             _context.UserAccesses.RemoveRange(userAccesses);
 
-            var unitUsers = _context.UnitUser.Where(uu => uu.UserId == userToDelete.Id);
+            var unitUsers = _context.UnitUser.IgnoreQueryFilters().Where(uu => uu.UserId == userToDelete.Id);
             _context.UnitUser.RemoveRange(unitUsers);
 
             _context.Users.Remove(userToDelete);
@@ -256,6 +259,9 @@ namespace AccessManager.Services
 
             foreach (var userAccess in user.UserAccesses)
                 userAccess.DeletedOn = null;
+
+            foreach (var unitUser in user.AccessibleUnits)
+                unitUser.DeletedOn = null;
 
             _context.SaveChanges();
         }

@@ -1,5 +1,6 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Services
 {
@@ -44,8 +45,25 @@ namespace AccessManager.Services
             return directive;
         }
 
-        internal void DeleteDirective(Directive directive)
+        internal void SoftDeleteDirective(Directive directive)
         {
+            _context.UserAccesses
+                .Where(ua => ua.GrantedByDirectiveId == directive.Id || ua.RevokedByDirectiveId == directive.Id)
+                .ToList()
+                .ForEach(ua => ua.DeletedOn = DateTime.Now);
+
+            directive.DeletedOn = DateTime.Now;
+
+            _context.SaveChanges();
+        }
+        internal void HardDeleteDirective(Directive directive)
+        {
+            var userAccesses = _context.UserAccesses
+                .IgnoreQueryFilters()
+                .Where(ua => ua.GrantedByDirectiveId == directive.Id || ua.RevokedByDirectiveId == directive.Id)
+                .ToList();
+
+            _context.UserAccesses.RemoveRange(userAccesses);
             _context.Directives.Remove(directive);
             _context.SaveChanges();
         }

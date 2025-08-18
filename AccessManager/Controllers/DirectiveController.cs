@@ -27,6 +27,22 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
+        public IActionResult GetDirectives(string q="")
+        {
+            var all = _directiveService.GetDirectives().Select(a => new { a.Id, a.Name }).ToList();
+            var qLower = (q ?? "").Trim().ToLowerInvariant();
+
+            var candidates = all
+                .Where(a => string.IsNullOrEmpty(qLower) || a.Name.ToLowerInvariant().Contains(qLower))
+                .OrderBy(a => a.Name)
+                .Take(30)
+                .Select(a => new { id = a.Id, text = a.Name })
+                .ToList();
+
+            return Json(candidates);
+        }
+
+        [HttpGet]
         [AutoValidateAntiforgeryToken]
         public IActionResult DirectiveList(int page = 1)
         {
@@ -83,7 +99,7 @@ namespace AccessManager.Controllers
             if(directive != null)
             {
                 _logService.AddLog(loggedUser, LogAction.Delete, directive);
-                _directiveService.DeleteDirective(directive);
+                _directiveService.SoftDeleteDirective(directive);
             }
 
             else TempData["Error"] = "Не съществува такава заповед";
