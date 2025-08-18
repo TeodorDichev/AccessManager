@@ -1,10 +1,7 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
-using AccessManager.Utills;
-using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Services
@@ -165,7 +162,7 @@ namespace AccessManager.Services
 
         internal void UpdateUser(MyProfileViewModel model, User loggedUser)
         {
-            UpdateUserFromModel(loggedUser, model.FirstName, model.MiddleName, model.LastName, model.EGN, model.Phone, 
+            UpdateUserFromModel(loggedUser, model.FirstName, model.MiddleName, model.LastName, model.EGN, model.Phone,
                 model.SelectedUnitId, model.WritingAccess, model.ReadingAccess);
             _context.SaveChanges();
         }
@@ -177,7 +174,7 @@ namespace AccessManager.Services
             _context.SaveChanges();
         }
 
-        internal void UpdateUserFromModel(User user, string firstName, string middleName, 
+        internal void UpdateUserFromModel(User user, string firstName, string middleName,
             string lastName, string? egn, string? phone, Guid unitId, AuthorityType write, AuthorityType read)
         {
             if (user == null) return;
@@ -199,8 +196,10 @@ namespace AccessManager.Services
 
         internal List<User> GetAccessibleUsers(User loggedUser)
         {
+            var accessibleUnitIds = loggedUser.AccessibleUnits.Select(au => au.UnitId).ToList();
+
             return _context.Users
-                .Where(u => u.DeletedOn == null && u.Id != loggedUser.Id && loggedUser.AccessibleUnits.Any(au => au.UnitId == u.UnitId))
+                .Where(u => u.Id != loggedUser.Id && accessibleUnitIds.Contains(u.UnitId))
                 .ToList();
         }
 

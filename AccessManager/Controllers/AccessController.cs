@@ -86,7 +86,8 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var accessToDelete = _accessService.GetAccess(id);
-            if (accessToDelete != null) {
+            if (accessToDelete != null)
+            {
                 _accessService.SoftDeleteAccess(accessToDelete);
                 TempData["Success"] = "Достъпът е успешно изтрит.";
                 return RedirectToAction("AccessList");
@@ -204,6 +205,21 @@ namespace AccessManager.Controllers
 
             return Json(candidates);
         }
+        [HttpGet]
+        public IActionResult GetAccesses(string q = "")
+        {
+            var all = _accessService.GetAccesses().Select(a => new { a.Id, a.Description}).ToList();
+            var qLower = (q ?? "").Trim().ToLowerInvariant();
+
+            var candidates = all
+                .Where(a => string.IsNullOrEmpty(qLower) || a.Description.ToLowerInvariant().Contains(qLower))
+                .OrderBy(a => a.Description)
+                .Take(30)
+                .Select(a => new { id = a.Id, text = _accessService.GetAccessDescription(_accessService.GetAccess(a.Id)) })
+                .ToList();
+
+            return Json(candidates);
+        }
 
         [HttpGet]
         public IActionResult MapUserAccess(string username, string filterDirective1, string filterDirective2, int page1 = 1, int page2 = 1)
@@ -287,7 +303,8 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var access = _accessService.GetAccess(accessId);
-            if (access == null) {
+            if (access == null)
+            {
                 TempData["Error"] = "Достъпът не е намерен";
                 return RedirectToAction("AccessList");
             }
@@ -471,14 +488,63 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult UserAccessList(int page = 1)
+        public IActionResult UserAccessList(UserAccessListViewModel model, int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
+            List<UserAccess> userAccesses = new List<UserAccess>();
 
-            return View();
+            if (model.FilterUserId.HasValue) {
+                var user = _userService.GetUser(model.FilterUserId.Value);
+                if (user != null) {
+                    userAccesses = user.UserAccesses.ToList();
+                }
+            }
+            else
+            {
+                foreach (var user in _userService.GetAccessibleUsers(loggedUser).Append(loggedUser).ToList())
+                {
+                    userAccesses.AddRange(user.UserAccesses.ToList());
+                }
+            }
+
+            if (model.FilterAccessId.HasValue)
+            {
+                var access = _accessService.GetAccess(model.FilterAccessId.Value);
+                if (access != null)
+                {
+                    userAccesses = userAccesses.Where(ua => ua.AccessId == model.FilterAccessId).ToList();
+                }
+            }
+
+
+            model.UserAccessList = userAccesses.Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).Select(ua =>
+                new UserAccessListItemViewModel
+                {
+                    UserName = ua.User.UserName,
+                    FirstName = ua.User.FirstName,
+                    LastName = ua.User.LastName,
+                    Department = ua.User.Unit.Department.Description,
+                    Unit = ua.User.Unit.Description,
+                    WriteAccess = ua.User.WritingAccess,
+                    ReadAccess = ua.User.ReadingAccess,
+                    AccessDescription = _accessService.GetAccessDescription(ua.Access),
+                    GrantDirectiveDescription = ua.GrantedByDirective.Name,
+                    RevokeDirectiveDescription = ua.RevokedByDirective != null ? ua.RevokedByDirective.Name : "-",
+                }).OrderBy(u => u.UserName).ToList();
+            model.CurrentPage = page;
+            model.TotalPages = (int)Math.Ceiling(userAccesses.Count / (double)Constants.ItemsPerPage);
+            if(model.FilterUserId.HasValue)
+            {
+                model.FilterUserName = _userService.GetUser(model.FilterUserId)?.UserName;
+            }
+            if (model.FilterAccessId.HasValue)
+            {
+                model.FilterAccessDescription = _accessService.GetAccessDescription(_accessService.GetAccess(model.FilterAccessId.Value));
+            }
+            return View(model);
         }
     }
 }

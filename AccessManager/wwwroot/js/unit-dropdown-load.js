@@ -21,7 +21,6 @@
                 option.value = unit.unitId;
                 option.text = unit.description;
                 unitSelect.appendChild(option);
-                console.log(unit.unitId);
             });
         });
 });

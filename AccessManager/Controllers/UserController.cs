@@ -63,7 +63,7 @@ namespace AccessManager.Controllers
                 {
                     AccessId = ua.Access.Id,
                     Description = _accessService.GetAccessDescription(ua.Access),
-                    DirectiveId =ua.GrantedByDirectiveId,
+                    DirectiveId = ua.GrantedByDirectiveId,
                     DirectiveDescription = _directiveService.GetDirective(ua.GrantedByDirectiveId)?.Name ?? string.Empty,
                 }).ToList(),
             };
@@ -367,6 +367,25 @@ namespace AccessManager.Controllers
             };
 
             return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult GetAccessibleUsers(string q = "")
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var all = _userService.GetAccessibleUsers(loggedUser).Append(loggedUser).Select(a => new { a.Id, a.UserName }).ToList();
+            var qLower = (q ?? "").Trim().ToLowerInvariant();
+
+            var candidates = all
+                .Where(a => string.IsNullOrEmpty(qLower) || a.UserName.ToLowerInvariant().Contains(qLower))
+                .OrderBy(a => a.UserName)
+                .Take(30)
+                .Select(a => new { id = a.Id, text = a.UserName })
+                .ToList();
+
+            return Json(candidates);
         }
     }
 }

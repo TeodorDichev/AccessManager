@@ -1,1 +1,93 @@
-﻿
+﻿@using AccessManager.Utills
+@using AccessManager.ViewModels.Access
+@model UserAccessListViewModel
+
+@{
+    ViewData["Title"] = "Потребители и достъпи";
+}
+
+<h2>Потребители</h2>
+
+<form style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<form method="get">
+    <div class ="mb-3 d-flex align-items-end gap-3">
+        <div>
+            <label>Филтър по достъп</label>
+            <input type="text" id="FilterAccessSearch" class="form-control" placeholder="Избор на достъp" autocomplete="off" value="@Model.FilterAccessDescription" />
+            <input type="hidden" asp-for="FilterAccessId" name="filterAccessId" id="FilterAccessId" onchange="this.form.submit()" />
+            <div id="filterAccessCandidates" class="list-group" style="position:relative; z-index:2000;"></div>
+            <span asp-validation-for="FilterAccessId" class="text-danger"></span>
+        </div>
+
+        <div>
+            <label>Филтър по потребител</label>
+            <input type="text" id="FilterUserSearch" class="form-control" placeholder="Избор на потребител" autocomplete="off" value="@Model.FilterUserName" />
+            <input type="hidden" asp-for="FilterUserId" name="filterUserId" id="FilterUserId" onchange="this.form.submit()" />
+            <div id="filterUserCandidates" class="list-group" style="position:relative; z-index:2000;"></div>
+            <span asp-validation-for="FilterUserId" class="text-danger"></span>
+        </div>
+
+        <div>
+            <button type="button" id="clearFiltersBtn" class="btn btn-secondary btn-sm">
+                Изчисти
+            </button>
+        </div>
+    </div>
+    <div>
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Потребителско име</th>
+                    <th>Собствено име</th>
+                    <th>Фамилия</th>
+                    <th>Дирекция</th>
+                    <th>Отдел</th>
+                    <th>Достъп за писане</th>
+                    <th>Достъп за четене</th>
+                    <th>Описание на достъп</th>
+                    <th>Заповед за даване на достъпа</th>
+                    <th>Заповед за премахване на достъпа</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ua in Model.UserAccessList)
+                {
+                    <tr>
+                        <td>@ua.UserName</td>
+                        <td>@ua.FirstName</td>
+                        <td>@ua.LastName</td>
+                        <td>@ua.Department</td>
+                        <td>@ua.Unit</td>
+                        <td>@AuthorityTypeLocalization.GetBulgarianAuthorityType(ua.WriteAccess)</td>
+                        <td>@AuthorityTypeLocalization.GetBulgarianAuthorityType(ua.ReadAccess)</td>
+                        <td>@ua.AccessDescription</td>
+                        <td>@ua.GrantDirectiveDescription</td>
+                        <td>@ua.RevokeDirectiveDescription</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center mt-4">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="?page=@i">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/useraccess-list.js" asp-append-version="true"></script>
+}

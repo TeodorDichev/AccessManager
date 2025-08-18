@@ -13,6 +13,7 @@ namespace AccessManager
             builder.Services.AddDbContext<Context>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            builder.Services.AddScoped<LogService>();
             builder.Services.AddScoped<UnitService>();
             builder.Services.AddScoped<UserService>();
             builder.Services.AddScoped<AccessService>();

@@ -72,7 +72,10 @@ namespace AccessManager.Data
                 entity.Property(e => e.Description)
                     .IsRequired();
 
-                entity.Property(e => e.CreatedOn)
+                entity.Property(e => e.ActionType)
+                    .IsRequired();
+
+                entity.Property(e => e.Date)
                     .IsRequired();
             });
         }
