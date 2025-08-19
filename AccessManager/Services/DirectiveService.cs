@@ -45,29 +45,6 @@ namespace AccessManager.Services
             return directive;
         }
 
-        internal void SoftDeleteDirective(Directive directive)
-        {
-            _context.UserAccesses
-                .Where(ua => ua.GrantedByDirectiveId == directive.Id || ua.RevokedByDirectiveId == directive.Id)
-                .ToList()
-                .ForEach(ua => ua.DeletedOn = DateTime.Now);
-
-            directive.DeletedOn = DateTime.Now;
-
-            _context.SaveChanges();
-        }
-        internal void HardDeleteDirective(Directive directive)
-        {
-            var userAccesses = _context.UserAccesses
-                .IgnoreQueryFilters()
-                .Where(ua => ua.GrantedByDirectiveId == directive.Id || ua.RevokedByDirectiveId == directive.Id)
-                .ToList();
-
-            _context.UserAccesses.RemoveRange(userAccesses);
-            _context.Directives.Remove(directive);
-            _context.SaveChanges();
-        }
-
         internal void UpdateAccessDirective(UserAccess access, Guid directiveId)
         {
             if (_context.Directives.Any(d => d.Id == directiveId))
@@ -77,6 +54,36 @@ namespace AccessManager.Services
         internal List<Directive> GetDirectives()
         {
             return _context.Directives.ToList();
+        }
+
+        internal bool CanDeleteDirective(Directive directive)
+        {
+            return !_context.UserAccesses.Any(ua =>
+                ua.GrantedByDirectiveId == directive.Id ||
+                ua.RevokedByDirectiveId == directive.Id);
+        }
+
+        internal void RestoreDirective(Directive directive)
+        {
+            _context.Directives.IgnoreQueryFilters()
+                .Where(d => d.Id == directive.Id)
+                .ExecuteUpdate(d => d.SetProperty(x => x.DeletedOn, (DateTime?)null));
+        }
+
+        internal void SoftDeleteDirective(Directive directive)
+        {
+            var timestamp = DateTime.Now;
+
+            _context.Directives
+                .Where(d => d.Id == directive.Id)
+                .ExecuteUpdate(d => d.SetProperty(x => x.DeletedOn, timestamp));
+        }
+
+        internal void HardDeleteDirective(Directive directive)
+        {
+            _context.Directives.IgnoreQueryFilters()
+                .Where(d => d.Id == directive.Id)
+                .ExecuteDelete();
         }
     }
 }

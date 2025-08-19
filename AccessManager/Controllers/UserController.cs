@@ -296,16 +296,25 @@ namespace AccessManager.Controllers
             if (string.IsNullOrWhiteSpace(username)) return BadRequest();
 
             var userToDelete = _userService.GetUser(username);
-            if (userToDelete == null) return NotFound();
-
-            if (loggedUser.WritingAccess < AuthorityType.Full
+            if (userToDelete == null)
+            {
+                TempData["Error"] = "Потребителят не е намерен";
+                return RedirectToAction("UserList");
+            }
+            else if (loggedUser.WritingAccess < AuthorityType.Full
                 || userToDelete.WritingAccess >= loggedUser.WritingAccess
                 || userToDelete.ReadingAccess >= loggedUser.WritingAccess)
             {
                 TempData["Error"] = "Недостатъчен достъп!";
                 return RedirectToAction("UserList");
             }
+            else if (!_userService.CanDeleteUser(userToDelete))
+            {
+                TempData["Error"] = "Не може да изтриете този потребител, защото той участва в други записи!";
+                return RedirectToAction("UserList");
+            }
 
+            TempData["Success"] = "Потребителят е изтрит успешно.";
             _logService.AddLog(loggedUser, LogAction.Delete, userToDelete);
             _userService.SoftDeleteUser(userToDelete);
             return RedirectToAction("UserList");
@@ -316,12 +325,6 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            if (string.IsNullOrWhiteSpace(username))
-            {
-                TempData["Error"] = "Потребителят не е намерен";
-                return RedirectToAction("UserList");
-            }
 
             var userToDelete = _userService.GetDeletedUser(username);
             if (userToDelete == null)
@@ -338,7 +341,7 @@ namespace AccessManager.Controllers
                 return RedirectToAction("UserList");
             }
 
-            _logService.AddLog(loggedUser, LogAction.Delete, userToDelete);
+            _logService.AddLog(loggedUser, LogAction.HardDelete, userToDelete);
             _userService.HardDeleteUser(userToDelete);
             return RedirectToAction("DeletedUsers");
         }

@@ -25,7 +25,7 @@
                     <input type="text" class="form-control directive-name" value="@dir.Name" />
                 </td>
                 <td>
-                    <form asp-controller="Directive" asp-action="DeleteDirective" method="post" asp-route-id="@dir.Id">
+                    <form asp-controller="Directive" asp-action="SoftDeleteDirective" method="post" asp-route-id="@dir.Id">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="btn btn-danger me-2">Изтрий</button>
                     </form>

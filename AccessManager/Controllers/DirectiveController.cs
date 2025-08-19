@@ -90,19 +90,26 @@ namespace AccessManager.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteDirective(Guid id)
+        public IActionResult SoftDeleteDirective(Guid id)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             Directive? directive = _directiveService.GetDirective(id);
-            if(directive != null)
+            if(directive == null)
+            {            
+                TempData["Error"] = "Не съществува такава заповед";
+                return RedirectToAction("DirectiveList");
+            }
+            else if(!_directiveService.CanDeleteDirective(directive))
             {
-                _logService.AddLog(loggedUser, LogAction.Delete, directive);
-                _directiveService.SoftDeleteDirective(directive);
+                TempData["Error"] = "Не може да изтриете тази заповед";
+                return RedirectToAction("DirectiveList");
             }
 
-            else TempData["Error"] = "Не съществува такава заповед";
+            TempData["Success"] = "Заповедта е изтрита успешно";
+            _logService.AddLog(loggedUser, LogAction.Delete, directive);
+            _directiveService.SoftDeleteDirective(directive);
             return RedirectToAction("DirectiveList");
         }
 

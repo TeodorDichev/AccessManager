@@ -123,35 +123,43 @@ namespace AccessManager.Services
                 .ToList();
         }
 
-        internal void SoftDeleteUser(User userToDelete)
+        internal bool CanDeleteUser(User user)
         {
-            userToDelete.DeletedOn = DateTime.Now;
-
-            foreach (var userAccess in userToDelete.UserAccesses)
-                userAccess.DeletedOn = DateTime.Now;
-
-            foreach (var unitUser in userToDelete.AccessibleUnits)
-                unitUser.DeletedOn = DateTime.Now;
-
-            _context.SaveChanges();
+            return !_context.UserAccesses.Any(ua => ua.UserId == user.Id)
+                && !_context.UnitUsers.Any(uu => uu.UserId == user.Id);
         }
 
-        internal void HardDeleteUser(User userToDelete)
+        internal void RestoreUser(User user)
         {
-            var userAccesses = _context.UserAccesses.IgnoreQueryFilters().Where(ua => ua.UserId == userToDelete.Id);
-            _context.UserAccesses.RemoveRange(userAccesses);
+            _context.Users
+                .IgnoreQueryFilters()
+                .Where(u => u.Id == user.Id)
+                .ExecuteUpdate(u => u.SetProperty(x => x.DeletedOn,(DateTime?)null));
+        }
 
-            var unitUsers = _context.UnitUser.IgnoreQueryFilters().Where(uu => uu.UserId == userToDelete.Id);
-            _context.UnitUser.RemoveRange(unitUsers);
+        internal void SoftDeleteUser(User user)
+        {
+            var timestamp = DateTime.Now;
 
-            _context.Users.Remove(userToDelete);
-            _context.SaveChanges();
+            _context.Users
+                .Where(u => u.Id == user.Id)
+                .ExecuteUpdate(u => u.SetProperty(x => x.DeletedOn, timestamp));
+        }
+
+        internal void HardDeleteUser(User user)
+        {
+            _context.Users
+                .IgnoreQueryFilters()
+                .Where(u => u.Id == user.Id)
+                .ExecuteDelete();
         }
 
         internal void HardDeleteUsers()
         {
-            foreach (var user in _context.Users.IgnoreQueryFilters().Where(u => u.DeletedOn != null).ToList())
-                HardDeleteUser(user);
+            _context.Users
+                .IgnoreQueryFilters()
+                .Where(u => u.DeletedOn != null)
+                .ExecuteDelete();
         }
 
         internal List<UserListItemViewModel> GetDeletedUsers()
@@ -171,21 +179,6 @@ namespace AccessManager.Services
                     ReadAccess = u.ReadingAccess,
                 })
                 .ToList();
-        }
-
-        internal void RestoreUser(User user)
-        {
-            user.DeletedOn = null;
-
-            foreach (var userAccess in user.UserAccesses)
-                if(userAccess.Access != null)
-                    userAccess.DeletedOn = null;
-
-            foreach (var unitUser in user.AccessibleUnits)
-                if(unitUser.Unit != null)
-                    unitUser.DeletedOn = null;
-
-            _context.SaveChanges();
         }
 
         internal User? GetDeletedUser(string username)

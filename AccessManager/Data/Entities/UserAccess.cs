@@ -18,6 +18,5 @@
         virtual public Directive? RevokedByDirective { get; set; } = null!;
 
         public DateTime? RevokedOn { get; set; } = null;
-        public DateTime? DeletedOn { get; set; } = null;
     }
 }

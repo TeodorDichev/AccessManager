@@ -567,7 +567,7 @@ namespace AccessManager.Controllers
                 return RedirectToAction("AccessList");
 
             }
-            else if(_accessService.CanDeleteAccess(accessToDelete))
+            else if(!_accessService.CanDeleteAccess(accessToDelete))
             {
                 TempData["Error"] = "Достъпът не може да бъде изтрит понеже той или някой от поддостъпите му е свързан с потребител!";
                 return RedirectToAction("DeletedAccesses");

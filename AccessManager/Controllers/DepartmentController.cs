@@ -185,9 +185,15 @@ namespace AccessManager.Controllers
                 TempData["Error"] = "Дирекцията не е намерена";
                 return RedirectToAction("UnitDepartmentList");
             }
+            else if(!_departmentService.CanDeleteDepartment(dep))
+            {
+                TempData["Error"] = "Дирекцията не може да бъде изтрит понеже тя или някои от отделите и са свързани с потребители!";
+                return RedirectToAction("UnitDepartmentList");
+            }
 
+            _logService.AddLog(loggedUser, LogAction.Delete, dep);
             _departmentService.SoftDeleteDepartment(dep);
-            _logService.AddLog(loggedUser, Data.Enums.LogAction.Delete, dep);
+            TempData["Success"] = "Дирекцията е успешно изтрита.";
             return RedirectToAction("UnitDepartmentList");
         }
 
@@ -247,6 +253,5 @@ namespace AccessManager.Controllers
             TempData["Success"] = "Дирекцията е успешно изтритa.";
             return RedirectToAction("DeletedUnitDepartments");
         }
-
     }
 }

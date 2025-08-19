@@ -193,15 +193,12 @@ namespace AccessManager.Services
 
         internal void RestoreAccess(Access access)
         {
-            access.DeletedOn = null;
+            var accessIds = GetAllAccessIds(access);
 
-            foreach (var userAccess in access.UserAccesses)
-                if(userAccess.User != null)
-                    userAccess.DeletedOn = null;
-
-            _context.SaveChanges();
+            _context.Accesses
+                .Where(a => accessIds.Contains(a.Id))
+                .ExecuteUpdate(a => a.SetProperty(x => x.DeletedOn, (DateTime?)null));
         }
-
 
         internal bool CanDeleteAccess(Access rootAccess)
         {
@@ -209,34 +206,30 @@ namespace AccessManager.Services
             return !_context.UserAccesses.Any(ua => accessIds.Contains(ua.AccessId));
         }
 
-        internal void SoftDeleteAccess(Access accessToDelete)
+        internal void SoftDeleteAccess(Access access)
         {
             var timestamp = DateTime.Now;
-            var accessIds = GetAllAccessIds(accessToDelete);
+            var accessIds = GetAllAccessIds(access);
 
             _context.Accesses
                 .Where(a => accessIds.Contains(a.Id))
                 .ExecuteUpdate(a => a.SetProperty(x => x.DeletedOn, timestamp));
-
-            _context.UserAccesses
-                .Where(ua => accessIds.Contains(ua.AccessId))
-                .ExecuteUpdate(ua => ua.SetProperty(x => x.DeletedOn, timestamp));
         }
 
-        internal void HardDeleteAccess(Access accessToDelete)
+        internal void HardDeleteAccess(Access access)
         {
-            var accessIds = GetAllAccessIds(accessToDelete);
+            var accessIds = GetAllAccessIds(access);
 
             _context.Accesses
                 .Where(a => accessIds.Contains(a.Id))
                 .ExecuteDelete();
         }
 
-        private List<Guid> GetAllAccessIds(Access rootAccess)
+        private List<Guid> GetAllAccessIds(Access access)
         {
             var accessIds = new List<Guid>();
             var stack = new Stack<Access>();
-            stack.Push(rootAccess);
+            stack.Push(access);
 
             while (stack.Count > 0)
             {

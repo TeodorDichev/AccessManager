@@ -13,30 +13,16 @@ namespace AccessManager.Services
             _context = context;
         }
 
-        internal void SoftDeleteUnitUser(UnitUser uu)
-        {
-            if (uu != null)
-            {
-                uu.DeletedOn = DateTime.Now;
-                _context.SaveChanges();
-            }
-        }
-
-        internal void HardDeleteUnitUser(UnitUser uu)
-        {
-            _context.UnitUser.Remove(uu);
-            _context.SaveChanges();
-		}
 
         internal UnitUser? GetUnitUser(Guid userId, Guid unitId)
         {
-            return _context.UnitUser.FirstOrDefault(u => u.UserId == userId && u.UnitId == unitId);
+            return _context.UnitUsers.FirstOrDefault(u => u.UserId == userId && u.UnitId == unitId);
         }
 
         internal UnitUser AddUnitAccess(Guid userId, Guid unitId)
         {
             UnitUser uu = new UnitUser() { UserId = userId, UnitId = unitId };
-            _context.UnitUser.Add(uu);
+            _context.UnitUsers.Add(uu);
             _context.SaveChanges();
             return uu;
         }
@@ -70,7 +56,7 @@ namespace AccessManager.Services
                 .ToList();
 
             foreach (var user in users)
-                _context.UnitUser.Add(new UnitUser { UserId = user.Id, UnitId = unit.Id });
+                _context.UnitUsers.Add(new UnitUser { UserId = user.Id, UnitId = unit.Id });
 
             _context.SaveChanges();
             return unit;
@@ -80,7 +66,7 @@ namespace AccessManager.Services
             if (user.WritingAccess == AuthorityType.None)
                 return [];
             else if (user.WritingAccess == AuthorityType.Restricted)
-                return _context.Units.Where(u => _context.UnitUser.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id)).ToList();
+                return _context.Units.Where(u => _context.UnitUsers.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id)).ToList();
             else
                 return _context.Units.ToList();
         }
@@ -93,10 +79,10 @@ namespace AccessManager.Services
             var query = _context.Units.AsQueryable();
 
             if (user.WritingAccess == AuthorityType.Restricted)
-                query = query.Where(u => _context.UnitUser.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id));
+                query = query.Where(u => _context.UnitUsers.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id));
 
             if (loggedUser.WritingAccess == AuthorityType.Restricted)
-                query = query.Where(u => _context.UnitUser.Any(uu => uu.UserId == loggedUser.Id && uu.UnitId == u.Id));
+                query = query.Where(u => _context.UnitUsers.Any(uu => uu.UserId == loggedUser.Id && uu.UnitId == u.Id));
 
             return query.ToList();
         }
@@ -109,33 +95,17 @@ namespace AccessManager.Services
             var query = _context.Units.AsQueryable();
 
             if (loggedUser.WritingAccess == AuthorityType.Restricted)
-                query = query.Where(u => _context.UnitUser.Any(uu => uu.UserId == loggedUser.Id && uu.UnitId == u.Id));
+                query = query.Where(u => _context.UnitUsers.Any(uu => uu.UserId == loggedUser.Id && uu.UnitId == u.Id));
 
             if (user.WritingAccess != AuthorityType.None)
             {
                 if (user.WritingAccess == AuthorityType.Restricted)
-                    query = query.Where(u => !_context.UnitUser.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id));
+                    query = query.Where(u => !_context.UnitUsers.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id));
                 else
                     return [];
             }
 
             return query.ToList();
-        }
-
-        internal void SoftDeleteUnit(string unitId)
-        {
-            var unit = _context.Units.FirstOrDefault(d => d.Id == Guid.Parse(unitId));
-            if (unit != null)
-            {
-                unit.DeletedOn = DateTime.Now;
-                foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
-                    unitUser.DeletedOn = DateTime.Now;
-
-                foreach (var user in unit.UsersFromUnit)
-                    user.DeletedOn = DateTime.Now;
-
-                _context.SaveChanges();
-            }
         }
         internal List<Unit> GetAllowedUnitsForDepartment(User user, Guid departmentId)
         {
@@ -153,16 +123,42 @@ namespace AccessManager.Services
                 return _context.Units.Where(u => u.DepartmentId == departmentId).ToList();
         }
 
+        internal bool CanDeleteUnit(Unit unit)
+        {
+            return !unit.UsersFromUnit.Any() && !_context.UnitUsers.Any(uu => uu.UnitId == unit.Id);
+        }
+
+        internal void RestoreUnit(Unit unit)
+        {
+            _context.Units
+                .IgnoreQueryFilters()
+                .Where(u => u.Id == unit.Id)
+                .ExecuteUpdate(u => u.SetProperty(x => x.DeletedOn, (DateTime?)null));
+        }
+        internal void SoftDeleteUnit(Unit unit)
+        {
+            var timestamp = DateTime.Now;
+
+            _context.Units
+                .Where(u => u.Id == unit.Id)
+                .ExecuteUpdate(u => u.SetProperty(x => x.DeletedOn, timestamp));
+        }
+
         internal void HardDeleteUnit(Unit unit)
         {
-			var unitUsers = _context.UnitUser.IgnoreQueryFilters().Where(uu => uu.UnitId == unit.Id);
-			_context.UnitUser.RemoveRange(unitUsers);
+            _context.Units
+                    .IgnoreQueryFilters()
+                    .Where(u => u.Id == unit.Id)
+                    .ExecuteDelete();
+        }
 
-			var users = _context.Users.IgnoreQueryFilters().Where(uu => uu.UnitId == unit.Id);
-			_context.Users.RemoveRange(users);
+        internal void HardDeleteUnitUser(UnitUser unitUser)
+        {
+            _context.UnitUsers
+                .Where(u => u.UserId == unitUser.UserId && u.UnitId == unitUser.UnitId)
+                .ExecuteDelete();
 
-			_context.Units.Remove(unit);
-			_context.SaveChanges();
+            _context.SaveChanges();
         }
     }
 }

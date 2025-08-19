@@ -58,38 +58,6 @@ namespace AccessManager.Services
                 return _context.Departments.ToList();
         }
 
-        internal void SoftDeleteDepartment(Department dep)
-        {
-            dep.DeletedOn = DateTime.Now;
-            foreach (var unit in dep.Units)
-            {
-                foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
-                    unitUser.DeletedOn = DateTime.Now;
-
-                foreach (var user in unit.UsersFromUnit)
-                    user.DeletedOn = DateTime.Now;
-
-                unit.DeletedOn = DateTime.Now;
-            }
-            _context.SaveChanges();
-        }
-
-        internal void HardDeleteDepartment(Department dep)
-        {
-            foreach (var unit in dep.Units)
-            {
-                var unitUsers = _context.UnitUser.IgnoreQueryFilters().Where(uu => uu.UnitId == unit.Id);
-                _context.UnitUser.RemoveRange(unitUsers);
-
-                var users = _context.Users.IgnoreQueryFilters().Where(uu => uu.UnitId == unit.Id);
-                _context.Users.RemoveRange(users);
-
-                _context.Units.Remove(unit);
-            }
-
-            _context.Departments.Remove(dep);
-            _context.SaveChanges();
-        }
 
         internal int GetDeletedUnitDepartmentsCount()
         {
@@ -177,18 +145,56 @@ namespace AccessManager.Services
 
         internal void RestoreDepartment(Department department)
         {
-            department.DeletedOn = null;
-            foreach (var unit in department.Units)
-            {
-                foreach (var unitUser in _context.UnitUser.Where(uu => uu.UnitId == unit.Id))
-                    unitUser.DeletedOn = null;
+            var unitIds = GetAllUnitIds(department);
 
-                foreach (var user in unit.UsersFromUnit)
-                    user.DeletedOn = null;
+            _context.Departments
+                .IgnoreQueryFilters()
+                .Where(d => d.Id == department.Id)
+                .ExecuteUpdate(d => d.SetProperty(x => x.DeletedOn, (DateTime?)null));
 
-                unit.DeletedOn = null;
-            }
-            _context.SaveChanges();
+            _context.Units
+                .IgnoreQueryFilters()
+                .Where(u => unitIds.Contains(u.Id))
+                .ExecuteUpdate(u => u.SetProperty(x => x.DeletedOn, (DateTime?)null));
+        }
+
+        internal bool CanDeleteDepartment(Department department)
+        {
+            return !_context.UnitUsers.Any(uu => uu.Unit.DepartmentId == department.Id) &&
+                        !_context.Users.Any(u => u.Unit.DepartmentId == department.Id);
+        }
+        internal void SoftDeleteDepartment(Department department)
+        {
+            var timestamp = DateTime.Now;
+            var unitIds = GetAllUnitIds(department);
+
+            _context.Departments
+                .Where(d => d.Id == department.Id)
+                .ExecuteUpdate(d => d.SetProperty(x => x.DeletedOn, timestamp));
+
+            _context.Units
+                .Where(u => unitIds.Contains(u.Id))
+                .ExecuteUpdate(u => u.SetProperty(x => x.DeletedOn, timestamp));
+        }
+
+        internal void HardDeleteDepartment(Department department)
+        {
+            var unitIds = GetAllUnitIds(department);
+
+            _context.Units
+                .IgnoreQueryFilters()
+                .Where(u => unitIds.Contains(u.Id))
+                .ExecuteDelete();
+
+            _context.Departments
+                .IgnoreQueryFilters()
+                .Where(d => d.Id == department.Id)
+                .ExecuteDelete();
+        }
+
+        private List<Guid> GetAllUnitIds(Department department)
+        {
+            return department.Units.Select(u => u.Id).ToList();
         }
     }
 }

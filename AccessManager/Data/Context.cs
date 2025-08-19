@@ -16,7 +16,7 @@ namespace AccessManager.Data
         public DbSet<Department> Departments { get; set; } = null!;
         public DbSet<Unit> Units { get; set; } = null!;
         public DbSet<Log> Logs { get; set; } = null!;
-        public DbSet<UnitUser> UnitUser { get; set; } = null!;
+        public DbSet<UnitUser> UnitUsers { get; set; } = null!;
         public DbSet<Directive> Directives { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -54,14 +54,6 @@ namespace AccessManager.Data
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.NoAction)
                       .IsRequired(false);
-
-                entity.HasOne(e => e.User)
-                    .WithMany(u => u.AccessibleUnits)
-                    .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.NoAction)
-                    .IsRequired(false);
-
-                entity.HasQueryFilter(e => e.DeletedOn == null);
             });
         }
 
@@ -92,6 +84,8 @@ namespace AccessManager.Data
                     .IsRequired();
                 entity.HasIndex(e => e.Name)
                      .IsUnique();
+
+                entity.HasQueryFilter(e => e.DeletedOn == null);
             });
         }
 
@@ -142,7 +136,9 @@ namespace AccessManager.Data
                 entity.HasMany(e => e.UsersWithAccess)
                     .WithOne(uu => uu.Unit)
                     .HasForeignKey(uu => uu.UnitId)
-                    .OnDelete(DeleteBehavior.NoAction);
+                    .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired(false);
+                ;
 
                 entity.HasQueryFilter(e => e.DeletedOn == null);
             });
@@ -170,6 +166,8 @@ namespace AccessManager.Data
                     .WithMany(a => a.SubAccesses)
                     .HasForeignKey(a => a.ParentAccessId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasQueryFilter(e => e.DeletedOn == null);
             });
         }
 
@@ -180,49 +178,41 @@ namespace AccessManager.Data
                 entity.HasKey(e => e.Id);
 
                 entity.Property(e => e.UserName)
-                    .IsRequired()
-                    .HasMaxLength(50);
+                      .IsRequired()
+                      .HasMaxLength(50);
 
                 entity.HasIndex(e => e.UserName)
                       .IsUnique();
 
                 entity.Property(e => e.FirstName)
-                    .IsRequired()
-                    .HasMaxLength(50);
+                      .IsRequired()
+                      .HasMaxLength(50);
 
                 entity.Property(e => e.MiddleName)
-                    .IsRequired()
-                    .HasMaxLength(50);
+                      .IsRequired()
+                      .HasMaxLength(50);
 
                 entity.Property(e => e.LastName)
-                    .IsRequired()
-                    .HasMaxLength(50);
+                      .IsRequired()
+                      .HasMaxLength(50);
 
                 entity.Property(e => e.WritingAccess)
-                    .IsRequired();
+                      .IsRequired();
 
                 entity.Property(e => e.ReadingAccess)
-                    .IsRequired();
+                      .IsRequired();
 
-                entity.HasIndex(e => e.EGN)
-                    .IsUnique();
-
-                entity.HasIndex(e => e.Phone)
-                    .IsUnique();
+                entity.HasIndex(e => e.EGN).IsUnique();
+                entity.HasIndex(e => e.Phone).IsUnique();
 
                 entity.HasMany(e => e.UserAccesses)
                       .WithOne(ea => ea.User)
-                      .HasForeignKey(ea => ea.UserId);
-
-                entity.HasMany(e => e.AccessibleUnits)
-                    .WithOne(ea => ea.User)
-                    .HasForeignKey(ea => ea.UserId)
-                    .OnDelete(DeleteBehavior.NoAction);
+                      .HasForeignKey(ea => ea.UserId); // simple, no duplicate
 
                 entity.HasOne(e => e.Unit)
-                    .WithMany(s => s.UsersFromUnit)
-                    .HasForeignKey(s => s.UnitId)
-                    .IsRequired();
+                      .WithMany(s => s.UsersFromUnit)
+                      .HasForeignKey(s => s.UnitId)
+                      .IsRequired();
 
                 entity.HasQueryFilter(e => e.DeletedOn == null);
             });
@@ -235,24 +225,24 @@ namespace AccessManager.Data
                 entity.HasKey(ua => new { ua.UserId, ua.AccessId });
 
                 entity.HasOne(ua => ua.User)
-                    .WithMany(e => e.UserAccesses)
-                    .HasForeignKey(ea => ea.UserId)
-                    .IsRequired();
-
-                entity.HasOne(ea => ea.Access)
-                    .WithMany(a => a.UserAccesses)
-                    .HasForeignKey(ea => ea.AccessId)
-                    .IsRequired();
-
-                entity.HasOne(ua => ua.GrantedByDirective);
-    
-                entity.HasOne(e => e.User)
                     .WithMany(u => u.UserAccesses)
-                    .HasForeignKey(e => e.UserId)
+                    .HasForeignKey(ua => ua.UserId)
                     .OnDelete(DeleteBehavior.NoAction)
                     .IsRequired(false);
 
-                entity.HasQueryFilter(e => e.DeletedOn == null);
+                entity.HasOne(ua => ua.Access)
+                    .WithMany(a => a.UserAccesses)
+                    .HasForeignKey(ua => ua.AccessId)
+                    .OnDelete(DeleteBehavior.NoAction)
+                    .IsRequired(false);
+
+                entity.HasOne(ua => ua.GrantedByDirective)
+                    .WithMany()
+                    .HasForeignKey(ua => ua.GrantedByDirectiveId)
+                    .OnDelete(DeleteBehavior.NoAction)
+                    .IsRequired(false);
+
+                entity.HasOne(ua => ua.GrantedByDirective);
             });
         }
     }

@@ -102,7 +102,7 @@ namespace AccessManager.Controllers
             if (user.ReadingAccess == Data.Enums.AuthorityType.Full) user.ReadingAccess = Data.Enums.AuthorityType.Restricted;
 
             _logService.AddLog(loggedUser, LogAction.Delete, uu);
-            _unitService.SoftDeleteUnitUser(uu);
+            _unitService.HardDeleteUnitUser(uu);
             return Json(new { success = true, message = "Достъпът е премахнат успешно" });
         }
 
@@ -146,13 +146,20 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             Unit? unit = _unitService.GetUnit(unitId);
-            if(unit != null)
+            if (unit == null)
             {
-                _logService.AddLog(loggedUser, LogAction.Delete, unit);
-                _unitService.SoftDeleteUnit(unitId);
+                TempData["Error"] = "Не съществува такъв отдел";
+                return RedirectToAction("UnitDepartmentList", "Department");
             }
-            else TempData["Error"] = "Отделът не е изтрит успешно";
+            else if (!_unitService.CanDeleteUnit(unit))
+            { 
+                TempData["Error"] = "Отделът не е изтрит успешно";
+                return RedirectToAction("UnitDepartmentList", "Department");
+            }
 
+            TempData["Success"] = "Отделът е изтрит успешно";
+            _logService.AddLog(loggedUser, LogAction.Delete, unit);
+            _unitService.SoftDeleteUnit(unit);
             return RedirectToAction("UnitDepartmentList", "Department");
         }
 
@@ -279,7 +286,7 @@ namespace AccessManager.Controllers
                 if(uu != null)
                 {
                     _logService.AddLog(loggedUser, LogAction.Add, uu);
-                    _unitService.SoftDeleteUnitUser(uu);
+                    _unitService.HardDeleteUnitUser(uu);
                 }
             }
 

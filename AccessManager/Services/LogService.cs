@@ -2,6 +2,7 @@
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Utills;
+using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Services
 {
@@ -59,11 +60,10 @@ namespace AccessManager.Services
             _context.Add(log);
             _context.SaveChanges();
         }
+
         internal void DeleteAllLogs()
         {
-            var allItems = _context.Logs.ToList();
-            _context.Logs.RemoveRange(allItems);
-            _context.SaveChanges();
+            _context.Logs.ExecuteDelete();
         }
     }
 }
