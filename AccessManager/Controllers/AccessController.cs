@@ -82,26 +82,6 @@ namespace AccessManager.Controllers
             return View(model);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult SoftDeleteAccess(string id)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var accessToDelete = _accessService.GetAccess(id);
-            if (accessToDelete != null)
-            {
-                _logService.AddLog(loggedUser, LogAction.Delete, accessToDelete);
-                _accessService.SoftDeleteAccess(accessToDelete);
-                TempData["Success"] = "Достъпът е успешно изтрит.";
-                return RedirectToAction("AccessList");
-            }
-
-            TempData["Error"] = "Достъпът не е намерен";
-            return RedirectToAction("AccessList");
-        }
-
         [HttpGet]
         public IActionResult CreateAccess()
         {
@@ -571,6 +551,96 @@ namespace AccessManager.Controllers
             model.CurrentPage = page;
             model.TotalPages = (int)Math.Ceiling(userAccesses.Count / (double)Constants.ItemsPerPage);
             return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SoftDeleteAccess(string id)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var accessToDelete = _accessService.GetAccess(id);
+            if (accessToDelete == null)
+            {
+                TempData["Error"] = "Достъпът не е намерен";
+                return RedirectToAction("AccessList");
+
+            }
+            else if(_accessService.CanDeleteAccess(accessToDelete))
+            {
+                TempData["Error"] = "Достъпът не може да бъде изтрит понеже той или някой от поддостъпите му е свързан с потребител!";
+                return RedirectToAction("DeletedAccesses");
+            }
+
+            _logService.AddLog(loggedUser, LogAction.Delete, accessToDelete);
+            _accessService.SoftDeleteAccess(accessToDelete);
+            TempData["Success"] = "Достъпът е успешно изтрит.";
+            return RedirectToAction("AccessList");
+        }
+
+
+        [HttpGet]
+        public IActionResult DeletedAccesses(int page)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.SuperAdmin;
+
+            var model = new DeletedAccessesViewModel()
+            {
+                Accesses = _accessService.GetDeletedAccesses(page)
+                    .Select(a => new AccessListItemViewModel
+                    {
+                        AccessId = a.Id,
+                        Description = _accessService.GetAccessDescription(a),
+                    })
+                    .ToList(),
+                CurrentPage = page,
+                TotalPages = _accessService.GetDeletedAccessesCount(),
+            };
+            return View(model);
+        }
+
+        [HttpPost]
+        public IActionResult RestoreAccess(Guid accessId)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var access = _accessService.GetDeletedAccess(accessId);
+            if (access == null)
+            {
+                TempData["Error"] = "Достъпът не е намерен";
+                return RedirectToAction("DeletedAccesses");
+            }
+
+            _accessService.RestoreAccess(access);
+            _logService.AddLog(loggedUser, LogAction.Restore, access);
+
+            TempData["Success"] = "Достъпът е успешно възстановен.";
+            return RedirectToAction("DeletedAccesses");
+        }
+
+        [HttpPost]
+        public IActionResult HardDeleteAccess(Guid accessId)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var access = _accessService.GetDeletedAccess(accessId);
+            if (access == null)
+            {
+                TempData["Error"] = "Достъпът не е намерен";
+                return RedirectToAction("DeletedAccesses");
+            }
+
+            _logService.AddLog(loggedUser, LogAction.HardDelete, access);
+            _accessService.HardDeleteAccess(access);
+
+            TempData["Success"] = "Достъпът е успешно изтрит.";
+            return RedirectToAction("DeletedAccesses");
         }
     }
 }

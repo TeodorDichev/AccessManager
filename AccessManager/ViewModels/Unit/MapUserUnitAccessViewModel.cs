@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using AccessManager.ViewModels.Department;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AccessManager.ViewModels.Unit
 {
@@ -12,8 +13,8 @@ namespace AccessManager.ViewModels.Unit
         public List<SelectListItem> FilterDepartments { get; set; } = [];
         public string FilterDepartment1 { get; set; } = String.Empty;
         public string FilterDepartment2 { get; set; } = String.Empty;
-        public List<UnitViewModel> AccessibleUnits { get; set; } = [];
-        public List<UnitViewModel> InaccessibleUnits { get; set; } = [];
+        public List<UnitDepartmentViewModel> AccessibleUnits { get; set; } = [];
+        public List<UnitDepartmentViewModel> InaccessibleUnits { get; set; } = [];
         public List<Guid> SelectedAccessibleUnitIds { get; set; } = [];
         public List<Guid> SelectedInaccessibleUnitIds { get; set; } = [];
         public int CurrentPage1 { get; set; } = 1;

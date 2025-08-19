@@ -3,6 +3,7 @@ using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
+using AccessManager.ViewModels.Department;
 using AccessManager.ViewModels.InformationSystem;
 using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
@@ -49,15 +50,15 @@ namespace AccessManager.Controllers
                 WritingAccess = loggedUser.WritingAccess,
                 EGN = loggedUser.EGN ?? string.Empty,
                 Phone = loggedUser.Phone ?? string.Empty,
-                AccessibleUnits = loggedUser.AccessibleUnits.Select(au => new UnitViewModel
+                AccessibleUnits = loggedUser.AccessibleUnits.Select(au => new UnitDepartmentViewModel
                 {
                     UnitId = au.UnitId,
                     UnitName = au.Unit.Description,
                     DepartmentName = au.Unit.Department.Description
                 }).ToList(),
-                AvailableDepartments = _userService.GetAllowedDepartments(loggedUser)
+                AvailableDepartments = _departmentService.GetAllowedDepartments(loggedUser)
                     .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList(),
-                AvailableUnits = _userService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
+                AvailableUnits = _unitService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
                     .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList(),
                 SelectedDepartmentId = loggedUser.Unit.Department.Id,
                 SelectedUnitId = loggedUser.Unit.Id,
@@ -143,7 +144,7 @@ namespace AccessManager.Controllers
 
             CreateUserViewModel model = new CreateUserViewModel
             {
-                Departments = _userService.GetAllowedDepartments(loggedUser).Select(d => new SelectListItem
+                Departments = _departmentService.GetAllowedDepartments(loggedUser).Select(d => new SelectListItem
                 {
                     Value = d.Id.ToString(),
                     Text = d.Description,
@@ -151,7 +152,7 @@ namespace AccessManager.Controllers
             };
 
             if (model.SelectedDepartmentId.HasValue)
-                model.Units = _userService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
+                model.Units = _unitService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
                     .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList();
             ;
 
@@ -171,19 +172,19 @@ namespace AccessManager.Controllers
                 ModelState.AddModelError("SelectedReadingAccess", "Не може да добавяш потребител с по-висок достъп.");
 
             if (model.SelectedDepartmentId.HasValue)
-                model.Units = _userService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
+                model.Units = _unitService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
                     .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList();
 
             if (!ModelState.IsValid)
             {
-                model.Departments = _userService.GetAllowedDepartments(loggedUser).Select(d => new SelectListItem
+                model.Departments = _departmentService.GetAllowedDepartments(loggedUser).Select(d => new SelectListItem
                 {
                     Value = d.Id.ToString(),
                     Text = d.Description,
                 }).ToList();
 
                 if (model.SelectedDepartmentId.HasValue)
-                    model.Units = _userService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
+                    model.Units = _unitService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
                         .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList();
 
                 return View(model);
@@ -249,9 +250,9 @@ namespace AccessManager.Controllers
                 LoggedUserWritingAccess = loggedUser.WritingAccess,
                 SelectedDepartmentId = user.Unit.Department.Id,
                 SelectedUnitId = user.Unit.Id,
-                AvailableDepartments = _userService.GetAllowedDepartments(loggedUser)
+                AvailableDepartments = _departmentService.GetAllowedDepartments(loggedUser)
                     .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList(),
-                AvailableUnits = _userService.GetAllowedUnitsForDepartment(loggedUser, user.Unit.Department.Id)
+                AvailableUnits = _unitService.GetAllowedUnitsForDepartment(loggedUser, user.Unit.Department.Id)
                     .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList(),
             };
             model.AvailableDepartments.ForEach(d => d.Selected = d.Value == model.SelectedDepartmentId.ToString());

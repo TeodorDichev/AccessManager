@@ -40,86 +40,6 @@ namespace AccessManager.Services
             _context.SaveChanges();
         }
 
-        internal List<Department> GetAllowedDepartments(User user)
-        {
-            if (user.WritingAccess == AuthorityType.None)
-                return [];
-            else if (user.WritingAccess == AuthorityType.Restricted)
-            {
-                var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
-                return _context.Units
-                    .Where(u => allowedUnitIds.Contains(u.Id))
-                    .Select(u => u.Department)
-                    .Distinct()
-                    .ToList();
-            }
-            else
-                return _context.Departments.ToList();
-        }
-
-        internal List<Unit> GetUserAllowedUnits(User user)
-        {
-            if (user.WritingAccess == AuthorityType.None)
-                return [];
-            else if (user.WritingAccess == AuthorityType.Restricted)
-                return _context.Units.Where(u => _context.UnitUser.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id)).ToList();
-            else
-                return _context.Units.ToList();
-        }
-
-        internal List<Unit> GetUserAccessibleUnits(User user, User loggedUser)
-        {
-            if (user.WritingAccess == AuthorityType.None || loggedUser.WritingAccess == AuthorityType.None)
-                return [];
-
-            var query = _context.Units.AsQueryable();
-
-            if (user.WritingAccess == AuthorityType.Restricted)
-                query = query.Where(u => _context.UnitUser.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id));
-
-            if (loggedUser.WritingAccess == AuthorityType.Restricted)
-                query = query.Where(u => _context.UnitUser.Any(uu => uu.UserId == loggedUser.Id && uu.UnitId == u.Id));
-
-            return query.ToList();
-        }
-
-        internal List<Unit> GetUserInaccessibleUnits(User user, User loggedUser)
-        {
-            if (loggedUser.WritingAccess == AuthorityType.None)
-                return [];
-
-            var query = _context.Units.AsQueryable();
-
-            if (loggedUser.WritingAccess == AuthorityType.Restricted)
-                query = query.Where(u => _context.UnitUser.Any(uu => uu.UserId == loggedUser.Id && uu.UnitId == u.Id));
-
-            if (user.WritingAccess != AuthorityType.None)
-            {
-                if (user.WritingAccess == AuthorityType.Restricted)
-                    query = query.Where(u => !_context.UnitUser.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id));
-                else
-                    return [];
-            }
-
-            return query.ToList();
-        }
-
-        internal List<Unit> GetAllowedUnitsForDepartment(User user, Guid departmentId)
-        {
-            if (user.WritingAccess == AuthorityType.None)
-                return [];
-            else if (user.WritingAccess == AuthorityType.Restricted)
-            {
-                var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
-                return _context.Units
-                    .Where(u => allowedUnitIds.Contains(u.Id) && u.DepartmentId == departmentId)
-                    .Distinct()
-                    .ToList();
-            }
-            else
-                return _context.Units.Where(u => u.DepartmentId == departmentId).ToList();
-        }
-
         internal List<UserListItemViewModel> GetFilteredUsers(string sortBy, string filterUnit, string filterDepartment, User loggedUser)
         {
             var accessibleUnitIds = loggedUser.AccessibleUnits.Select(au => au.UnitId).ToList();
@@ -258,18 +178,14 @@ namespace AccessManager.Services
             user.DeletedOn = null;
 
             foreach (var userAccess in user.UserAccesses)
-                userAccess.DeletedOn = null;
+                if(userAccess.Access != null)
+                    userAccess.DeletedOn = null;
 
             foreach (var unitUser in user.AccessibleUnits)
-                unitUser.DeletedOn = null;
+                if(unitUser.Unit != null)
+                    unitUser.DeletedOn = null;
 
             _context.SaveChanges();
-        }
-
-        internal void RestoreAllUsers()
-        {
-            foreach (var user in _context.Users.IgnoreQueryFilters().Where(u => u.DeletedOn != null).ToList())
-                RestoreUser(user);
         }
 
         internal User? GetDeletedUser(string username)

@@ -1,7 +1,7 @@
 ﻿using AccessManager.Data.Enums;
 using AccessManager.Utills;
+using AccessManager.ViewModels.Department;
 using AccessManager.ViewModels.InformationSystem;
-using AccessManager.ViewModels.Unit;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
@@ -31,7 +31,7 @@ namespace AccessManager.ViewModels.User
         [RegularExpression(@"^(?:\+359|0)?8[7-9][0-9]{7}$", ErrorMessage = ExceptionMessages.InvalidPhone)]
 
         public string? Phone { get; set; } = string.Empty;
-        public List<UnitViewModel> AccessibleUnits { get; set; } = [];
+        public List<UnitDepartmentViewModel> AccessibleUnits { get; set; } = [];
         public List<AccessViewModel> UserAccesses { get; set; } = [];
     }
 }

@@ -15,7 +15,7 @@ namespace AccessManager.Services
 
         public List<Log> GetLogs(int page)
         {
-            return _context.Logs.Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).OrderByDescending(l => l.Date).ToList();
+            return _context.Logs.OrderByDescending(l => l.Date).Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).ToList();
         }
         public int GetLogsCount()
         {
@@ -59,7 +59,6 @@ namespace AccessManager.Services
             _context.Add(log);
             _context.SaveChanges();
         }
-
         internal void DeleteAllLogs()
         {
             var allItems = _context.Logs.ToList();

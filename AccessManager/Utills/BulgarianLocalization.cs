@@ -21,8 +21,10 @@ namespace AccessManager.Utills
             return logAction switch
             {
                 LogAction.Add => "създаде",
-                LogAction.Delete => "премахна",
+                LogAction.Delete => "деактивира",
                 LogAction.Edit => "редактира",
+                LogAction.Restore => "възстанови",
+                LogAction.HardDelete => "изтри",
                 _ => throw new NotImplementedException(),
             };
         }

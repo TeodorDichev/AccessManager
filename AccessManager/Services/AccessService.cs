@@ -1,6 +1,8 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
+using AccessManager.Utills;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace AccessManager.Services
 {
@@ -57,56 +59,6 @@ namespace AccessManager.Services
             return _context.Accesses.FirstOrDefault(a => a.Id == id);
         }
 
-        internal void SoftDeleteAccess(Access accessToDelete)
-        {
-            accessToDelete.DeletedOn = DateTime.Now;
-            SoftDeleteRecursively(accessToDelete, DateTime.Now);
-            _context.SaveChanges();
-        }
-
-        internal void HardDeleteAccess(Access accessToDelete)
-        {
-            HardDeleteRecursively(accessToDelete);
-            _context.Accesses.Remove(accessToDelete);
-            _context.SaveChanges();
-        }
-
-        private void SoftDeleteRecursively(Access access, DateTime timestamp)
-        {
-            if (access == null) return;
-
-            access.DeletedOn = timestamp;
-
-            if (access.SubAccesses != null && access.SubAccesses.Any())
-            {
-                foreach (var subAccess in access.SubAccesses)
-                {
-                    foreach(var ua in _context.UserAccesses.Where(ua => ua.AccessId == subAccess.Id))
-                    {
-                        ua.DeletedOn = timestamp;
-                    }
-
-                    SoftDeleteRecursively(subAccess, timestamp);
-                }
-            }
-        }
-
-        private void HardDeleteRecursively(Access access)
-        {
-            if (access == null) return;
-
-            if (access.SubAccesses != null && access.SubAccesses.Any())
-            {
-                foreach (var subAccess in access.SubAccesses)
-                {
-                    var ua = _context.UserAccesses.IgnoreQueryFilters().Where(ua => ua.AccessId == subAccess.Id).ToList();
-                    _context.UserAccesses.RemoveRange(ua);
-                    _context.Accesses.Remove(subAccess);
-
-                    HardDeleteRecursively(subAccess);
-                }
-            }
-        }
 
         internal UserAccess? GetUserAccess(string v, string username)
         {
@@ -210,6 +162,93 @@ namespace AccessManager.Services
             }
 
             return userAccess;
+        }
+
+        internal int GetDeletedAccessesCount()
+        {
+            return _context.Accesses
+                .IgnoreQueryFilters()
+                .Count(a => a.DeletedOn != null);
+        }
+
+        internal IEnumerable<Access> GetDeletedAccesses(int page)
+        {
+            if (page < 1) page = 1;
+
+            return _context.Accesses
+                .IgnoreQueryFilters()
+                .Where(a => a.DeletedOn != null)
+                .OrderByDescending(a => a.DeletedOn)
+                .Skip((page - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .ToList();
+        }
+
+        internal Access GetDeletedAccess(Guid accessId)
+        {
+            return _context.Accesses.IgnoreQueryFilters()
+                .Where(a => a.Id == accessId && a.DeletedOn != null)
+                .First(a => a.Id == accessId);
+        }
+
+        internal void RestoreAccess(Access access)
+        {
+            access.DeletedOn = null;
+
+            foreach (var userAccess in access.UserAccesses)
+                if(userAccess.User != null)
+                    userAccess.DeletedOn = null;
+
+            _context.SaveChanges();
+        }
+
+
+        internal bool CanDeleteAccess(Access rootAccess)
+        {
+            var accessIds = GetAllAccessIds(rootAccess);
+            return !_context.UserAccesses.Any(ua => accessIds.Contains(ua.AccessId));
+        }
+
+        internal void SoftDeleteAccess(Access accessToDelete)
+        {
+            var timestamp = DateTime.Now;
+            var accessIds = GetAllAccessIds(accessToDelete);
+
+            _context.Accesses
+                .Where(a => accessIds.Contains(a.Id))
+                .ExecuteUpdate(a => a.SetProperty(x => x.DeletedOn, timestamp));
+
+            _context.UserAccesses
+                .Where(ua => accessIds.Contains(ua.AccessId))
+                .ExecuteUpdate(ua => ua.SetProperty(x => x.DeletedOn, timestamp));
+        }
+
+        internal void HardDeleteAccess(Access accessToDelete)
+        {
+            var accessIds = GetAllAccessIds(accessToDelete);
+
+            _context.Accesses
+                .Where(a => accessIds.Contains(a.Id))
+                .ExecuteDelete();
+        }
+
+        private List<Guid> GetAllAccessIds(Access rootAccess)
+        {
+            var accessIds = new List<Guid>();
+            var stack = new Stack<Access>();
+            stack.Push(rootAccess);
+
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+                accessIds.Add(current.Id);
+
+                if (current.SubAccesses != null)
+                    foreach (var sub in current.SubAccesses)
+                        stack.Push(sub);
+            }
+
+            return accessIds;
         }
     }
 }

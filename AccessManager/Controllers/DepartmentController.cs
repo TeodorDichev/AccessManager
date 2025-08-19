@@ -1,9 +1,12 @@
 ﻿using AccessManager.Data.Entities;
+using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
+using AccessManager.ViewModels.Access;
 using AccessManager.ViewModels.Department;
 using AccessManager.ViewModels.Unit;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace AccessManager.Controllers
 {
@@ -11,12 +14,14 @@ namespace AccessManager.Controllers
     {
         private readonly LogService _logService;
         private readonly UserService _userService;
+        private readonly UnitService _unitService;
         private readonly DepartmentService _departmentService;
-        public DepartmentController(DepartmentService departmentUnitService, UserService userService, LogService logService)
+        public DepartmentController(DepartmentService departmentUnitService, UserService userService, LogService logService, UnitService unitService)
         {
             _departmentService = departmentUnitService;
             _userService = userService;
             _logService = logService;
+            _unitService = unitService;
         }
 
         [HttpGet]
@@ -27,19 +32,21 @@ namespace AccessManager.Controllers
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            List<DepartmentViewModel> list = _userService.GetAllowedDepartments(loggedUser)
-                .Select(g => new DepartmentViewModel
+            List<UnitDepartmentViewModel> departments = _departmentService.GetAllowedDepartments(loggedUser)
+                .Select(g => new UnitDepartmentViewModel
                 {
                     DepartmentId = g.Id,
                     DepartmentName = g.Description,
-                    Units = g.Units.Select(u => new UnitViewModel
-                    {
-                        UnitId = u.Id,
-                        UnitName = u.Description,
-                        DepartmentName = u.Department.Description,
-                    }).ToList()
-                })
-                .ToList();
+                }).ToList();
+
+            List<UnitDepartmentViewModel> units = _unitService.GetUserAllowedUnits(loggedUser)
+                .Select(g => new UnitDepartmentViewModel
+                {
+                    DepartmentId = g.Id,
+                    DepartmentName = g.Description,
+                }).ToList();
+
+            List<UnitDepartmentViewModel> list = departments.Concat(units).ToList();
 
             if (!string.IsNullOrEmpty(filterDepartment))
                 list = list.Where(d => d.DepartmentName == filterDepartment).ToList();
@@ -48,7 +55,7 @@ namespace AccessManager.Controllers
 
             UnitDepartmentListViewModel model = new UnitDepartmentListViewModel
             {
-                Departments = list,
+                UnitDepartments = list,
                 WriteAuthority = loggedUser.WritingAccess,
                 CurrentPage = page,
                 TotalPages = (int)Math.Ceiling((double)totalUsers / Constants.ItemsPerPage),
@@ -78,7 +85,7 @@ namespace AccessManager.Controllers
             {
                 DepartmentId = dep.Id,
                 DepartmentName = dep.Description,
-                Units = _userService.GetAllowedUnitsForDepartment(loggedUser, Guid.Parse(id)).Select(u => new UnitListItemViewModel { UnitId = u.Id, UnitName = u.Description }).ToList(),
+                Units = _unitService.GetAllowedUnitsForDepartment(loggedUser, Guid.Parse(id)).Select(u => new UnitViewModel { UnitId = u.Id, UnitName = u.Description }).ToList(),
                 WriteAuthority = loggedUser.WritingAccess
             };
 
@@ -119,7 +126,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var res = _userService.GetAllowedUnitsForDepartment(loggedUser, departmentId).Select(u => new { UnitId = u.Id, u.Description });
+            var res = _unitService.GetAllowedUnitsForDepartment(loggedUser, departmentId).Select(u => new { UnitId = u.Id, u.Description });
             return Json(res);
         }
 
@@ -129,7 +136,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var departments = _userService.GetUserAllowedUnits(loggedUser)
+            var departments = _unitService.GetUserAllowedUnits(loggedUser)
                 .GroupBy(u => u.Department)
                 .Select(g => new
                 {
@@ -183,5 +190,63 @@ namespace AccessManager.Controllers
             _logService.AddLog(loggedUser, Data.Enums.LogAction.Delete, dep);
             return RedirectToAction("UnitDepartmentList");
         }
+
+        [HttpGet]
+        public IActionResult DeletedUnitDepartments(int page)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.SuperAdmin;
+
+            var model = new DeletedUnitDepartmentListViewModel()
+            {
+                UnitDepartments = _departmentService.GetDeletedUnitDepartments(page).ToList(),
+                CurrentPage = page,
+                TotalPages = _departmentService.GetDeletedUnitDepartmentsCount(),
+            };
+            return View(model);
+        }
+
+        [HttpPost]
+        public IActionResult RestoreDepartment(Guid departmentId)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var department = _departmentService.GetDeletedDepartment(departmentId);
+            if (department == null)
+            {
+                TempData["Error"] = "Дирекцията не е намерена";
+                return RedirectToAction("DeletedUnitDepartments");
+            }
+
+            _departmentService.RestoreDepartment(department);
+            _logService.AddLog(loggedUser, LogAction.Restore, department);
+
+            TempData["Success"] = "Дирекцията е успешно възстановенa.";
+            return RedirectToAction("DeletedUnitDepartments");
+        }
+
+        [HttpPost]
+        public IActionResult HardDeleteDepartment(Guid departmentId)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var department = _departmentService.GetDeletedDepartment(departmentId);
+            if (department == null)
+            {
+                TempData["Error"] = "Дирекцията не е намеренa";
+                return RedirectToAction("DeletedAccesses");
+            }
+
+            _logService.AddLog(loggedUser, LogAction.HardDelete, department);
+            _departmentService.HardDeleteDepartment(department);
+
+            TempData["Success"] = "Дирекцията е успешно изтритa.";
+            return RedirectToAction("DeletedUnitDepartments");
+        }
+
     }
 }

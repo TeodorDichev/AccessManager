@@ -1,5 +1,101 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model AccessManager.ViewModels.Department.DeletedUnitDepartmentListViewModel
+
 @{
+    ViewData["Title"] = "Отдели и дирекции";
+}
+
+<h2>Деактивирани отдели и дирекции</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="text-success">@TempData["Success"]</div>
+}
+
+<form style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="d-flex mb-3">
+    <form asp-controller="Access" asp-action="HardUnitsAndDepartments" method="post" onsubmit="return confirm('Наистина ли искате да изтриете всички деактивирани отдели и дирекции?');">
+        <button type="submit" class="btn btn-danger me-2">
+            Изтрий всички деактивирани отдели и дирекции
+        </button>
+    </form>
+</div>
+<table class="table table-bordered table-striped wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+    <thead class="table-light">
+        <tr>
+            <th>Дирекция</th>
+            <th>Отдел</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var ud in Model.UnitDepartments)
+        {
+            <tr>
+                <td>@ud.DepartmentName</td>
+                <td>@ud.UnitName</td>
+                @if (ud.UnitId == null)
+                {
+                    <td>
+                        <form asp-controller="Department" asp-action="HardDeleteDepartment" method="post" asp-route-departmentId="@ud.DepartmentId">
+                            <button type="submit" class="btn btn-danger me-2">
+                                Изтрий
+                            </button>
+                        </form>
+                    </td>
+                    <td>
+                        <form asp-controller="Department" asp-action="RestoreDepartment" method="post" asp-route-accessId="@ud.DepartmentId">
+                            <button type="submit" class="btn btn-success me-2">
+                                Възстанови
+                            </button>
+                        </form>
+                    </td>
+                }
+                else
+                {
+                    <td>
+                        <form asp-controller="Unit" asp-action="HardDeleteUnit" method="post" asp-route-unitId="@ud.UnitId">
+                            <button type="submit" class="btn btn-danger me-2">
+                                Изтрий
+                            </button>
+                        </form>
+                    </td>
+                    <td>
+                        <form asp-controller="Unit" asp-action="RestoreUnit" method="post" asp-route-unitId="@ud.UnitId">
+                            <button type="submit" class="btn btn-success me-2">
+                                Възстанови
+                            </button>
+                        </form>
+                    </td>
+                }
+
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center mt-4">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="?page=@i">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
 }

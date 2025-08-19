@@ -2,6 +2,7 @@
 using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
+using AccessManager.ViewModels.Department;
 using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
@@ -14,11 +15,13 @@ namespace AccessManager.Controllers
         private readonly LogService _logService;
         private readonly UnitService _unitService;
         private readonly UserService _userService;
-        public UnitController(UnitService unitService, UserService userService, LogService logService)
+        private readonly DepartmentService _departmentService;
+        public UnitController(UnitService unitService, UserService userService, LogService logService, DepartmentService departmentService)
         {
             _unitService = unitService;
             _userService = userService;
             _logService = logService;
+            _departmentService = departmentService;
         }
 
         [HttpGet]
@@ -115,7 +118,7 @@ namespace AccessManager.Controllers
 
             if (!string.IsNullOrEmpty(departmentId)) model.DepartmentId = Guid.Parse(departmentId);
 
-            var departments = _userService.GetAllowedDepartments(loggedUser).Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList();
+            var departments = _departmentService.GetAllowedDepartments(loggedUser).Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList();
 
             model.Departments = departments;
             return View(model);
@@ -166,14 +169,14 @@ namespace AccessManager.Controllers
                 return RedirectToAction("EditUser", new { username });
             }
 
-            var departments = _userService.GetAllowedDepartments(loggedUser).OrderBy(d => d.Description)
+            var departments = _departmentService.GetAllowedDepartments(loggedUser).OrderBy(d => d.Description)
                                     .Select(d => new SelectListItem(d.Description, d.Id.ToString()))
                                     .ToList();
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            var accessibleUnitsQuery = _userService.GetUserAccessibleUnits(user, loggedUser);
-            var inaccessibleUnitsQuery = _userService.GetUserInaccessibleUnits(user, loggedUser);
+            var accessibleUnitsQuery = _unitService.GetUserAccessibleUnits(user, loggedUser);
+            var inaccessibleUnitsQuery = _unitService.GetUserInaccessibleUnits(user, loggedUser);
 
             if (!string.IsNullOrEmpty(filterDepartment1))
                 accessibleUnitsQuery = accessibleUnitsQuery.Where(u => u.Department.Id == Guid.Parse(filterDepartment1)).ToList();
@@ -187,7 +190,7 @@ namespace AccessManager.Controllers
                 .OrderBy(u => u.Description)
                 .Skip((page1 - 1) * Constants.ItemsPerPage)
                 .Take(Constants.ItemsPerPage)
-                .Select(u => new UnitViewModel
+                .Select(u => new UnitDepartmentViewModel
                 {
                     UnitId = u.Id,
                     UnitName = u.Description,
@@ -199,7 +202,7 @@ namespace AccessManager.Controllers
                 .OrderBy(u => u.Description)
                 .Skip((page2 - 1) * Constants.ItemsPerPage)
                 .Take(Constants.ItemsPerPage)
-                .Select(u => new UnitViewModel
+                .Select(u => new UnitDepartmentViewModel
                 {
                     UnitId = u.Id,
                     UnitName = u.Description,

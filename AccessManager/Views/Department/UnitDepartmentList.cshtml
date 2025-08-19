@@ -65,46 +65,45 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var dep in Model.Departments)
+        @foreach (var ud in Model.UnitDepartments)
         {
             <tr>
-                <td>@dep.DepartmentName</td>
-                <td>-</td>
-                    <td>
-                        <a asp-controller="Department" asp-action="EditDepartment" asp-route-id="@dep.DepartmentId" class="btn btn-sm btn-info">
-                            Редактирай
+                <td>@ud.DepartmentName</td>
+                <td>@ud.UnitName</td>
+                @if (ud.UnitId == null)
+                {
+                    <td
+                        ><a asp-controller="Department" asp-action="EditDepartment" asp-route-id="@ud.DepartmentId" class="btn btn-sm btn-info">
+                        Редактирай
                         </a>
                     </td>
                     <td>
-                        <form asp-controller="Department" asp-action="SoftDeleteDepartment" method="post" asp-route-departmentid="@dep.DepartmentId">
-                        <button type="submit" class="btn btn-danger btn-sm"
-                            onclick="return confirm('Изтриваенето на дирекция изтрива: всички нейни отдели, всички служители от тези отдели, всички достъпи на служители до тези отдели'">
+                        <form asp-controller="Department" asp-action="SoftDeleteDepartment" method="post" asp-route-departmentid="@ud.DepartmentId">
+                            <button type="submit" class="btn btn-danger btn-sm"
+                                    onclick="return confirm('Изтриваенето на дирекция изтрива: всички нейни отдели, всички служители от тези отдели, всички достъпи на служители до тези отдели'">
                                 Изтрий
                             </button>
                         </form>
                     </td>
-            </tr>
-            @foreach (var unit in dep.Units)
-            {
-                <tr>
-                    <td>@unit.DepartmentName</td>
-                    <td>@unit.UnitName</td>
-                        <td>
-                            <a asp-controller="Unit" asp-action="EditUnit" asp-route-id="@unit.UnitId" class="btn btn-sm btn-info">
-                                Редактирай
-                            </a>
-                        </td>
-                        <td>
-                        <form asp-controller="Unit" asp-action="SoftDeleteUnit" method="post" asp-route-unitid="@unit.UnitId">
+                }
+                else
+                {
+                    <td>
+                        <a asp-controller="Unit" asp-action="EditUnit" asp-route-id="@ud.UnitId" class="btn btn-sm btn-info">
+                            Редактирай
+                        </a>
+                    </td>
+                    <td>
+                        <form asp-controller="Unit" asp-action="SoftDeleteUnit" method="post" asp-route-unitid="@ud.UnitId">
                             <button type="submit" class="btn btn-danger btn-sm"
                                     onclick="return confirm('Изтриваенето на отдел изтрива: всички служители от този отдели, всички достъпи на служители до този отдели'">
-                                    Изтрий
-                                </button>
+                                Изтрий
+                            </button>
                         </form>
-                        </td>
+                    </td>
+                }
 
-                </tr>
-            }
+            </tr>
         }
     </tbody>
 </table>

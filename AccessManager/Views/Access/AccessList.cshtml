@@ -45,7 +45,7 @@
     }
     @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.SuperAdmin)
     {
-        <a asp-controller="Access" asp-action="ViewDeactivatedAccesses" class="btn btn-primary">
+        <a asp-controller="Access" asp-action="DeletedAccesses" class="btn btn-primary">
             Виж изтритите достъпи
         </a>
     }
@@ -102,4 +102,5 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/access-list.js" asp-append-version="true"></script>
+    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
 }
