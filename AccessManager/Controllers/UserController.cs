@@ -1,11 +1,9 @@
-﻿using AccessManager.Data;
-using AccessManager.Data.Entities;
+﻿using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
 using AccessManager.ViewModels.Department;
 using AccessManager.ViewModels.InformationSystem;
-using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -22,7 +20,7 @@ namespace AccessManager.Controllers
         private readonly UnitService _unitService;
         private readonly LogService _logService;
 
-        public UserController(Context context, PasswordService passwordService, UserService userService, LogService logService,
+        public UserController(PasswordService passwordService, UserService userService, LogService logService,
             AccessService accessService, DepartmentService departmentService, DirectiveService directiveService, UnitService unitService)
         {
             _logService = logService;

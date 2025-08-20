@@ -19,7 +19,7 @@
     <div class="text-success">@TempData["Success"]</div>
 }
 
-<form method="get" class="d-flex justify-content-start gap-2 mb-3">
+<form method="get" class="d-flex justify-content-start align-items-end gap-2 mb-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
     <div>
         <label class="form-label">Ниво</label>
         <select asp-for="Level" id="LevelSelect" class="form-select" onchange="this.form.submit()">
@@ -29,26 +29,36 @@
             <option value="3">3</option>
         </select>
     </div>
-    <div>
+    <div class="position-relative">
         <label class="form-label">Филтър по родителски достъп</label>
-        <input type="text" id="FilterSearch" class="form-control" placeholder="Избор на родител" autocomplete="off" value="@Model.FilterDescription" />        
-        <input type="hidden" asp-for="FilterAccessId" name="filterAccessId" id="FilterAccessId" onchange="this.form.submit()" />
-        <div id="filterCandidates" class="list-group" style="position:relative; z-index:2000;"></div>
+        <input type="text" id="FilterSearch" class="form-control"
+               placeholder="Избор на родител" autocomplete="off"
+               value="@Model.FilterDescription" />
+
+        <input type="hidden" asp-for="FilterAccessId"
+               name="filterAccessId" id="FilterAccessId"
+               onchange="this.form.submit()" />
+
+        <div id="filterCandidates" class="list-group dropdown-results"></div>
         <span asp-validation-for="FilterAccessId" class="text-danger"></span>
     </div>
-
-    @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
-    {
-        <a asp-controller="Access" asp-action="CreateAccess" class="btn btn-success">
-            Добави нов достъп
-        </a>
-    }
-    @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.SuperAdmin)
-    {
-        <a asp-controller="Access" asp-action="DeletedAccesses" class="btn btn-primary">
-            Виж изтритите достъпи
-        </a>
-    }
+    <div>
+        @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
+        {
+            <a asp-controller="Access" asp-action="CreateAccess" class="btn btn-success">
+                Добави нов достъп
+            </a>
+            <a asp-controller="File" asp-action="AccessesCsv" class="btn btn-primary">
+                Експортирай CSV
+            </a>
+        }
+        @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.SuperAdmin)
+        {
+            <a asp-controller="Access" asp-action="DeletedAccesses" class="btn btn-danger">
+                Виж изтритите достъпи
+            </a>
+        }
+    </div>
 </form>
 
 <table class="table table-bordered table-striped">

@@ -6,6 +6,7 @@ using AccessManager.Utills;
 using AccessManager.ViewModels.Access;
 using AccessManager.ViewModels.InformationSystem;
 using AccessManager.ViewModels.User;
+using AspNetCoreGeneratedDocument;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text;
@@ -188,7 +189,7 @@ namespace AccessManager.Controllers
                 .Where(a => string.IsNullOrEmpty(qLower) || a.Description.ToLowerInvariant().Contains(qLower))
                 .OrderBy(a => a.Description)
                 .Take(30)
-                .Select(a => new { id = a.Id, text = a.Description })
+                .Select(a => new { id = a.Id, text = _accessService.GetAccessDescription(_accessService.GetAccess(a.Id)) })
                 .ToList();
 
             return Json(candidates);
@@ -579,7 +580,6 @@ namespace AccessManager.Controllers
             return RedirectToAction("AccessList");
         }
 
-
         [HttpGet]
         public IActionResult DeletedAccesses(int page)
         {
@@ -598,7 +598,7 @@ namespace AccessManager.Controllers
                     })
                     .ToList(),
                 CurrentPage = page,
-                TotalPages = _accessService.GetDeletedAccessesCount(),
+                TotalPages = (int)Math.Ceiling((double)_accessService.GetDeletedAccessesCount()/Constants.ItemsPerPage)
             };
             return View(model);
         }
@@ -613,6 +613,11 @@ namespace AccessManager.Controllers
             if (access == null)
             {
                 TempData["Error"] = "Достъпът не е намерен";
+                return RedirectToAction("DeletedAccesses");
+            }
+            else if(!_accessService.CanRestoreAccess(access))
+            {
+                TempData["Error"] = "Достъпът не може да бъде възстановен защото липсва такъв родителски достъп";
                 return RedirectToAction("DeletedAccesses");
             }
 

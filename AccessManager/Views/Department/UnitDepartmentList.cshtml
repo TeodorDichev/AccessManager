@@ -42,11 +42,13 @@
             <a asp-controller="Unit" asp-action="CreateUnit" class="btn btn-success">
                 Добави нов отдел
             </a>
-
+            <a asp-controller="File" asp-action="UnitsCsv" class="btn btn-primary">
+                Експортирай CSV
+            </a>
         }
         @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.SuperAdmin)
         {
-            <a asp-controller="Unit" asp-action="ViewDeactivatedUnits" class="btn btn-danger">
+            <a asp-controller="Department" asp-action="DeletedUnitDepartments" class="btn btn-danger">
                 Виж изтритите отдели
             </a>
         }

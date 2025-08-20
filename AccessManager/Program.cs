@@ -15,6 +15,7 @@ namespace AccessManager
 
             builder.Services.AddScoped<LogService>();
             builder.Services.AddScoped<UnitService>();
+            builder.Services.AddScoped<FileService>();
             builder.Services.AddScoped<UserService>();
             builder.Services.AddScoped<AccessService>();
             builder.Services.AddScoped<PasswordService>();

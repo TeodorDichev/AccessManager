@@ -2,7 +2,6 @@
 using AccessManager.Data.Entities;
 using AccessManager.Utills;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace AccessManager.Services
 {
@@ -155,7 +154,7 @@ namespace AccessManager.Services
             UserAccess? userAccess = _context.UserAccesses.FirstOrDefault(ua => ua.UserId == userId && ua.AccessId == accessId);
             if (userAccess != null)
             {
-                if(userAccess.RevokedByDirective != null) userAccess.RevokedByDirectiveId = directiveId;
+                if (userAccess.RevokedByDirective != null) userAccess.RevokedByDirectiveId = directiveId;
                 else userAccess.GrantedByDirectiveId = directiveId;
 
                 _context.SaveChanges();
@@ -190,26 +189,41 @@ namespace AccessManager.Services
                 .Where(a => a.Id == accessId && a.DeletedOn != null)
                 .First(a => a.Id == accessId);
         }
+        internal bool CanRestoreAccess(Access access)
+        {
+            if (access.ParentAccessId == null)
+                return true;
+
+            var ancestorIds = GetParentAccessTree(access);
+
+            return _context.Accesses
+                               .IgnoreQueryFilters()
+                               .Where(a => ancestorIds.Contains(a.Id))
+                               .All(a => a.DeletedOn == null);
+        }
 
         internal void RestoreAccess(Access access)
         {
-            var accessIds = GetAllAccessIds(access);
+            // We cannot simply restore the access because the parent id stays however the parent may be deleted
+            // We will forbid restoring until all parents are restored in linear order (without the siblings)
 
-            _context.Accesses
+            var accessIds = GetAccessSubTree(access);
+
+            _context.Accesses.IgnoreQueryFilters()
                 .Where(a => accessIds.Contains(a.Id))
                 .ExecuteUpdate(a => a.SetProperty(x => x.DeletedOn, (DateTime?)null));
         }
 
-        internal bool CanDeleteAccess(Access rootAccess)
+        internal bool CanDeleteAccess(Access access)
         {
-            var accessIds = GetAllAccessIds(rootAccess);
+            var accessIds = GetAccessSubTree(access);
             return !_context.UserAccesses.Any(ua => accessIds.Contains(ua.AccessId));
         }
 
         internal void SoftDeleteAccess(Access access)
         {
             var timestamp = DateTime.Now;
-            var accessIds = GetAllAccessIds(access);
+            var accessIds = GetAccessSubTree(access);
 
             _context.Accesses
                 .Where(a => accessIds.Contains(a.Id))
@@ -218,14 +232,15 @@ namespace AccessManager.Services
 
         internal void HardDeleteAccess(Access access)
         {
-            var accessIds = GetAllAccessIds(access);
+            var accessIds = GetAccessSubTree(access);
 
             _context.Accesses
+                .IgnoreQueryFilters()
                 .Where(a => accessIds.Contains(a.Id))
                 .ExecuteDelete();
         }
 
-        private List<Guid> GetAllAccessIds(Access access)
+        private List<Guid> GetAccessSubTree(Access access)
         {
             var accessIds = new List<Guid>();
             var stack = new Stack<Access>();
@@ -242,6 +257,22 @@ namespace AccessManager.Services
             }
 
             return accessIds;
+        }
+
+        private List<Guid> GetParentAccessTree(Access access)
+        {
+            var ancestors = new List<Guid>();
+            if (access.ParentAccessId == null) return ancestors;
+
+            var map = _context.Accesses
+                .IgnoreQueryFilters()
+                .Select(a => new { a.Id, a.ParentAccessId })
+                .ToDictionary(a => a.Id, a => a.ParentAccessId);
+
+            for (var parentId = access.ParentAccessId; parentId != null && map.ContainsKey(parentId.Value); parentId = map[parentId.Value])
+                ancestors.Add(parentId.Value);
+
+            return ancestors;
         }
     }
 }

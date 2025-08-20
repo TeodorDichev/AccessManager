@@ -12,7 +12,7 @@
     @Html.AntiForgeryToken()
 </form>
 
-<form method="get" class="mb-3 d-flex align-items-end gap-3">
+<form method="get" class="mb-3 d-flex align-items-end gap-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
     <div>
         <label for="sortBy" class="form-label">Сортиране по:</label>
         <select name="sortBy" id="sortBy" class="form-select" onchange="this.form.submit()">
@@ -51,17 +51,26 @@
         </select>
     </div>
 
-    <div class="wrapper">
-            <a asp-controller="User" asp-action="CreateUser" class="btn btn-success">
-                Добави потребител
-            </a>
+    <div>
+        <a asp-controller="User" asp-action="CreateUser" class="btn btn-success">
+            Добави потребител
+        </a>
     </div>
-    <div class="wrapper">
-        <a asp-controller="User" asp-action="DeletedUsers" class="btn btn-primary">
+    <div>
+        <a asp-controller="User" asp-action="DeletedUsers" class="btn btn-danger">
             Виж изтритите потребители
         </a>
     </div>
-
+    <div>
+        <a asp-controller="File" asp-action="UsersCsv" class="btn btn-primary">
+            Експортирай CSV с потребители
+        </a>
+    </div>
+    <div>
+        <a asp-controller="File" asp-action="UsersUnitsCsv" class="btn btn-primary">
+            Експортирай CSV с достъпните отдели за потребители
+        </a>
+    </div>
 </form>
 
 <table class="table table-bordered table-striped">

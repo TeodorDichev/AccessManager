@@ -37,6 +37,10 @@ namespace AccessManager.Services
         {
             return _context.Units.FirstOrDefault(u => u.Id == Guid.Parse(id));
         }
+        internal Unit? GetDeletedUnit(Guid id)
+        {
+            return _context.Units.IgnoreQueryFilters().FirstOrDefault(u => u.Id == id && u.DeletedOn != null);
+        }
 
         internal Unit CreateUnit(string unitName, Guid departmentId)
         {
@@ -125,13 +129,24 @@ namespace AccessManager.Services
 
         internal bool CanDeleteUnit(Unit unit)
         {
-            return !unit.UsersFromUnit.Any() && !_context.UnitUsers.Any(uu => uu.UnitId == unit.Id);
+            return !unit.UsersFromUnit.Any();
+        }
+        internal bool CanRestoreUnit(Unit unit)
+        {
+            // Needed due to dependency to department
+            return _context.Departments.IgnoreQueryFilters().Any(d => d.Id == unit.DepartmentId);
         }
 
         internal void RestoreUnit(Unit unit)
         {
-            _context.Units
-                .IgnoreQueryFilters()
+            // If deleted unit department exists it maps to it
+            // If it is also deleted it restores and maps to it
+            // If no then we must not restore which will be checked beforehand
+            _context.Departments.IgnoreQueryFilters()
+                .Where(d => d.Id == unit.DepartmentId)
+                .ExecuteUpdate(d => d.SetProperty(d => d.DeletedOn, (DateTime?)null));
+
+            _context.Units.IgnoreQueryFilters()
                 .Where(u => u.Id == unit.Id)
                 .ExecuteUpdate(u => u.SetProperty(x => x.DeletedOn, (DateTime?)null));
         }
@@ -142,6 +157,10 @@ namespace AccessManager.Services
             _context.Units
                 .Where(u => u.Id == unit.Id)
                 .ExecuteUpdate(u => u.SetProperty(x => x.DeletedOn, timestamp));
+
+            _context.UnitUsers
+                .Where(u => u.UnitId == unit.Id)
+                .ExecuteDelete();
         }
 
         internal void HardDeleteUnit(Unit unit)

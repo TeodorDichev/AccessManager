@@ -138,31 +138,6 @@ namespace AccessManager.Controllers
             return RedirectToAction("UnitDepartmentList", "Department");
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult SoftDeleteUnit(string unitId)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            Unit? unit = _unitService.GetUnit(unitId);
-            if (unit == null)
-            {
-                TempData["Error"] = "Не съществува такъв отдел";
-                return RedirectToAction("UnitDepartmentList", "Department");
-            }
-            else if (!_unitService.CanDeleteUnit(unit))
-            { 
-                TempData["Error"] = "Отделът не е изтрит успешно";
-                return RedirectToAction("UnitDepartmentList", "Department");
-            }
-
-            TempData["Success"] = "Отделът е изтрит успешно";
-            _logService.AddLog(loggedUser, LogAction.Delete, unit);
-            _unitService.SoftDeleteUnit(unit);
-            return RedirectToAction("UnitDepartmentList", "Department");
-        }
-
         [HttpGet]
         public IActionResult MapUserUnitAccess(string username, string filterDepartment1, string filterDepartment2, int page1 = 1, int page2 = 1)
         {
@@ -292,5 +267,76 @@ namespace AccessManager.Controllers
 
             return RedirectToAction("MapUserUnitAccess", new { model.UserName });
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SoftDeleteUnit(string unitId)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            Unit? unit = _unitService.GetUnit(unitId);
+            if (unit == null)
+            {
+                TempData["Error"] = "Не съществува такъв отдел";
+                return RedirectToAction("UnitDepartmentList", "Department");
+            }
+            else if (!_unitService.CanDeleteUnit(unit))
+            {
+                TempData["Error"] = "Отделът не е изтрит успешно";
+                return RedirectToAction("UnitDepartmentList", "Department");
+            }
+
+            TempData["Success"] = "Отделът е изтрит успешно";
+            _logService.AddLog(loggedUser, LogAction.Delete, unit);
+            _unitService.SoftDeleteUnit(unit);
+            return RedirectToAction("UnitDepartmentList", "Department");
+        }
+
+        [HttpPost]
+        public IActionResult RestoreUnit(Guid unitId)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var unit = _unitService.GetDeletedUnit(unitId);
+            if (unit == null)
+            {
+                TempData["Error"] = "Отделът не е намерена";
+                return RedirectToAction("DeletedUnitDepartments", "Department");
+            }
+            else if (!_unitService.CanRestoreUnit(unit))
+            {
+                TempData["Error"] = "Отделът не е може да бъде възстановен понеже не съществува съответната дирекция";
+                return RedirectToAction("DeletedUnitDepartments", "Department");
+            }
+
+            _unitService.RestoreUnit(unit);
+            _logService.AddLog(loggedUser, LogAction.Restore, unit);
+
+            TempData["Success"] = "Дирекцията е успешно възстановенa.";
+            return RedirectToAction("DeletedUnitDepartments", "Department");
+        }
+
+        [HttpPost]
+        public IActionResult HardDeleteUnit(Guid unitId)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var unit = _unitService.GetDeletedUnit(unitId);
+            if (unit == null)
+            {
+                TempData["Error"] = "Отделът не е намеренa";
+                return RedirectToAction("DeletedUnitDepartments", "Department");
+            }
+
+            _logService.AddLog(loggedUser, LogAction.HardDelete, unit);
+            _unitService.HardDeleteUnit(unit);
+
+            TempData["Success"] = "Дирекцията е успешно изтритa.";
+            return RedirectToAction("DeletedUnitDepartments", "Department");
+        }
+
     }
 }

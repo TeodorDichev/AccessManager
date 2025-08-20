@@ -42,8 +42,10 @@ namespace AccessManager.Controllers
             List<UnitDepartmentViewModel> units = _unitService.GetUserAllowedUnits(loggedUser)
                 .Select(g => new UnitDepartmentViewModel
                 {
-                    DepartmentId = g.Id,
-                    DepartmentName = g.Description,
+                    DepartmentId = g.DepartmentId,
+                    DepartmentName = g.Department.Description,
+                    UnitId = g.Id,
+                    UnitName = g.Description
                 }).ToList();
 
             List<UnitDepartmentViewModel> list = departments.Concat(units).ToList();
@@ -209,7 +211,7 @@ namespace AccessManager.Controllers
             {
                 UnitDepartments = _departmentService.GetDeletedUnitDepartments(page).ToList(),
                 CurrentPage = page,
-                TotalPages = _departmentService.GetDeletedUnitDepartmentsCount(),
+                TotalPages = (int)Math.Ceiling((double)_departmentService.GetDeletedUnitDepartmentsCount() / Constants.ItemsPerPage),
             };
             return View(model);
         }
@@ -244,7 +246,7 @@ namespace AccessManager.Controllers
             if (department == null)
             {
                 TempData["Error"] = "Дирекцията не е намеренa";
-                return RedirectToAction("DeletedAccesses");
+                return RedirectToAction("DeletedUnitDepartments");
             }
 
             _logService.AddLog(loggedUser, LogAction.HardDelete, department);

@@ -63,17 +63,15 @@ namespace AccessManager.Services
         {
             // Only accessible to admins so it does not need filtering based on user authority
 
-            return _context.Departments
+            var deletedDepartmentsCount = _context.Departments
+                    .IgnoreQueryFilters()
+                    .Count(d => d.DeletedOn != null);
+
+            var deletedUnitsCount = _context.Units
                 .IgnoreQueryFilters()
-                .Count(d => d.DeletedOn != null)
-                +
-                _context.Units
-                .IgnoreQueryFilters()
-                .Count(u => u.Department.DeletedOn != null)
-                +
-                _context.Units
-                .IgnoreQueryFilters()
-                .Count(u => u.DeletedOn != null && u.Department.DeletedOn == null);
+                .Count(u => u.DeletedOn != null || u.Department.DeletedOn != null);
+
+            return deletedDepartmentsCount + deletedUnitsCount;
         }
 
         internal IEnumerable<UnitDepartmentViewModel> GetDeletedUnitDepartments(int page)
@@ -121,15 +119,14 @@ namespace AccessManager.Services
 
                 units = _context.Units
                     .IgnoreQueryFilters()
-                    .Where(u => u.DeletedOn != null || u.Department.DeletedOn != null)
-                    .Where(u => remainingDepartments.Contains(u.Department.Id))
-                    .OrderByDescending(u => u.DeletedOn ?? u.Department.DeletedOn)
+                    .Where(u => u.DeletedOn != null)
                     .Take(unitRows)
                     .Select(u => new UnitDepartmentViewModel
                     {
                         DepartmentId = u.Department.Id,
                         DepartmentName = u.Department.Description,
-                        UnitName = u.Description
+                        UnitName = u.Description,
+                        UnitId = u.Id
                     });
             }
 
@@ -160,8 +157,7 @@ namespace AccessManager.Services
 
         internal bool CanDeleteDepartment(Department department)
         {
-            return !_context.UnitUsers.Any(uu => uu.Unit.DepartmentId == department.Id) &&
-                        !_context.Users.Any(u => u.Unit.DepartmentId == department.Id);
+            return !_context.Users.Any(u => u.Unit.DepartmentId == department.Id);
         }
         internal void SoftDeleteDepartment(Department department)
         {
@@ -171,6 +167,10 @@ namespace AccessManager.Services
             _context.Departments
                 .Where(d => d.Id == department.Id)
                 .ExecuteUpdate(d => d.SetProperty(x => x.DeletedOn, timestamp));
+
+            _context.UnitUsers
+                .Where(u => u.Unit.DepartmentId == department.Id)
+                .ExecuteDelete();
 
             _context.Units
                 .Where(u => unitIds.Contains(u.Id))
