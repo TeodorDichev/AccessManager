@@ -13,6 +13,15 @@
     <div class="alert alert-success">Профилът е обновен успешно.</div>
 }
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="text-success">@TempData["Success"]</div>
+}
+
 <style>
     input[readonly] {
         background-color: #e9ecef;
@@ -25,118 +34,52 @@
 <form asp-action="MyProfile" method="post">
     <div class="row">
         <div class="col-md-6">
-            <div class="mb-3">
+            <div class="mb-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
                 <label asp-for="FirstName" class="form-label">Първо име</label>
-                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
-                {
-                    <input asp-for="FirstName" class="form-control" />
-                }
-                else
-                {
-                    <input type="hidden" asp-for="FirstName" />
-                    <input class="form-control" value="@Model.FirstName" disabled />
-                }
+                <input asp-for="FirstName" class="form-control" />
                 <span asp-validation-for="FirstName" class="text-danger"></span>
             </div>
 
-            <div class="mb-3">
+            <div class="mb-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
                 <label asp-for="MiddleName" class="form-label">Второ име</label>
-                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
-                {
-                    <input asp-for="MiddleName" class="form-control" />
-                }
-                else
-                {
-                    <input type="hidden" asp-for="MiddleName" />
-                    <input class="form-control" value="@Model.MiddleName" disabled />
-                }
+                <input asp-for="MiddleName" class="form-control" />
                 <span asp-validation-for="MiddleName" class="text-danger"></span>
             </div>
 
-            <div class="mb-3">
+            <div class="mb-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
                 <label asp-for="LastName" class="form-label">Фамилия</label>
-                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
-                {
-                    <input asp-for="LastName" class="form-control" />
-                }
-                else
-                {
-                    <input type="hidden" asp-for="LastName" />
-                    <input class="form-control" value="@Model.LastName" disabled />
-                }
+                <input asp-for="LastName" class="form-control" />
                 <span asp-validation-for="LastName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="EGN" class="form-label">ЕГН</label>
                 <span asp-validation-for="EGN" class="text-danger"></span>
-                @if (Model.WritingAccess >= AuthorityType.Restricted)
-                {
-                    <input asp-for="EGN" class="form-control" />
-                }
-                else
-                {
-                    <input type="hidden" asp-for="EGN" />
-                    <input class="form-control" value="@Model.EGN" disabled />
-                }
+                <input asp-for="EGN" class="form-control" />
             </div>
 
             <div class="mb-3">
                 <label asp-for="Phone" class="form-label">Телефонен номер</label>
-                @if (Model.WritingAccess >= AuthorityType.Restricted)
-                {
-                    <input asp-for="Phone" class="form-control" />
-                }
-                else
-                {
-                    <input type="hidden" asp-for="Phone" />
-                    <input class="form-control" value="@Model.Phone" disabled />
-                }
+                <input asp-for="Phone" class="form-control" />
                 <span asp-validation-for="Phone" class="text-danger"></span>
             </div>
         </div>
 
-        <div class="col-md-6">
+        <div class="col-md-6 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
             <div class="mb-3">
                 <label asp-for="UserName" class="form-label">Потребителско име</label>
-                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
-                {
-                    <input asp-for="UserName" class="form-control" />
-                }
-                else
-                {
-                    <input type="hidden" asp-for="UserName" />
-                    <input class="form-control" value="@Model.UserName" disabled />
-                }
+                <input asp-for="UserName" class="form-control" />
                 <span asp-validation-for="UserName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="SelectedDepartmentId" class="form-label">Дирекция</label>
-                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
-                {
-                    <select asp-for="SelectedDepartmentId" asp-items="Model.AvailableDepartments" class="form-select" id="SelectedDepartmentId"></select>
-                }
-                else
-                {
-                    <input type="hidden" asp-for="SelectedDepartmentId" />
-                    <input class="form-control" value="@Model.AvailableDepartments.FirstOrDefault(u => u.Value.ToLower() == Model.SelectedDepartmentId.ToString().ToLower())?.Text" disabled />
-                }
+                <select asp-for="SelectedDepartmentId" asp-items="Model.AvailableDepartments" class="form-select" id="SelectedDepartmentId"></select>
                 <span asp-validation-for="SelectedDepartmentId" class="text-danger"></span>
             </div>
             <div class="mb-3">
                 <label asp-for="SelectedUnitId" class="form-label">Отдел</label>
-
-                @if (Model.WritingAccess >= AuthorityType.SuperAdmin)
-                {
-                    <select asp-for="SelectedUnitId" asp-items="Model.AvailableUnits" class="form-select" id="SelectedUnitId"></select>
-                }
-                else
-                {
-                    <input type="hidden" asp-for="SelectedUnitId" />
-                    <input class="form-control" value="@Model.AvailableUnits.FirstOrDefault(u => u.Value.ToLower() == Model.SelectedUnitId.ToString().ToLower())?.Text" disabled />
-                }
-
+                <select asp-for="SelectedUnitId" asp-items="Model.AvailableUnits" class="form-select" id="SelectedUnitId"></select>
                 <span asp-validation-for="SelectedUnitId" class="text-danger"></span>
             </div>
 
@@ -194,51 +137,22 @@
 
 <hr />
 
-@*ADD PAGINATION HERE*@
-<h4>Видими отдели</h4>
-<div style="max-height: 200px; overflow-y: auto;">
-    <table class="table table-sm table-bordered">
-        <thead class="table-light">
-            <tr>
-                <th>Дирекция</th>
-                <th>Отдел</th>
-            </tr>
-        </thead>
-        <tbody>
-            @for (int i = 0; i < Model.AccessibleUnits.Count; i++)
-            {
-                <tr>
-                    <td>@Model.AccessibleUnits[i].DepartmentName</td>
-                    <td>@Model.AccessibleUnits[i].UnitName</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
+<div class="row mt-5">
+    <div class="col-md-6">
+        <h4>Достъпни отдели</h4>
+        <div id="accessibleUnitsContainer"></div>
+    </div>
 
-<h4>Видими достъпи</h4>
-<div style="max-height: 200px; overflow-y: auto;">
-    <table class="table table-sm table-bordered">
-        <thead class="table-light">
-            <tr>
-                <th>Име</th>
-                <th>Заповед за даване на достъп</th>
-            </tr>
-        </thead>
-        <tbody>
-            @for (int i = 0; i < Model.UserAccesses.Count; i++)
-            {
-                <tr>
-                    <td>@Model.UserAccesses[i].Description</td>
-                    <td>@Model.UserAccesses[i].DirectiveDescription</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="col-md-6">
+        <h4>Получени достъпи</h4>
+        <div id="userAccessesContainer"></div>
+    </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
     <script src="~/js/unit-dropdown-load.js" asp-append-version="true"></script>
+    <script src="~/js/myprofile.js" asp-append-version="true"></script>
     <script src="~/js/password-visibility-toggle.js" asp-append-version="true"></script>
 }

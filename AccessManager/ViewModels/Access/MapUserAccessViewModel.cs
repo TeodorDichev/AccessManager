@@ -15,9 +15,9 @@ namespace AccessManager.ViewModels.Access
         public string FilterDirective2 { get; set; } = String.Empty;
         public List<AccessViewModel> AccessibleSystems { get; set; } = [];
         public List<AccessViewModel> InaccessibleSystems { get; set; } = [];
-        public string? DirectiveToRevokeAccess { get; set; }
+        public Guid? DirectiveToRevokeAccess { get; set; }
         public List<Guid> SelectedAccessibleSystemIds { get; set; } = [];
-        public string? DirectiveToGrantAccess { get; set; }
+        public Guid? DirectiveToGrantAccess { get; set; }
         public List<Guid> SelectedInaccessibleSystemIds { get; set; } = [];
         public int CurrentPage1 { get; set; } = 1;
         public int TotalPages1 { get; set; } = 1;

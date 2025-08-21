@@ -1,7 +1,5 @@
 ﻿using AccessManager.Data.Enums;
 using AccessManager.Utills;
-using AccessManager.ViewModels.Department;
-using AccessManager.ViewModels.InformationSystem;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
@@ -11,16 +9,26 @@ namespace AccessManager.ViewModels.User
     {
         public AuthorityType ReadingAccess { get; set; }
         public AuthorityType WritingAccess { get; set; }
+
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public string UserName { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
+
         public string MiddleName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
+
         public string LastName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Моля изберете дирекция")]
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public Guid? SelectedDepartmentId { get; set; }
 
-        [Required(ErrorMessage = "Моля изберете отдел")]
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public Guid SelectedUnitId { get; set; }
 
         public List<SelectListItem> AvailableDepartments { get; set; } = [];
@@ -31,7 +39,5 @@ namespace AccessManager.ViewModels.User
         [RegularExpression(@"^(?:\+359|0)?8[7-9][0-9]{7}$", ErrorMessage = ExceptionMessages.InvalidPhone)]
 
         public string? Phone { get; set; } = string.Empty;
-        public List<UnitDepartmentViewModel> AccessibleUnits { get; set; } = [];
-        public List<AccessViewModel> UserAccesses { get; set; } = [];
     }
 }

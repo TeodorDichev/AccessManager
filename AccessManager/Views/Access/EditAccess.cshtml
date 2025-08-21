@@ -47,7 +47,7 @@
                 <option value=""></option>
                 @foreach (var directive in Model.FilterDirectives)
                 {
-                    <option value="@directive.Value" selected="@(directive.Value == Model.DirectiveToRevokeAccess ? "selected" : null)">
+                    <option value="@directive.Value" selected="@(directive.Value == Model.DirectiveToRevokeAccess.ToString() ? "selected" : null)">
                         @directive.Text
                     </option>
                 }
@@ -124,7 +124,7 @@
                 <option value=""></option>
                 @foreach (var directive in Model.FilterDirectives)
                 {
-                    <option value="@directive.Value" selected="@(directive.Value == Model.DirectiveToGrantAccess ? "selected" : null)">
+                    <option value="@directive.Value" selected="@(directive.Value == Model.DirectiveToGrantAccess.ToString() ? "selected" : null)">
                         @directive.Text
                     </option>
                 }

@@ -5,6 +5,8 @@
     string errorMsg = "Моля, влезте в системата, за да достъпите тази страница.";
 }
 
+@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
 <div id="menuCarousel" class="carousel slide mt-5" data-bs-ride="false">
     <div class="carousel-inner">
         <div class="carousel-item active">

@@ -142,7 +142,8 @@ namespace AccessManager.Controllers
             if (model == null || model.AccessId == Guid.Empty || model.DirectiveId == Guid.Empty)
                 return Json(new { success = false, message = "Невалидни данни" });
 
-            var userAccess = _accessService.GetUserAccess(model.AccessId.ToString(), model.Username);
+            var user = _userService.GetUser(model.Username);
+            var userAccess = _accessService.GetUserAccess(model.AccessId, user.Id);
             if (userAccess == null)
                 return Json(new { success = false, message = "Достъпът не е намерен" });
 

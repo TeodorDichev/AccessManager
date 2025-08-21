@@ -14,10 +14,10 @@ namespace AccessManager.ViewModels.Access
         public string FilterDirective2 { get; set; } = String.Empty;
         public List<UserAccessViewModel> UsersWithAccess { get; set; } = [];
         public List<UserAccessViewModel> UsersWithoutAccess { get; set; } = [];
-        public string? DirectiveToRevokeAccess { get; set; }
+        public Guid? DirectiveToRevokeAccess { get; set; }
         public List<Guid> SelectedUsersWithAccessIds { get; set; } = new();
         public List<Guid> SelectedUsersWithoutAccessIds { get; set; } = new();
-        public string? DirectiveToGrantAccess { get; set; }
+        public Guid? DirectiveToGrantAccess { get; set; }
         public int CurrentPage1 { get; set; } = 1;
         public int TotalPages1 { get; set; } = 1;
         public int CurrentPage2 { get; set; } = 1;

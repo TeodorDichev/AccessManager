@@ -373,15 +373,23 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var user = _userService.GetUser(model.UserName);
-            if (user == null || string.IsNullOrEmpty(model.DirectiveToGrantAccess))
+            if (user == null || !model.DirectiveToGrantAccess.HasValue)
             {
-                TempData["Error"] = "Please select a directive before adding access!";
-                return RedirectToAction("EditAccess", new { username = model.UserName });
+                TempData["Error"] = "Моля изберете заповед преди да дадете достъп!";
+                return RedirectToAction("MapUserAccess", new { username = model.UserName });
             }
 
             foreach (var accId in model.SelectedInaccessibleSystemIds)
             {
-                UserAccess ua = _accessService.AddUserAccess(user.Id, accId, model.DirectiveToGrantAccess);
+                var directive = _directiveService.GetDirective(model.DirectiveToGrantAccess.Value);
+                var access = _accessService.GetAccess(accId);
+                if(access == null || directive == null)
+                {
+                    TempData["Error"] = "Неуспешно даден достъп!";
+                    continue;
+                }
+
+                UserAccess ua = _accessService.AddUserAccess(user, access, directive);
                 _logService.AddLog(loggedUser, LogAction.Add, ua);
             }
 
@@ -395,16 +403,23 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var user = _userService.GetUser(model.UserName);
-            if (user == null || string.IsNullOrEmpty(model.DirectiveToRevokeAccess))
+            if (user == null || !model.DirectiveToRevokeAccess.HasValue)
             {
-                TempData["Error"] = "Please select a directive before revoking access!";
+                TempData["Error"] = "Моля изберете заповед преди да премахнете достъп!";
                 return RedirectToAction("MapUserAccess", new { username = model.UserName });
             }
 
             foreach (var accId in model.SelectedAccessibleSystemIds)
             {
-                UserAccess ua = _accessService.RevokeAccess(user.Id, accId, model.DirectiveToRevokeAccess);
-                _logService.AddLog(loggedUser, LogAction.Add, ua);
+                var directive = _directiveService.GetDirective(model.DirectiveToRevokeAccess.Value);
+                UserAccess? userAccess = _accessService.GetUserAccess(user.Id, accId);
+                if (userAccess == null || directive == null)
+                {
+                    TempData["Error"] = "Неуспешно премахнат достъп!";
+                    continue;
+                }
+                _accessService.RevokeAccess(userAccess, directive);
+                _logService.AddLog(loggedUser, LogAction.Edit, userAccess);
             }
 
             return RedirectToAction("MapUserAccess", new { username = model.UserName });
@@ -417,7 +432,7 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var access = _accessService.GetAccess(model.AccessId);
-            if (access == null || string.IsNullOrEmpty(model.DirectiveToGrantAccess))
+            if (access == null || !model.DirectiveToGrantAccess.HasValue)
             {
                 TempData["Error"] = "Please select a directive before adding access!";
                 return RedirectToAction("EditAccess", new { accessId = model.AccessId });
@@ -425,7 +440,15 @@ namespace AccessManager.Controllers
 
             foreach (var userId in model.SelectedUsersWithoutAccessIds)
             {
-                UserAccess ua = _accessService.AddUserAccess(userId, access.Id, model.DirectiveToGrantAccess);
+                var directive = _directiveService.GetDirective(model.DirectiveToGrantAccess.Value);
+                var user = _userService.GetUser(userId);
+                if (user == null || directive == null)
+                {
+                    TempData["Error"] = "Неуспешно даден достъп!";
+                    continue;
+                }
+
+                UserAccess ua = _accessService.AddUserAccess(user, access, directive);
                 _logService.AddLog(loggedUser, LogAction.Add, ua);
             }
 
@@ -439,7 +462,7 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var access = _accessService.GetAccess(model.AccessId);
-            if (access == null || string.IsNullOrEmpty(model.DirectiveToRevokeAccess))
+            if (access == null || !model.DirectiveToRevokeAccess.HasValue)
             {
                 TempData["Error"] = "Please select a directive before revoking access!";
                 return RedirectToAction("EditAccess", new { accessId = model.AccessId });
@@ -447,8 +470,15 @@ namespace AccessManager.Controllers
 
             foreach (var userId in model.SelectedUsersWithAccessIds)
             {
-                UserAccess ua = _accessService.RevokeAccess(userId, access.Id, model.DirectiveToRevokeAccess);
-                _logService.AddLog(loggedUser, LogAction.Add, ua);
+                var directive = _directiveService.GetDirective(model.DirectiveToRevokeAccess.Value);
+                UserAccess? userAccess = _accessService.GetUserAccess(userId, access.Id);
+                if (userAccess == null || directive == null)
+                {
+                    TempData["Error"] = "Неуспешно премахнат достъп!";
+                    continue;
+                }
+                _accessService.RevokeAccess(userAccess, directive);
+                _logService.AddLog(loggedUser, LogAction.Edit, userAccess);
             }
 
             return RedirectToAction("EditAccess", new { accessId = model.AccessId });

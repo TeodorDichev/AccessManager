@@ -1,5 +1,6 @@
 using AccessManager.Data.Entities;
 using AccessManager.Services;
+using AccessManager.Utills;
 using AccessManager.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,6 +30,9 @@ namespace AccessManager.Controllers
         [HttpGet]
         public IActionResult Login()
         {
+            if (_userService.GetUser(HttpContext.Session.GetString("Username")) != null) 
+                return RedirectToAction("Index", "Home");
+
             return View();
         }
 
@@ -45,7 +49,7 @@ namespace AccessManager.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            ModelState.AddModelError("", "Невалиден опит за вход!");
+            ModelState.AddModelError("", ExceptionMessages.InvalidLoginAttempt);
             return View(model);
         }
 
@@ -55,6 +59,5 @@ namespace AccessManager.Controllers
             HttpContext.Session.SetString("Username", "");
             return RedirectToAction("Index", "Home");
         }
-
     }
 }

@@ -1,0 +1,38 @@
+﻿@using AccessManager.ViewModels.InformationSystem
+@using AccessManager.ViewModels
+@model PagedResult<AccessViewModel>
+
+<table class="table table-sm table-bordered">
+    <thead class="table-light">
+        <tr>
+            <th>Име</th>
+            <th>Заповед за даване на достъп</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var access in Model.Items)
+        {
+            <tr>
+                <td>@access.Description</td>
+                <td>@access.DirectiveDescription</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<nav>
+    <ul class="pagination pagination-sm">
+        <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+            <a class="page-link" href="#" data-page="@(Model.Page - 1)">Предишна</a>
+        </li>
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            <li class="page-item @(i == Model.Page ? "active" : "")">
+                <a class="page-link" href="#" data-page="@i">@i</a>
+            </li>
+        }
+        <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+            <a class="page-link" href="#" data-page="@(Model.Page + 1)">Следваща</a>
+        </li>
+    </ul>
+</nav>

@@ -1,0 +1,38 @@
+﻿@using AccessManager.ViewModels
+@using AccessManager.ViewModels.Department
+@model PagedResult<UnitDepartmentViewModel>
+
+<table class="table table-sm table-bordered">
+    <thead class="table-light">
+        <tr>
+            <th>Дирекция</th>
+            <th>Отдел</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var unit in Model.Items)
+        {
+            <tr>
+                <td>@unit.DepartmentName</td>
+                <td>@unit.UnitName</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<nav>
+    <ul class="pagination pagination-sm">
+        <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+            <a class="page-link" href="#" data-page="@(Model.Page - 1)">Предишна</a>
+        </li>
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            <li class="page-item @(i == Model.Page ? "active" : "")">
+                <a class="page-link" href="#" data-page="@i">@i</a>
+            </li>
+        }
+        <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+            <a class="page-link" href="#" data-page="@(Model.Page + 1)">Следваща</a>
+        </li>
+    </ul>
+</nav>

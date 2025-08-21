@@ -2,11 +2,13 @@
 using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
+using AccessManager.ViewModels;
 using AccessManager.ViewModels.Department;
 using AccessManager.ViewModels.InformationSystem;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace AccessManager.Controllers
 {
@@ -38,6 +40,8 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.SuperAdmin;
+
             MyProfileViewModel model = new()
             {
                 UserName = loggedUser.UserName,
@@ -48,28 +52,72 @@ namespace AccessManager.Controllers
                 WritingAccess = loggedUser.WritingAccess,
                 EGN = loggedUser.EGN ?? string.Empty,
                 Phone = loggedUser.Phone ?? string.Empty,
-                AccessibleUnits = loggedUser.AccessibleUnits.Select(au => new UnitDepartmentViewModel
-                {
-                    UnitId = au.UnitId,
-                    UnitName = au.Unit.Description,
-                    DepartmentName = au.Unit.Department.Description
-                }).ToList(),
                 AvailableDepartments = _departmentService.GetAllowedDepartments(loggedUser)
                     .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList(),
                 AvailableUnits = _unitService.GetAllowedUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
                     .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList(),
                 SelectedDepartmentId = loggedUser.Unit.Department.Id,
                 SelectedUnitId = loggedUser.Unit.Id,
-                UserAccesses = _accessService.GetGrantedUserAccesses(loggedUser).Select(ua => new AccessViewModel
-                {
-                    AccessId = ua.Access.Id,
-                    Description = _accessService.GetAccessDescription(ua.Access),
-                    DirectiveId = ua.GrantedByDirectiveId,
-                    DirectiveDescription = _directiveService.GetDirective(ua.GrantedByDirectiveId)?.Name ?? string.Empty,
-                }).ToList(),
             };
 
             return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult GetAccessibleUnits(int page = 1)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var accessibleUnits = loggedUser.AccessibleUnits.Select(au => new UnitDepartmentViewModel
+            {
+                UnitName = au.Unit.Description,
+                DepartmentName = au.Unit.Department.Description
+            }).ToList();
+
+            var totalCount = accessibleUnits.Count();
+
+            var paged = accessibleUnits
+                .Skip((page - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .ToList();
+
+            var result = new PagedResult<UnitDepartmentViewModel>
+            {
+                Items = paged,
+                Page = page,
+                TotalCount = totalCount
+            };
+            return PartialView("_AccessibleUnitsTable", result);
+        }
+
+        [HttpGet]
+        public IActionResult GetUserAccesses(int page = 1)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var userAccesses = _accessService.GetGrantedUserAccesses(loggedUser).Select(ua => new AccessViewModel
+            {
+                Description = _accessService.GetAccessDescription(ua.Access),
+                DirectiveDescription = _directiveService.GetDirective(ua.GrantedByDirectiveId)?.Name ?? string.Empty,
+            }).ToList();
+
+            var totalCount = userAccesses.Count();
+
+            var paged = userAccesses
+                .Skip((page - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .ToList();
+
+            var result = new PagedResult<AccessViewModel>
+            {
+                Items = paged,
+                Page = page,
+                TotalCount = totalCount
+            };
+
+            return PartialView("_UserAccessesTable", result);
         }
 
         [HttpPost]
@@ -84,8 +132,8 @@ namespace AccessManager.Controllers
             {
                 if (string.IsNullOrWhiteSpace(OldPassword) || !_passwordService.VerifyPassword(loggedUser, OldPassword, loggedUser.Password))
                 {
-                    ModelState.AddModelError("Password", "Старата парола е невалидна.");
-                    return View(model);
+                    TempData["Error"] = ExceptionMessages.InvalidPassword;
+                    return RedirectToAction("MyProfile");
                 }
 
                 loggedUser.Password = _passwordService.HashPassword(loggedUser, NewPassword);
@@ -109,17 +157,22 @@ namespace AccessManager.Controllers
 
             List<UserListItemViewModel> users = allUsers.Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).ToList();
 
+            var paged = new PagedResult<UserListItemViewModel>()
+            {
+                Items = users,
+                Page = page,
+                TotalCount = totalUsers
+            };
+
             var model = new UserListViewModel
             {
-                Users = users,
+                Users = paged,
                 SortOptions = _userService.GetSortOptions(),
                 SelectedSortOption = sortBy,
                 SelectedFilterUnit = filterUnit,
                 FilterDepartments = loggedUser.AccessibleUnits.Select(u => u.Unit.Department.Description).Distinct().ToList(),
                 SelectedFilterDepartment = filterDepartment,
                 WriteAuthority = loggedUser.WritingAccess,
-                CurrentPage = page,
-                TotalPages = (int)Math.Ceiling((double)totalUsers / Constants.ItemsPerPage)
             };
 
             if (string.IsNullOrEmpty(filterDepartment))

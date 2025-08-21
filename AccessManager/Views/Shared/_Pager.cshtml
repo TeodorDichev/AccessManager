@@ -1,0 +1,20 @@
+﻿@model AccessManager.ViewModels.IPagedResult
+
+<nav>
+    <ul class="pagination justify-content-center mt-4">
+        <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+            <a class="page-link" href="?page=@(Model.Page - 1)">Предишна</a>
+        </li>
+
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            <li class="page-item @(i == Model.Page ? "active" : "")">
+                <a class="page-link" href="?page=@i">@i</a>
+            </li>
+        }
+
+        <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+            <a class="page-link" href="?page=@(Model.Page + 1)">Следваща</a>
+        </li>
+    </ul>
+</nav>

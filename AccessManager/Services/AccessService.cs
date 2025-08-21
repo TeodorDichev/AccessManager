@@ -58,10 +58,9 @@ namespace AccessManager.Services
             return _context.Accesses.FirstOrDefault(a => a.Id == id);
         }
 
-
-        internal UserAccess? GetUserAccess(string v, string username)
+        internal UserAccess? GetUserAccess(Guid userId, Guid accessId)
         {
-            return _context.UserAccesses.FirstOrDefault(ua => ua.Id == Guid.Parse(v) && ua.User.UserName == username);
+            return _context.UserAccesses.FirstOrDefault(ua => ua.AccessId == accessId && ua.UserId == userId);
         }
 
         internal List<UserAccess> GetRevokedUserAccesses(User user)
@@ -96,16 +95,20 @@ namespace AccessManager.Services
             return _context.Directives.Any(d => d.Id == Guid.Parse(directiveToRevokeAccess));
         }
 
-        internal UserAccess AddUserAccess(Guid userId, Guid accessId, string directiveToGrantAccess)
+        internal UserAccess AddUserAccess(User user, Access access, Directive directive)
         {
-            UserAccess? userAccess = _context.UserAccesses.FirstOrDefault(ua => ua.UserId == userId && ua.AccessId == accessId);
+            UserAccess? userAccess = _context.UserAccesses.FirstOrDefault(ua => ua.UserId == user.Id && ua.AccessId == access.Id);
             if (userAccess == null)
             {
                 userAccess = new UserAccess
                 {
-                    UserId = userId,
-                    AccessId = accessId,
-                    GrantedByDirectiveId = Guid.Parse(directiveToGrantAccess),
+                    Id = Guid.NewGuid(),
+                    User = user,
+                    UserId = user.Id,
+                    AccessId = access.Id,
+                    Access = access,
+                    GrantedByDirectiveId = directive.Id,
+                    GrantedByDirective = directive,
                     GrantedOn = DateTime.Now
                 };
 
@@ -115,7 +118,8 @@ namespace AccessManager.Services
             {
                 userAccess.RevokedOn = null;
                 userAccess.RevokedByDirectiveId = null;
-                userAccess.GrantedByDirectiveId = Guid.Parse(directiveToGrantAccess);
+                userAccess.GrantedByDirectiveId = directive.Id;
+                userAccess.GrantedByDirective = directive;
             }
 
             _context.SaveChanges();
@@ -128,17 +132,13 @@ namespace AccessManager.Services
             _context.SaveChanges();
         }
 
-        internal UserAccess RevokeAccess(Guid userId, Guid accessId, string directiveToRevokeAccess)
+        internal UserAccess RevokeAccess(UserAccess userAccess, Directive directiveToRevokeAccess)
         {
-            UserAccess? userAccess = _context.UserAccesses.FirstOrDefault(ua => ua.UserId == userId && ua.AccessId == accessId);
+            userAccess.RevokedByDirectiveId = directiveToRevokeAccess.Id;
+            userAccess.RevokedByDirective = directiveToRevokeAccess;
+            userAccess.RevokedOn = DateTime.Now;
 
-            if (userAccess != null)
-            {
-                userAccess.RevokedByDirectiveId = Guid.Parse(directiveToRevokeAccess);
-                userAccess.RevokedOn = DateTime.Now;
-
-                _context.SaveChanges();
-            }
+            _context.SaveChanges();
 
             return userAccess;
         }
