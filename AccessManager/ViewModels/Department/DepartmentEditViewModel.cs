@@ -7,7 +7,7 @@ namespace AccessManager.ViewModels.Department
     {
         public Guid DepartmentId { get; set; }
         public string DepartmentName { get; set; } = string.Empty;
-        public List<UnitViewModel> Units { get; set; } = [];
+        public PagedResult<UnitViewModel> Units { get; set; } = new();
         public AuthorityType WriteAuthority { get; set; }
     }
 }

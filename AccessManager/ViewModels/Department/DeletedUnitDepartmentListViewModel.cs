@@ -2,8 +2,6 @@
 {
     public class DeletedUnitDepartmentListViewModel
     {
-        public List<UnitDepartmentViewModel> UnitDepartments { get; set; } = [];
-        public int CurrentPage { get; set; }
-        public int TotalPages { get; set; }
+        public PagedResult<UnitDepartmentViewModel> UnitDepartments { get; set; } = [];
     }
 }

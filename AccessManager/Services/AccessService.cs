@@ -13,134 +13,14 @@ namespace AccessManager.Services
             _context = context;
         }
 
-        internal List<UserAccess> GetGrantedUserAccesses(User loggedUser)
-        {
-            return _context.UserAccesses
-                .Where(ua => ua.UserId == loggedUser.Id && ua.RevokedOn == null)
-                .ToList();
-        }
-
-        internal List<UserAccess> GetGrantedUserAccesses(Access access)
-        {
-            return _context.UserAccesses
-                .Where(ua => ua.Access.Id == access.Id && ua.RevokedOn == null)
-                .ToList();
-        }
-
-        internal string GetAccessDescription(Access access)
-        {
-            var result = access.Description;
-            var current = access.ParentAccess;
-            while (current != null)
-            {
-                result = current.Description + " -> " + result;
-                current = current.ParentAccess;
-            }
-            return result;
-        }
-
-        internal List<string> GetDirectivesDescription()
-        {
-            return _context.Directives.Select(d => d.Name).Distinct().ToList();
-        }
-
-        internal List<Access> GetAccesses()
-        {
-            return _context.Accesses.Where(a => a.DeletedOn == null).ToList();
-        }
-
-        internal Access? GetAccess(string id)
-        {
-            return GetAccess(Guid.Parse(id));
-        }
         internal Access? GetAccess(Guid id)
         {
             return _context.Accesses.FirstOrDefault(a => a.Id == id);
         }
-
-        internal UserAccess? GetUserAccess(Guid userId, Guid accessId)
-        {
-            return _context.UserAccesses.FirstOrDefault(ua => ua.AccessId == accessId && ua.UserId == userId);
-        }
-
-        internal List<UserAccess> GetRevokedUserAccesses(User user)
-        {
-            return _context.UserAccesses
-                .Where(ua => ua.UserId == user.Id && ua.RevokedOn != null)
-                .ToList();
-        }
-
-        internal List<UserAccess> GetRevokedUserAccesses(Access access)
-        {
-            return _context.UserAccesses
-                .Where(ua => ua.AccessId == access.Id && ua.RevokedOn != null)
-                .ToList();
-        }
-
-        internal List<Access> GetNotGrantedAccesses(User user)
-        {
-            return _context.Accesses
-                .Where(a => !_context.UserAccesses.Any(ua => ua.UserId == user.Id && ua.AccessId == a.Id))
-                .ToList();
-        }
-        internal List<User> GetNotGrantedUsers(Access access)
-        {
-            return _context.Users
-                .Where(u => !_context.UserAccesses.Any(ua => ua.UserId == u.Id && ua.AccessId == access.Id))
-                .ToList();
-        }
-
-        internal bool ExistsDirectiveWithId(string directiveToRevokeAccess)
-        {
-            return _context.Directives.Any(d => d.Id == Guid.Parse(directiveToRevokeAccess));
-        }
-
-        internal UserAccess AddUserAccess(User user, Access access, Directive directive)
-        {
-            UserAccess? userAccess = _context.UserAccesses.FirstOrDefault(ua => ua.UserId == user.Id && ua.AccessId == access.Id);
-            if (userAccess == null)
-            {
-                userAccess = new UserAccess
-                {
-                    Id = Guid.NewGuid(),
-                    User = user,
-                    UserId = user.Id,
-                    AccessId = access.Id,
-                    Access = access,
-                    GrantedByDirectiveId = directive.Id,
-                    GrantedByDirective = directive,
-                    GrantedOn = DateTime.Now
-                };
-
-                _context.UserAccesses.Add(userAccess);
-            }
-            else
-            {
-                userAccess.RevokedOn = null;
-                userAccess.RevokedByDirectiveId = null;
-                userAccess.GrantedByDirectiveId = directive.Id;
-                userAccess.GrantedByDirective = directive;
-            }
-
-            _context.SaveChanges();
-            return userAccess;
-        }
-
         internal void AddAccess(Access acc)
         {
             _context.Accesses.Add(acc);
             _context.SaveChanges();
-        }
-
-        internal UserAccess RevokeAccess(UserAccess userAccess, Directive directiveToRevokeAccess)
-        {
-            userAccess.RevokedByDirectiveId = directiveToRevokeAccess.Id;
-            userAccess.RevokedByDirective = directiveToRevokeAccess;
-            userAccess.RevokedOn = DateTime.Now;
-
-            _context.SaveChanges();
-
-            return userAccess;
         }
 
         internal void UpdateAccessName(string name, Access access)
@@ -149,18 +29,48 @@ namespace AccessManager.Services
             _context.SaveChanges();
         }
 
-        internal UserAccess UpdateAccessDirective(Guid userId, Guid accessId, Guid directiveId)
+        internal string GetAccessDescription(Access access)
         {
-            UserAccess? userAccess = _context.UserAccesses.FirstOrDefault(ua => ua.UserId == userId && ua.AccessId == accessId);
-            if (userAccess != null)
-            {
-                if (userAccess.RevokedByDirective != null) userAccess.RevokedByDirectiveId = directiveId;
-                else userAccess.GrantedByDirectiveId = directiveId;
+            if (access == null)
+                return string.Empty;
 
-                _context.SaveChanges();
+            var accessMap = _context.Accesses
+                .IgnoreQueryFilters()
+                .Select(a => new { a.Id, a.ParentAccessId, a.Description })
+                .ToDictionary(a => a.Id, a => new { a.ParentAccessId, a.Description });
+
+            var descriptions = new List<string>();
+            var currentParentId = access.ParentAccessId;
+
+            while (currentParentId != null && accessMap.ContainsKey(currentParentId.Value))
+            {
+                var parent = accessMap[currentParentId.Value];
+                descriptions.Add(parent.Description);
+                currentParentId = parent.ParentAccessId;
             }
 
-            return userAccess;
+            descriptions.Reverse();
+            descriptions.Add(access.Description);
+
+            return string.Join(" -> ", descriptions);
+        }
+        internal List<Access> GetAccesses()
+        {
+            return _context.Accesses.ToList();
+        }
+
+        internal List<Access> GetNotGrantedAccesses(User user)
+        {
+            return _context.Accesses
+                .Where(a => !_context.UserAccesses.Any(ua => ua.UserId == user.Id && ua.AccessId == a.Id))
+                .ToList();
+        }
+
+        internal List<User> GetNotGrantedUsers(Access access)
+        {
+            return _context.Users
+                .Where(u => !_context.UserAccesses.Any(ua => ua.UserId == u.Id && ua.AccessId == access.Id))
+                .ToList();
         }
 
         internal int GetDeletedAccessesCount()
@@ -189,6 +99,7 @@ namespace AccessManager.Services
                 .Where(a => a.Id == accessId && a.DeletedOn != null)
                 .First(a => a.Id == accessId);
         }
+
         internal bool CanRestoreAccess(Access access)
         {
             if (access.ParentAccessId == null)

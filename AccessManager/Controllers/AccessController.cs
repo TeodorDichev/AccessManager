@@ -418,7 +418,7 @@ namespace AccessManager.Controllers
                     TempData["Error"] = "Неуспешно премахнат достъп!";
                     continue;
                 }
-                _accessService.RevokeAccess(userAccess, directive);
+                _accessService.RevokeUserAccess(userAccess, directive);
                 _logService.AddLog(loggedUser, LogAction.Edit, userAccess);
             }
 
@@ -477,7 +477,7 @@ namespace AccessManager.Controllers
                     TempData["Error"] = "Неуспешно премахнат достъп!";
                     continue;
                 }
-                _accessService.RevokeAccess(userAccess, directive);
+                _accessService.RevokeUserAccess(userAccess, directive);
                 _logService.AddLog(loggedUser, LogAction.Edit, userAccess);
             }
 
@@ -498,7 +498,7 @@ namespace AccessManager.Controllers
                 model.UserId = _userService.GetUser(model.username)?.Id ?? Guid.Empty;
             }
 
-            UserAccess ua = _accessService.UpdateAccessDirective(model.UserId, access.Id, model.DirectiveId);
+            UserAccess ua = _accessService.UpdateUserAccessDirective(model.UserId, access.Id, model.DirectiveId);
             _logService.AddLog(loggedUser, LogAction.Edit, ua);
 
             return RedirectToAction("EditAccess", new { accessId = model.AccessId });

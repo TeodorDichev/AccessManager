@@ -118,7 +118,7 @@ namespace AccessManager.Controllers
 
             if (!string.IsNullOrEmpty(departmentId)) model.DepartmentId = Guid.Parse(departmentId);
 
-            var departments = _departmentService.GetAllowedDepartments(loggedUser).Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList();
+            var departments = _departmentService.GetDepartmentsByUserWriteAuthority(loggedUser).Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList();
 
             model.Departments = departments;
             return View(model);
@@ -151,14 +151,14 @@ namespace AccessManager.Controllers
                 return RedirectToAction("EditUser", new { username });
             }
 
-            var departments = _departmentService.GetAllowedDepartments(loggedUser).OrderBy(d => d.Description)
+            var departments = _departmentService.GetDepartmentsByUserWriteAuthority(loggedUser).OrderBy(d => d.Description)
                                     .Select(d => new SelectListItem(d.Description, d.Id.ToString()))
                                     .ToList();
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            var accessibleUnitsQuery = _unitService.GetUserAccessibleUnits(user, loggedUser);
-            var inaccessibleUnitsQuery = _unitService.GetUserInaccessibleUnits(user, loggedUser);
+            var accessibleUnitsQuery = _unitService.GetMutualUserUnits(user, loggedUser);
+            var inaccessibleUnitsQuery = _unitService.GetMutualInaccessibleUserUnits(user, loggedUser);
 
             if (!string.IsNullOrEmpty(filterDepartment1))
                 accessibleUnitsQuery = accessibleUnitsQuery.Where(u => u.Department.Id == Guid.Parse(filterDepartment1)).ToList();

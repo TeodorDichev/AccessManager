@@ -18,34 +18,42 @@ namespace AccessManager.Services
         {
             return _context.Logs.OrderByDescending(l => l.Date).Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).ToList();
         }
+
         public int GetLogsCount()
         {
             return _context.Logs.Count();
         }
+
         public void AddLog(User author, LogAction logType, User user)
         {
             AddLog(new Log() { Description = $"{author.UserName} {BulgarianLocalization.GetBulgarianLogAction(logType)} потребител {user.UserName}", ActionType = logType });
         }
+
         public void AddLog(User author, LogAction logType, Department department)
         {
             AddLog(new Log() { Description = $"{author.UserName} {BulgarianLocalization.GetBulgarianLogAction(logType)} дирекция {department.Description}", ActionType = logType });
         }
+
         public void AddLog(User author, LogAction logType, Unit unit)
         {
             AddLog(new Log() { Description = $"{author.UserName} {BulgarianLocalization.GetBulgarianLogAction(logType)} отдел {unit.Description}", ActionType = logType });
         }
+
         public void AddLog(User author, LogAction logType, Access access)
         {
             AddLog(new Log() { Description = $"{author.UserName} {BulgarianLocalization.GetBulgarianLogAction(logType)} достъп {access.Description}", ActionType = logType });
         }
+
         public void AddLog(User author, LogAction logType, Directive directive)
         {
             AddLog(new Log() { Description = $"{author.UserName} {BulgarianLocalization.GetBulgarianLogAction(logType)} заповед {directive.Name}", ActionType = logType });
         }
+
         public void AddLog(User author, LogAction logType, UnitUser uu)
         {
             AddLog(new Log() { Description = $"{author.UserName} {BulgarianLocalization.GetBulgarianLogAction(logType)} достъп на {uu.User.UserName} до отдел {uu.Unit.Description}", ActionType = logType });
         }
+
         public void AddLog(User author, LogAction logType, UserAccess ua)
         {
             AddLog(new Log()
@@ -55,6 +63,7 @@ namespace AccessManager.Services
                 ActionType = logType
             });
         }
+
         private void AddLog(Log log)
         {
             _context.Add(log);

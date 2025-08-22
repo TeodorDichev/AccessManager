@@ -3,11 +3,7 @@ using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Utills;
 using AccessManager.ViewModels.Department;
-using AccessManager.ViewModels.Unit;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using System.Runtime.Intrinsics.Arm;
 
 namespace AccessManager.Services
 {
@@ -19,14 +15,20 @@ namespace AccessManager.Services
             _context = context;
         }
 
-        internal Department? GetDepartment(string id)
+        internal Department? GetDepartment(Guid id)
         {
-            return _context.Departments.FirstOrDefault(u => u.Id == Guid.Parse(id));
+            return _context.Departments.FirstOrDefault(u => u.Id == id);
         }
 
-        internal bool DepartmentWithDescriptionExists(string departmentName)
+        internal bool DepartmentWithNameExists(string departmentName)
         {
             return _context.Departments.Select(d => d.Description).Contains(departmentName);
+        }
+
+        internal void UpdateDepartmentName(Department department, string name)
+        {
+            department.Description = name;
+            _context.SaveChanges();
         }
 
         internal Department CreateDepartment(string departmentName)
@@ -41,11 +43,13 @@ namespace AccessManager.Services
 
             return department;
         }
-        internal List<Department> GetAllowedDepartments(User user)
+
+        // This method expects to receive either user.WriteAuthority or user.ReadAuthority
+        internal List<Department> GetDepartmentsByUserWriteAuthority(User user, AuthorityType authority)
         {
-            if (user.WritingAccess == AuthorityType.None)
+            if (authority == AuthorityType.None)
                 return [];
-            else if (user.WritingAccess == AuthorityType.Restricted)
+            else if (authority == AuthorityType.Restricted)
             {
                 var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
                 return _context.Units
@@ -58,7 +62,65 @@ namespace AccessManager.Services
                 return _context.Departments.ToList();
         }
 
+        internal Department GetDeletedDepartment(Guid departmentId)
+        {
+            return _context.Departments
+                .IgnoreQueryFilters()
+                .First(d => d.Id == departmentId && d.DeletedOn != null);
+        }
 
+        internal void RestoreDepartment(Department department)
+        {
+            var unitIds = department.Units.Select(u => u.Id).ToList();
+
+            _context.Departments
+                .IgnoreQueryFilters()
+                .Where(d => d.Id == department.Id)
+                .ExecuteUpdate(d => d.SetProperty(x => x.DeletedOn, (DateTime?)null));
+
+            _context.Units
+                .IgnoreQueryFilters()
+                .Where(u => unitIds.Contains(u.Id))
+                .ExecuteUpdate(u => u.SetProperty(x => x.DeletedOn, (DateTime?)null));
+        }
+
+        internal bool CanDeleteDepartment(Department department)
+        {
+            return !_context.Users.Any(u => u.Unit.DepartmentId == department.Id);
+        }
+
+        internal void SoftDeleteDepartment(Department department)
+        {
+            var timestamp = DateTime.Now;
+            var unitIds = department.Units.Select(u => u.Id).ToList();
+
+            _context.Departments
+                .Where(d => d.Id == department.Id)
+                .ExecuteUpdate(d => d.SetProperty(x => x.DeletedOn, timestamp));
+
+            _context.UnitUsers
+                .Where(u => u.Unit.DepartmentId == department.Id)
+                .ExecuteDelete();
+
+            _context.Units
+                .Where(u => unitIds.Contains(u.Id))
+                .ExecuteUpdate(u => u.SetProperty(x => x.DeletedOn, timestamp));
+        }
+
+        internal void HardDeleteDepartment(Department department)
+        {
+            var unitIds = department.Units.Select(u => u.Id).ToList();
+
+            _context.Units
+                .IgnoreQueryFilters()
+                .Where(u => unitIds.Contains(u.Id))
+                .ExecuteDelete();
+
+            _context.Departments
+                .IgnoreQueryFilters()
+                .Where(d => d.Id == department.Id)
+                .ExecuteDelete();
+        }
         internal int GetDeletedUnitDepartmentsCount()
         {
             // Only accessible to admins so it does not need filtering based on user authority
@@ -131,70 +193,6 @@ namespace AccessManager.Services
             }
 
             return departments.Concat(units).ToList();
-        }
-
-        internal Department GetDeletedDepartment(Guid departmentId)
-        {
-            return _context.Departments
-                .IgnoreQueryFilters()
-                .First(d => d.Id == departmentId && d.DeletedOn != null);
-        }
-
-        internal void RestoreDepartment(Department department)
-        {
-            var unitIds = GetAllUnitIds(department);
-
-            _context.Departments
-                .IgnoreQueryFilters()
-                .Where(d => d.Id == department.Id)
-                .ExecuteUpdate(d => d.SetProperty(x => x.DeletedOn, (DateTime?)null));
-
-            _context.Units
-                .IgnoreQueryFilters()
-                .Where(u => unitIds.Contains(u.Id))
-                .ExecuteUpdate(u => u.SetProperty(x => x.DeletedOn, (DateTime?)null));
-        }
-
-        internal bool CanDeleteDepartment(Department department)
-        {
-            return !_context.Users.Any(u => u.Unit.DepartmentId == department.Id);
-        }
-        internal void SoftDeleteDepartment(Department department)
-        {
-            var timestamp = DateTime.Now;
-            var unitIds = GetAllUnitIds(department);
-
-            _context.Departments
-                .Where(d => d.Id == department.Id)
-                .ExecuteUpdate(d => d.SetProperty(x => x.DeletedOn, timestamp));
-
-            _context.UnitUsers
-                .Where(u => u.Unit.DepartmentId == department.Id)
-                .ExecuteDelete();
-
-            _context.Units
-                .Where(u => unitIds.Contains(u.Id))
-                .ExecuteUpdate(u => u.SetProperty(x => x.DeletedOn, timestamp));
-        }
-
-        internal void HardDeleteDepartment(Department department)
-        {
-            var unitIds = GetAllUnitIds(department);
-
-            _context.Units
-                .IgnoreQueryFilters()
-                .Where(u => unitIds.Contains(u.Id))
-                .ExecuteDelete();
-
-            _context.Departments
-                .IgnoreQueryFilters()
-                .Where(d => d.Id == department.Id)
-                .ExecuteDelete();
-        }
-
-        private List<Guid> GetAllUnitIds(Department department)
-        {
-            return department.Units.Select(u => u.Id).ToList();
         }
     }
 }

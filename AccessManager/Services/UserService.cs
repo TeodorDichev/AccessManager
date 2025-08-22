@@ -14,70 +14,127 @@ namespace AccessManager.Services
             _context = context;
         }
 
-        public void SaveChanges()
-        {
-            _context.SaveChanges();
-        }
-
         public User? GetUser(string? username)
         {
-            return _context.Users.FirstOrDefault(u => u.UserName == username && u.DeletedOn == null);
+            return _context.Users.FirstOrDefault(u => u.UserName == username);
         }
 
         public User? GetUser(Guid? id)
         {
-            return _context.Users.FirstOrDefault(u => u.Id == id && u.DeletedOn == null);
+            return _context.Users.FirstOrDefault(u => u.Id == id);
         }
 
         public bool UserWithUsernameExists(string username)
         {
-            return _context.Users.IgnoreQueryFilters().Any(u => u.UserName == username && u.DeletedOn == null);
+            return _context.Users.IgnoreQueryFilters().Any(u => u.UserName == username);
+        }
+
+        // To be fixed
+        private IQueryable<User> ApplySorting(IQueryable<User> query, UserSortOptions sortOption)
+        {
+            return sortOption switch
+            {
+                // TO DO
+                _ => query.OrderBy(u => u.UserName)
+            };
+        }
+
+        int GetAccessibleUsersCount(User loggedUser)
+        {
+            var accessibleUnitIds = _context.UnitUsers
+                    .Where(uu => uu.UserId == loggedUser.Id)
+                    .Select(uu => uu.UnitId);
+
+            return _context.Users
+                    .Where(u => accessibleUnitIds.Contains(u.UnitId))
+                    .Count();
+        }
+        int GetAccessibleUsersCount(User loggedUser, Department department)
+        {
+            var accessibleUnitIds = _context.UnitUsers
+                    .Where(uu => uu.UserId == loggedUser.Id)
+                    .Select(uu => uu.UnitId);
+
+            return _context.Users
+                .Where(u => accessibleUnitIds.Contains(u.UnitId) && u.Unit.DepartmentId == department.Id)
+                    .Count();
+        }
+
+        int GetAccessibleUsersCount(User loggedUser, Unit unit)
+        {
+            var accessibleUnitIds = _context.UnitUsers
+                    .Where(uu => uu.UserId == loggedUser.Id)
+                    .Select(uu => uu.UnitId);
+
+            return _context.Users
+                .Where(u => accessibleUnitIds.Contains(u.UnitId) && u.UnitId == unit.Id)
+                    .Count();
+        }
+
+        internal List<User> GetAccessibleUsers(User loggedUser, int page, string sortOption)
+        {
+            var accessibleUnitIds = _context.UnitUsers
+                .Where(uu => uu.UserId == loggedUser.Id)
+                .Select(uu => uu.UnitId);
+
+            var query = _context.Users
+                .Where(u => accessibleUnitIds.Contains(u.UnitId));
+
+            query = ApplySorting(query, sortOption);
+
+            return query
+                .Skip((page - 1) * Utills.Constants.ItemsPerPage)
+                .Take(Utills.Constants.ItemsPerPage)
+                .ToList();
+        }
+
+        internal List<User> GetAccessibleUsers(User loggedUser, Department department, int page, string sortOption)
+        {
+            var accessibleUnitIds = _context.UnitUsers
+                .Where(uu => uu.UserId == loggedUser.Id)
+                .Select(uu => uu.UnitId);
+
+            var query = _context.Users
+                .Where(u => accessibleUnitIds.Contains(u.UnitId) &&
+                            u.Unit.DepartmentId == department.Id);
+
+            query = ApplySorting(query, sortOption);
+
+            return query
+                .Skip((page - 1) * Utills.Constants.ItemsPerPage)
+                .Take(Utills.Constants.ItemsPerPage)
+                .ToList();
+        }
+
+        internal List<User> GetAccessibleUsers(User loggedUser, Unit unit, int page, string sortOption)
+        {
+            var accessibleUnitIds = _context.UnitUsers
+                .Where(uu => uu.UserId == loggedUser.Id)
+                .Select(uu => uu.UnitId);
+
+            var query = _context.Users
+                .Where(u => accessibleUnitIds.Contains(u.UnitId) &&
+                            u.UnitId == unit.Id);
+
+            query = ApplySorting(query, sortOption);
+
+            return query
+                .Skip((page - 1) * Utills.Constants.ItemsPerPage)
+                .Take(Utills.Constants.ItemsPerPage)
+                .ToList();
+        }
+
+        internal List<User> GetUsers(User loggedUser)
+        {
+            var accessibleUnitIds = loggedUser.AccessibleUnits.Select(au => au.UnitId).ToList();
+
+            return _context.Users.Where(u => accessibleUnitIds.Contains(u.UnitId)).ToList();
         }
 
         public void AddUser(User user)
         {
             _context.Users.Add(user);
             _context.SaveChanges();
-        }
-
-        internal List<UserListItemViewModel> GetFilteredUsers(string sortBy, string filterUnit, string filterDepartment, User loggedUser)
-        {
-            var accessibleUnitIds = loggedUser.AccessibleUnits.Select(au => au.UnitId).ToList();
-            var filteredUsers = _context.Users.Where(u => u.DeletedOn == null && accessibleUnitIds.Contains(u.UnitId));
-
-            if (!string.IsNullOrEmpty(filterDepartment)) filteredUsers = filteredUsers.Where(u => u.Unit.Department.Description == filterDepartment);
-            if (!string.IsNullOrEmpty(filterUnit)) filteredUsers = filteredUsers.Where(u => u.Unit.Description == filterUnit);
-
-            filteredUsers = sortBy switch
-            {
-                "Достъп за писане" => filteredUsers.OrderByDescending(u => u.WritingAccess),
-                "Достъп за четене" => filteredUsers.OrderByDescending(u => u.ReadingAccess),
-                "Потребителско име" => filteredUsers.OrderBy(u => u.UserName),
-                "Дирекция" => filteredUsers.OrderBy(u => u.Unit.Department.Description),
-                "Отдел" => filteredUsers.OrderBy(u => u.Unit.Description),
-                _ => filteredUsers.OrderBy(u => u.WritingAccess)
-            };
-
-            var usersQuery = filteredUsers
-                .ToList()
-                .Select(u => new UserListItemViewModel
-                {
-                    UserName = u.UserName,
-                    FirstName = u.FirstName,
-                    LastName = u.LastName,
-                    Unit = u.Unit.Description,
-                    Department = u.Unit.Department.Description,
-                    WriteAccess = u.WritingAccess,
-                    ReadAccess = u.ReadingAccess
-                });
-
-
-            return usersQuery.ToList();
-        }
-
-        internal List<string> GetSortOptions()
-        {
-            return ["Достъп за писане", "Достъп за четене", "Потребителско име", "Дирекция", "Отдел"];
         }
 
         internal void UpdateUser(MyProfileViewModel model, User loggedUser)
@@ -94,7 +151,7 @@ namespace AccessManager.Services
             _context.SaveChanges();
         }
 
-        internal void UpdateUserFromModel(User user, string firstName, string middleName,
+        private void UpdateUserFromModel(User user, string firstName, string middleName,
             string lastName, string? egn, string? phone, Guid unitId, AuthorityType write, AuthorityType read)
         {
             if (user == null) return;
@@ -112,15 +169,6 @@ namespace AccessManager.Services
                 user.UnitId = unitId;
                 user.Unit = _context.Units.FirstOrDefault(u => u.Id == unitId) ?? throw new ArgumentException("Unit not found");
             }
-        }
-
-        internal List<User> GetAccessibleUsers(User loggedUser)
-        {
-            var accessibleUnitIds = loggedUser.AccessibleUnits.Select(au => au.UnitId).ToList();
-
-            return _context.Users
-                .Where(u => u.Id != loggedUser.Id && accessibleUnitIds.Contains(u.UnitId))
-                .ToList();
         }
 
         internal bool CanDeleteUser(User user)
@@ -183,7 +231,12 @@ namespace AccessManager.Services
 
         internal User? GetDeletedUser(string username)
         {
-            return _context.Users.IgnoreQueryFilters().FirstOrDefault(u => u.UserName == username);
+            return _context.Users.IgnoreQueryFilters().FirstOrDefault(u => u.UserName == username && u.DeletedOn != null);
+        }
+
+        internal User? GetDeletedUser(Guid id)
+        {
+            return _context.Users.IgnoreQueryFilters().FirstOrDefault(u => u.Id == id && u.DeletedOn != null);
         }
     }
 }

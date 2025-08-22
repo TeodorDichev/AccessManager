@@ -32,14 +32,14 @@ namespace AccessManager.Controllers
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            List<UnitDepartmentViewModel> departments = _departmentService.GetAllowedDepartments(loggedUser)
+            List<UnitDepartmentViewModel> departments = _departmentService.GetDepartmentsByUserWriteAuthority(loggedUser)
                 .Select(g => new UnitDepartmentViewModel
                 {
                     DepartmentId = g.Id,
                     DepartmentName = g.Description,
                 }).ToList();
 
-            List<UnitDepartmentViewModel> units = _unitService.GetUserAllowedUnits(loggedUser)
+            List<UnitDepartmentViewModel> units = _unitService.GetUserUnits(loggedUser)
                 .Select(g => new UnitDepartmentViewModel
                 {
                     DepartmentId = g.DepartmentId,
@@ -87,7 +87,7 @@ namespace AccessManager.Controllers
             {
                 DepartmentId = dep.Id,
                 DepartmentName = dep.Description,
-                Units = _unitService.GetAllowedUnitsForDepartment(loggedUser, Guid.Parse(id)).Select(u => new UnitViewModel { UnitId = u.Id, UnitName = u.Description }).ToList(),
+                Units = _unitService.GetUserUnitsForDepartment(loggedUser, Guid.Parse(id)).Select(u => new UnitViewModel { UnitId = u.Id, UnitName = u.Description }).ToList(),
                 WriteAuthority = loggedUser.WritingAccess
             };
 
@@ -109,7 +109,7 @@ namespace AccessManager.Controllers
                 return RedirectToAction("EditDepartment", new { model.DepartmentId });
             }
 
-            if (_departmentService.DepartmentWithDescriptionExists(model.DepartmentName))
+            if (_departmentService.DepartmentWithNameExists(model.DepartmentName))
             {
                 TempData["Error"] = "Дирекция с това име вече съществува";
                 return View(model);
@@ -128,7 +128,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var res = _unitService.GetAllowedUnitsForDepartment(loggedUser, departmentId).Select(u => new { UnitId = u.Id, u.Description });
+            var res = _unitService.GetUserUnitsForDepartment(loggedUser, departmentId).Select(u => new { UnitId = u.Id, u.Description });
             return Json(res);
         }
 
@@ -138,7 +138,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var departments = _unitService.GetUserAllowedUnits(loggedUser)
+            var departments = _unitService.GetUserUnits(loggedUser)
                 .GroupBy(u => u.Department)
                 .Select(g => new
                 {
@@ -162,7 +162,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            if (_departmentService.DepartmentWithDescriptionExists(DepartmentName))
+            if (_departmentService.DepartmentWithNameExists(DepartmentName))
             {
                 TempData["Error"] = "Дирекция с това име вече същестува!";
                 return RedirectToAction("UnitDepartmentList");

@@ -1,12 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
-
-namespace AccessManager.ViewModels.Access
+﻿namespace AccessManager.ViewModels.Access
 {
     public class UserAccessListViewModel
     {
-        public List<UserAccessListItemViewModel> UserAccessList { get; set; } = [];
-        public int CurrentPage { get; set; } = 1;
-        public int TotalPages { get; set; } = 1;
+        public PagedResult<UserAccessListItemViewModel> UserAccessList { get; set; } = [];
         public Guid? FilterAccessId { get; set; }
 
         public string? FilterAccessDescription { get; set; }
@@ -15,6 +11,6 @@ namespace AccessManager.ViewModels.Access
         public string? FilterUserName { get; set; }
         public Guid? FilterDirectiveId { get; set; }
 
-        public string? FilterDirectiveDescription{ get; set; }
+        public string? FilterDirectiveDescription { get; set; }
     }
 }

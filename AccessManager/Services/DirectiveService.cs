@@ -1,5 +1,6 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
+using AccessManager.Utills;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Services
@@ -12,10 +13,14 @@ namespace AccessManager.Services
             _context = context;
         }
 
-
         internal Directive? GetDirective(Guid id)
         {
             return _context.Directives.FirstOrDefault(d => d.Id == id);
+        }
+
+        internal Directive? GetDeletedDirective(Guid id)
+        {
+            return _context.Directives.IgnoreQueryFilters().FirstOrDefault(d => d.Id == id && d.DeletedOn != null);
         }
 
         internal bool ExistsDirectiveWithName(string name)
@@ -25,11 +30,8 @@ namespace AccessManager.Services
 
         internal void UpdateDirectiveName(Directive directive, string name)
         {
-            if (directive != null)
-            {
-                directive.Name = name;
-                _context.SaveChanges();
-            }
+            directive.Name = name;
+            _context.SaveChanges();
         }
 
         internal Directive CreateDirective(string name)
@@ -39,28 +41,27 @@ namespace AccessManager.Services
                 Id = Guid.NewGuid(),
                 Name = name
             };
+
             _context.Directives.Add(directive);
             _context.SaveChanges();
 
             return directive;
         }
 
-        internal void UpdateAccessDirective(UserAccess access, Guid directiveId)
+        internal int GetDirectivesCount(int page)
         {
-            if (_context.Directives.Any(d => d.Id == directiveId))
-                access.GrantedByDirectiveId = directiveId;
+            return _context.Directives.Count();
         }
 
-        internal List<Directive> GetDirectives()
+        internal List<Directive> GetDirectives(int page)
         {
-            return _context.Directives.ToList();
-        }
+            if (page < 1) page = 1;
 
-        internal bool CanDeleteDirective(Directive directive)
-        {
-            return !_context.UserAccesses.Any(ua =>
-                ua.GrantedByDirectiveId == directive.Id ||
-                ua.RevokedByDirectiveId == directive.Id);
+            return _context.Directives
+                .OrderBy(d => d.Id)
+                .Skip((page - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .ToList();
         }
 
         internal void RestoreDirective(Directive directive)
@@ -68,6 +69,12 @@ namespace AccessManager.Services
             _context.Directives.IgnoreQueryFilters()
                 .Where(d => d.Id == directive.Id)
                 .ExecuteUpdate(d => d.SetProperty(x => x.DeletedOn, (DateTime?)null));
+        }
+        internal bool CanDeleteDirective(Directive directive)
+        {
+            return !_context.UserAccesses.Any(ua =>
+                ua.GrantedByDirectiveId == directive.Id ||
+                ua.RevokedByDirectiveId == directive.Id);
         }
 
         internal void SoftDeleteDirective(Directive directive)

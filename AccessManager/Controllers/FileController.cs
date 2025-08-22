@@ -47,7 +47,7 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var utf8WithBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
-            var bytes = utf8WithBom.GetBytes(_fileService.GetUnitsCsv(_unitService.GetUserAllowedUnits(loggedUser)).ToString());
+            var bytes = utf8WithBom.GetBytes(_fileService.GetUnitsCsv(_unitService.GetUserUnits(loggedUser)).ToString());
 
             return File(bytes, "text/csv", "units.csv");
         }
@@ -73,7 +73,7 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var utf8WithBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
-            var bytes = utf8WithBom.GetBytes(_fileService.GetUsersUnitsCsv(_unitService.GetUserAllowedUnits(loggedUser)).ToString());
+            var bytes = utf8WithBom.GetBytes(_fileService.GetUsersUnitsCsv(_unitService.GetUserUnits(loggedUser)).ToString());
 
             return File(bytes, "text/csv", "user_units.csv");
         }

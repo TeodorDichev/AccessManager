@@ -7,6 +7,7 @@ namespace AccessManager.ViewModels.User
 {
     public class MyProfileViewModel
     {
+        public Guid Id { get; set; }
         public AuthorityType ReadingAccess { get; set; }
         public AuthorityType WritingAccess { get; set; }
 
@@ -31,8 +32,8 @@ namespace AccessManager.ViewModels.User
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public Guid SelectedUnitId { get; set; }
 
-        public List<SelectListItem> AvailableDepartments { get; set; } = [];
-        public List<SelectListItem> AvailableUnits { get; set; } = [];
+        public string? SelectedDepartmentDescription { get; set; }
+        public string? SelectedUnitDescription { get; set; }
 
         [RegularExpression(@"^\d{10}$", ErrorMessage = ExceptionMessages.InvalidEGN)]
         public string? EGN { get; set; }

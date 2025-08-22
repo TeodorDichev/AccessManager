@@ -1,18 +1,18 @@
 ﻿using AccessManager.Data.Enums;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using AccessManager.Utills;
 using System.ComponentModel.DataAnnotations;
 
 namespace AccessManager.ViewModels.User
 {
     public class EditUserViewModel
     {
-        [Required]
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public string UserName { get; set; } = null!;
-        [Required]
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public string FirstName { get; set; } = null!;
-        [Required]
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public string MiddleName { get; set; } = null!;
-        [Required]
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public string LastName { get; set; } = null!;
         public string? EGN { get; set; }
         public string? Phone { get; set; }
@@ -23,13 +23,13 @@ namespace AccessManager.ViewModels.User
         public AuthorityType LoggedUserReadingAccess { get; set; } = AuthorityType.None;
         public AuthorityType LoggedUserWritingAccess { get; set; } = AuthorityType.None;
 
-        [Required]
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public Guid SelectedDepartmentId { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public Guid SelectedUnitId { get; set; }
 
-        public List<SelectListItem> AvailableDepartments { get; set; } = [];
-        public List<SelectListItem> AvailableUnits { get; set; } = [];
+        public string SelectedDepartmentDescription { get; set; } = null!;
+        public string SelectedUnitDescription { get; set; } = null!;
     }
 }

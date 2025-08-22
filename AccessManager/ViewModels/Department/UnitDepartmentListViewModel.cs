@@ -4,11 +4,9 @@ namespace AccessManager.ViewModels.Department
 {
     public class UnitDepartmentListViewModel
     {
-        public List<UnitDepartmentViewModel> UnitDepartments { get; set; } = [];
-        public List<string> FilterDepartments { get; set; } = [];
-        public string SelectedFilterDepartment { get; set; } = String.Empty;
+        public PagedResult<UnitDepartmentViewModel> UnitDepartments { get; set; } = new();
+        public Guid? FilterDepartmentId { get; set; }
+        public string? FilterDepartmentDescription { get; set; }
         public AuthorityType WriteAuthority { get; set; }
-        public int CurrentPage { get; set; }
-        public int TotalPages { get; set; }
     }
 }
