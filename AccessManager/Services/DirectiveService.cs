@@ -13,7 +13,7 @@ namespace AccessManager.Services
             _context = context;
         }
 
-        internal Directive? GetDirective(Guid id)
+        internal Directive? GetDirective(Guid? id)
         {
             return _context.Directives.FirstOrDefault(d => d.Id == id);
         }

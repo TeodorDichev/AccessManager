@@ -1,6 +1,9 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
 using AccessManager.Utills;
+using AccessManager.ViewModels;
+using AccessManager.ViewModels.Access;
+using AccessManager.ViewModels.InformationSystem;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Services
@@ -8,12 +11,14 @@ namespace AccessManager.Services
     public class AccessService
     {
         private readonly Context _context;
-        public AccessService(Context context)
+        private readonly UserService _userService;
+        public AccessService(Context context, UserService userService)
         {
             _context = context;
+            _userService = userService;
         }
 
-        internal Access? GetAccess(Guid id)
+        internal Access? GetAccess(Guid? id)
         {
             return _context.Accesses.FirstOrDefault(a => a.Id == id);
         }
@@ -29,7 +34,7 @@ namespace AccessManager.Services
             _context.SaveChanges();
         }
 
-        internal string GetAccessDescription(Access access)
+        internal string GetAccessDescription(Access? access)
         {
             if (access == null)
                 return string.Empty;
@@ -66,12 +71,142 @@ namespace AccessManager.Services
                 .ToList();
         }
 
-        internal List<User> GetNotGrantedUsers(Access access)
+        internal List<User> GetNotGrantedUsers(User loggedUser, Access access)
         {
+            var accessibleUserIds = _userService.GetAccessibleUsers(loggedUser).Select(u => u.Id).ToList();
+
             return _context.Users
+                .Where(u => accessibleUserIds.Contains(u.Id))
                 .Where(u => !_context.UserAccesses.Any(ua => ua.UserId == u.Id && ua.AccessId == access.Id))
                 .ToList();
         }
+
+        internal PagedResult<AccessListItemViewModel> GetAccessesPaged(Access? filterAccess, int level, int page)
+        {
+            IQueryable<Access> query = _context.Accesses;
+
+            if (level == 1) query = query.Where(a => a.ParentAccessId == null);
+            else if (level >= 2 && filterAccess != null)
+            {
+                var allAccesses = _context.Accesses
+                    .Select(a => new { a.Id, a.ParentAccessId })
+                    .ToList();
+
+                var lookup = allAccesses
+                    .Where(a => a.ParentAccessId.HasValue)
+                    .GroupBy(a => a.ParentAccessId.Value)
+                    .ToDictionary(g => g.Key, g => g.Select(x => x.Id).ToList());
+
+                var collectedIds = new HashSet<Guid>();
+
+                void Collect(Guid parentId)
+                {
+                    if (!lookup.TryGetValue(parentId, out var children)) return;
+                    foreach (var childId in children)
+                        if (collectedIds.Add(childId))
+                            Collect(childId);
+                }
+
+                Collect(filterAccess.Id);
+
+                query = query.Where(a => collectedIds.Contains(a.Id));
+            }
+
+            var projected = query
+                .Select(a => new AccessListItemViewModel
+                {
+                    AccessId = a.Id,
+                    Description = GetAccessDescription(a)
+                });
+
+            var total = projected.Count();
+
+            var items = projected
+                .OrderBy(a => a.Description)
+                .Skip((page - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .ToList();
+
+            return new PagedResult<AccessListItemViewModel>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = page
+            };
+        }
+
+        internal PagedResult<AccessViewModel> GetAccessesGrantedToUserPaged(User user, Directive? filterDirective, int page)
+        {
+            var query = _context.UserAccesses
+                .Include(ua => ua.User)
+                    .ThenInclude(u => u.Unit)
+                        .ThenInclude(unit => unit.Department)
+                .Include(ua => ua.GrantedByDirective)
+                .Where(ua => ua.UserId == user.Id && ua.RevokedOn == null);
+
+            if (filterDirective != null)
+                query = query.Where(ua => ua.GrantedByDirectiveId == filterDirective.Id);
+
+            var totalCount = query.Count();
+
+            var items = query
+                .OrderBy(ua => ua.User.UserName)
+                .Skip((page - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .Select(ua => new AccessViewModel
+                {
+                    AccessId = ua.Access.Id,
+                    Description = GetAccessDescription(ua.Access),
+                    DirectiveId = ua.GrantedByDirectiveId,
+                    DirectiveDescription = ua.GrantedByDirective.Name
+                })
+                .ToList();
+
+            return new PagedResult<AccessViewModel>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page
+            };
+        }
+
+        internal PagedResult<AccessViewModel> GetAccessesNotGrantedToUserPaged(User user, Directive? filterDirective, int page)
+        {
+            var revoked = _context.UserAccesses.Where(ua => ua.UserId == user.Id && ua.RevokedOn != null).Select(ua => new AccessViewModel
+            {
+                AccessId = ua.AccessId,
+                Description = GetAccessDescription(ua.Access),
+                DirectiveId = ua.GrantedByDirectiveId,
+                DirectiveDescription = ua.RevokedByDirective != null ? ua.GrantedByDirective.Name : ""
+            });
+
+            var notGranted = Enumerable.Empty<AccessViewModel>();
+            if (filterDirective == null)
+                notGranted = GetNotGrantedAccesses(user).Select(a => new AccessViewModel
+                {
+                    AccessId = a.Id,
+                    Description = GetAccessDescription(a),
+                    DirectiveId = Guid.Empty,
+                    DirectiveDescription = ""
+                });
+
+            var allWithoutAccess = revoked.Concat(notGranted).ToList();
+
+            var totalCount = allWithoutAccess.Count;
+            var items = allWithoutAccess
+                .OrderBy(u => u.Description)
+                .Skip((page - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .ToList();
+
+            return new PagedResult<AccessViewModel>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page
+            };
+        }
+
 
         internal int GetDeletedAccessesCount()
         {
@@ -185,5 +320,6 @@ namespace AccessManager.Services
 
             return ancestors;
         }
+
     }
 }

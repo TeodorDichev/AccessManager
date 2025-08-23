@@ -81,7 +81,7 @@
 
     function fetchAccesses() {
         const q = accessSearch.value || "";
-        fetch(`/Access/GetAccesses?q=${encodeURIComponent(q)}`)
+        fetch(`/Access/SearchAccesses?q=${encodeURIComponent(q)}`)
             .then(r => r.json())
             .then(list => {
                 candidatesAccessBox.innerHTML = "";

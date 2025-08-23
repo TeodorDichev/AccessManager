@@ -35,7 +35,7 @@ namespace AccessManager.Controllers
         public IActionResult UserAccessCsv()
         {
             var utf8WithBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
-            var bytes = utf8WithBom.GetBytes(_fileService.GetUserAccessCsv().ToString());
+            var bytes = utf8WithBom.GetBytes(_fileService.GetUserAccessCsv(_userService.GetAccessibleUsers(loggedUser)).ToString());
 
             return File(bytes, "text/csv", "user_accesses.csv");
         }

@@ -1,6 +1,7 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
+using AccessManager.ViewModels;
 using AccessManager.ViewModels.User;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,6 +50,7 @@ namespace AccessManager.Services
                     .Where(u => accessibleUnitIds.Contains(u.UnitId))
                     .Count();
         }
+
         int GetAccessibleUsersCount(User loggedUser, Department department)
         {
             var accessibleUnitIds = _context.UnitUsers
@@ -71,7 +73,7 @@ namespace AccessManager.Services
                     .Count();
         }
 
-        internal List<User> GetAccessibleUsers(User loggedUser, int page, string sortOption)
+        internal PagedResult<User> GetAccessibleUsersPaged(User loggedUser, int page, UserSortOptions sortOption)
         {
             var accessibleUnitIds = _context.UnitUsers
                 .Where(uu => uu.UserId == loggedUser.Id)
@@ -88,7 +90,19 @@ namespace AccessManager.Services
                 .ToList();
         }
 
-        internal List<User> GetAccessibleUsers(User loggedUser, Department department, int page, string sortOption)
+        internal List<User> GetAccessibleUsers(User loggedUser)
+        {
+            var accessibleUnitIds = _context.UnitUsers
+                .Where(uu => uu.UserId == loggedUser.Id)
+                .Select(uu => uu.UnitId);
+
+            var query = _context.Users
+                .Where(u => accessibleUnitIds.Contains(u.UnitId));
+
+            return query.ToList();
+        }
+
+        internal List<User> GetAccessibleUsers(User loggedUser, Department department, int page, UserSortOptions sortOption)
         {
             var accessibleUnitIds = _context.UnitUsers
                 .Where(uu => uu.UserId == loggedUser.Id)
@@ -106,7 +120,7 @@ namespace AccessManager.Services
                 .ToList();
         }
 
-        internal List<User> GetAccessibleUsers(User loggedUser, Unit unit, int page, string sortOption)
+        internal List<User> GetAccessibleUsers(User loggedUser, Unit unit, int page, UserSortOptions sortOption)
         {
             var accessibleUnitIds = _context.UnitUsers
                 .Where(uu => uu.UserId == loggedUser.Id)

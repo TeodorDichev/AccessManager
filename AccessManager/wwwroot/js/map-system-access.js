@@ -29,7 +29,7 @@
 document.querySelectorAll("select[name='directiveToRevokeAccessInner'], select[name='directiveToGrantAccessInner']")
     .forEach(select => {
         select.addEventListener("change", function () {
-            const username = this.dataset.username;
+            const userId = this.dataset.userid;
             const accessId = this.dataset.accessid;
             const directiveId = this.value;
 
@@ -39,7 +39,7 @@ document.querySelectorAll("select[name='directiveToRevokeAccessInner'], select[n
                     "Content-Type": "application/json",
                     "RequestVerificationToken": document.querySelector("input[name='__RequestVerificationToken']").value
                 },
-                body: JSON.stringify({ username, accessId, directiveId })
+                body: JSON.stringify({ userId, accessId, directiveId })
             });
         });
     });

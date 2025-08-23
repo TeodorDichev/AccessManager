@@ -31,13 +31,13 @@ namespace AccessManager.Services
             return sb;
         }
 
-        internal StringBuilder GetUserAccessCsv()
+        internal StringBuilder GetUserAccessCsv(List<User> accessibleUsers)
         {
             var sb = new StringBuilder();
 
             sb.AppendLine("Потребителско име,Собствено име,Фамилия,Достъп,Заповед за даване,Спрян,Заповед за спиране");
 
-            foreach (var u in _context.UserAccesses)
+            foreach (var u in _context.UserAccesses.Where(ua => accessibleUsers.Select(u => u.Id).Contains(ua.UserId)).OrderBy(ua => ua.User.UserName))
             {
                 sb.AppendLine($"\"{u.User.UserName}\",\"{u.User.FirstName}\",\"{u.User.LastName}\",\"{_accessService.GetAccessDescription(u.Access)}\"," +
                     $"\"{u.GrantedByDirective.Name}\",\"{(u.RevokedByDirective == null ? "не" : "да")}\",\"{(u.RevokedByDirective == null ? "" : u.RevokedByDirective.Name)}\"");

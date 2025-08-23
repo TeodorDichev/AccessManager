@@ -1,5 +1,7 @@
-﻿@model AccessManager.ViewModels.Access.DeletedAccessesViewModel
+﻿@using AccessManager.ViewModels.Access;
+@using AccessManager.ViewModels;
 
+@model PagedResult<AccessListItemViewModel>
 @{
     ViewData["Title"] = "Достъпи";
 }
@@ -36,7 +38,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var acc in Model.Accesses)
+        @foreach (var acc in Model.Items)
         {
             <tr>
                 <td>@acc.Description</td>
@@ -59,19 +61,7 @@
     </tbody>
 </table>
 
-@if (Model.TotalPages > 1)
-{
-    <nav>
-        <ul class="pagination justify-content-center mt-4">
-            @for (int i = 1; i <= Model.TotalPages; i++)
-            {
-                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                    <a class="page-link" href="?page=@i">@i</a>
-                </li>
-            }
-        </ul>
-    </nav>
-}
+@await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.Items)
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
