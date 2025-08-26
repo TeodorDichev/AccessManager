@@ -1,6 +1,7 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
 using AccessManager.Utills;
+using AccessManager.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Services
@@ -53,15 +54,27 @@ namespace AccessManager.Services
             return _context.Directives.Count();
         }
 
-        internal List<Directive> GetDirectives(int page)
+        internal List<Directive> GetDirectives()
+        {
+            return _context.Directives
+                .OrderBy(d => d.Name)
+                .ToList();
+        }
+
+        internal PagedResult<Directive> GetDirectivesPaged(int page)
         {
             if (page < 1) page = 1;
 
-            return _context.Directives
+            return new PagedResult<Directive>
+            {
+                Items = _context.Directives
                 .OrderBy(d => d.Id)
                 .Skip((page - 1) * Constants.ItemsPerPage)
                 .Take(Constants.ItemsPerPage)
-                .ToList();
+                .ToList(),
+                TotalCount = _context.Directives.Count(),
+                Page = page
+            };
         }
 
         internal void RestoreDirective(Directive directive)

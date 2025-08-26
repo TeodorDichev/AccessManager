@@ -1,6 +1,4 @@
 ﻿using AccessManager.Services;
-using AccessManager.Utills;
-using AccessManager.ViewModels.Log;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccessManager.Controllers
@@ -24,16 +22,9 @@ namespace AccessManager.Controllers
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.SuperAdmin;
 
-            var logs = _logService.GetLogs(page);
+            var result = _logService.GetLogsPaged(page);
 
-            var model = new LogListViewModel
-            {
-                Logs = logs,
-                CurrentPage = page,
-                TotalPages = (int)Math.Ceiling((double)_logService.GetLogsCount() / Constants.ItemsPerPage)
-            };
-
-            return View(model);
+            return View(result);
         }
 
         [HttpPost]
@@ -42,7 +33,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            if(loggedUser.WritingAccess != Data.Enums.AuthorityType.SuperAdmin)
+            if (loggedUser.WritingAccess != Data.Enums.AuthorityType.SuperAdmin)
             {
                 TempData["Error"] = "Нямате достъп";
             }

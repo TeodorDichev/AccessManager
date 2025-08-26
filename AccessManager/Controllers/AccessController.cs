@@ -2,13 +2,10 @@
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
-using AccessManager.Utills;
 using AccessManager.ViewModels;
 using AccessManager.ViewModels.Access;
-using AccessManager.ViewModels.InformationSystem;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text;
 
 namespace AccessManager.Controllers
@@ -238,7 +235,7 @@ namespace AccessManager.Controllers
 
             var filterDirective1 = _directiveService.GetDirective(filterDirectiveId1);
             var filterDirective2 = _directiveService.GetDirective(filterDirectiveId2);
-            if(filterDirective1 == null || filterDirective2 == null)
+            if (filterDirective1 == null || filterDirective2 == null)
             {
                 TempData["Error"] = "Филтърът за заповед не е намерен";
                 return RedirectToAction("AccessList");
@@ -253,7 +250,7 @@ namespace AccessManager.Controllers
                 FilterDirectiveDescription2 = filterDirective2.Name,
                 FilterDirectiveId1 = filterDirectiveId1,
                 FilterDirectiveId2 = filterDirectiveId2,
-                UsersWithAccess =_userAccessService.GetUsersWithAccessPaged(loggedUser, access, filterDirective1, page1),
+                UsersWithAccess = _userAccessService.GetUsersWithAccessPaged(loggedUser, access, filterDirective1, page1),
                 UsersWithoutAccess = _userAccessService.GetUsersWithoutAccessPaged(loggedUser, access, filterDirective2, page2),
             };
 

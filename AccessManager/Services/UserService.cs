@@ -1,9 +1,11 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
+using AccessManager.Utills;
 using AccessManager.ViewModels;
 using AccessManager.ViewModels.User;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace AccessManager.Services
 {
@@ -40,54 +42,40 @@ namespace AccessManager.Services
             };
         }
 
-        int GetAccessibleUsersCount(User loggedUser)
-        {
-            var accessibleUnitIds = _context.UnitUsers
-                    .Where(uu => uu.UserId == loggedUser.Id)
-                    .Select(uu => uu.UnitId);
-
-            return _context.Users
-                    .Where(u => accessibleUnitIds.Contains(u.UnitId))
-                    .Count();
-        }
-
-        int GetAccessibleUsersCount(User loggedUser, Department department)
-        {
-            var accessibleUnitIds = _context.UnitUsers
-                    .Where(uu => uu.UserId == loggedUser.Id)
-                    .Select(uu => uu.UnitId);
-
-            return _context.Users
-                .Where(u => accessibleUnitIds.Contains(u.UnitId) && u.Unit.DepartmentId == department.Id)
-                    .Count();
-        }
-
-        int GetAccessibleUsersCount(User loggedUser, Unit unit)
-        {
-            var accessibleUnitIds = _context.UnitUsers
-                    .Where(uu => uu.UserId == loggedUser.Id)
-                    .Select(uu => uu.UnitId);
-
-            return _context.Users
-                .Where(u => accessibleUnitIds.Contains(u.UnitId) && u.UnitId == unit.Id)
-                    .Count();
-        }
-
-        internal PagedResult<User> GetAccessibleUsersPaged(User loggedUser, int page, UserSortOptions sortOption)
+        internal PagedResult<UserListItemViewModel> GetAccessibleUsersPaged(User loggedUser, Unit? filterUnit, Department? filterDepartment, int page, UserSortOptions sortOption)
         {
             var accessibleUnitIds = _context.UnitUsers
                 .Where(uu => uu.UserId == loggedUser.Id)
                 .Select(uu => uu.UnitId);
 
-            var query = _context.Users
-                .Where(u => accessibleUnitIds.Contains(u.UnitId));
+            var query = _context.Users.Where(u => accessibleUnitIds.Contains(u.UnitId));
+
+            if(filterUnit != null)
+                query = query.Where(u => u.UnitId == filterUnit.Id);
+            else if (filterDepartment != null)
+                query = query.Where(u => u.Unit.DepartmentId == filterDepartment.Id);
 
             query = ApplySorting(query, sortOption);
 
-            return query
-                .Skip((page - 1) * Utills.Constants.ItemsPerPage)
-                .Take(Utills.Constants.ItemsPerPage)
-                .ToList();
+            return new PagedResult<UserListItemViewModel>
+            {
+                Items = query
+                    .Skip((page - 1) * Utills.Constants.ItemsPerPage)
+                    .Take(Utills.Constants.ItemsPerPage)
+                    .Select(u => new UserListItemViewModel
+                    {
+                        UserName = u.UserName,
+                        FirstName = u.FirstName,
+                        LastName = u.LastName,
+                        Unit = u.Unit.Description,
+                        Department = u.Unit.Department.Description,
+                        WriteAccess = u.WritingAccess,
+                        ReadAccess = u.ReadingAccess,
+                    })
+                    .ToList(),
+                TotalCount = query.Count(),
+                Page = page
+            };
         }
 
         internal List<User> GetAccessibleUsers(User loggedUser)
@@ -224,22 +212,11 @@ namespace AccessManager.Services
                 .ExecuteDelete();
         }
 
-        internal List<UserListItemViewModel> GetDeletedUsers()
+        internal List<User> GetDeletedUsers()
         {
             return _context.Users
                 .IgnoreQueryFilters()
                 .Where(u => u.DeletedOn != null)
-                .ToList()
-                .Select(u => new UserListItemViewModel
-                {
-                    UserName = u.UserName,
-                    FirstName = u.FirstName,
-                    LastName = u.LastName,
-                    Unit = u.Unit.Description,
-                    Department = u.Unit.Department.Description,
-                    WriteAccess = u.WritingAccess,
-                    ReadAccess = u.ReadingAccess,
-                })
                 .ToList();
         }
 
@@ -251,6 +228,36 @@ namespace AccessManager.Services
         internal User? GetDeletedUser(Guid id)
         {
             return _context.Users.IgnoreQueryFilters().FirstOrDefault(u => u.Id == id && u.DeletedOn != null);
+        }
+
+        internal PagedResult<UserListItemViewModel> GetDeletedUsersPaged(int page)
+        {
+            if (page < 1) page = 1;
+            int pageSize = Constants.ItemsPerPage;
+
+            var deletedUsers = GetDeletedUsers();
+
+            var items = deletedUsers
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(u => new UserListItemViewModel
+                {
+                    UserName = u.UserName,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Unit = u.Unit.Description,
+                    Department = u.Unit.Department.Description,
+                    WriteAccess = u.WritingAccess,
+                    ReadAccess = u.ReadingAccess
+                })
+                .ToList();
+
+            return new PagedResult<UserListItemViewModel>
+            {
+                Items = items,
+                Page = page,
+                TotalCount = deletedUsers.Count()
+            };
         }
     }
 }

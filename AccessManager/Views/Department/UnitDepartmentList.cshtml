@@ -23,13 +23,6 @@
     <div class="d-flex justify-content-start gap-2 mb-3 align-items-end">
         <label for="filterDepartment" class="form-label">Филтър по Дирекция:</label>
         <select name="filterDepartment" id="filterDepartment" class="form-select" onchange="this.form.submit()">
-            <option value="">Всички</option>
-            @foreach (var department in Model.FilterDepartments)
-            {
-                <option value="@department" selected="@(department == Model.SelectedFilterDepartment ? "selected" : null)">
-                    @department
-                </option>
-            }
         </select>
     </div>
 
@@ -55,8 +48,6 @@
     </div>
 </form>
 
-
-
 <table class="table table-bordered table-striped wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
     <thead class="table-light">
         <tr>
@@ -67,7 +58,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var ud in Model.UnitDepartments)
+        @foreach (var ud in Model.UnitDepartments.Items)
         {
             <tr>
                 <td>@ud.DepartmentName</td>
@@ -110,19 +101,7 @@
     </tbody>
 </table>
 
-@if (Model.TotalPages > 1)
-{
-    <nav>
-        <ul class="pagination justify-content-center mt-4">
-            @for (int i = 1; i <= Model.TotalPages; i++)
-            {
-                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                    <a class="page-link" href="?page=@i">@i</a>
-                </li>
-            }
-        </ul>
-    </nav>
-}
+@await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.UnitDepartments.Items)
 
 <!-- Modal -->
 <div class="modal fade" id="createDepartmentModal" tabindex="-1" aria-labelledby="createDepartmentModalLabel" aria-hidden="true">
@@ -148,7 +127,6 @@
         </div>
     </div>
 </div>
-
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

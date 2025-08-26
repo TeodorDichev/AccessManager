@@ -2,7 +2,7 @@
 {
     public class UserAccessListViewModel
     {
-        public PagedResult<UserAccessListItemViewModel> UserAccessList { get; set; } = [];
+        public PagedResult<UserAccessListItemViewModel> UserAccessList { get; set; } = new();
         public Guid? FilterAccessId { get; set; }
 
         public string? FilterAccessDescription { get; set; }

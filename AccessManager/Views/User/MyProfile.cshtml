@@ -74,12 +74,10 @@
 
             <div class="mb-3">
                 <label asp-for="SelectedDepartmentId" class="form-label">Дирекция</label>
-                <select asp-for="SelectedDepartmentId" asp-items="Model.AvailableDepartments" class="form-select" id="SelectedDepartmentId"></select>
                 <span asp-validation-for="SelectedDepartmentId" class="text-danger"></span>
             </div>
             <div class="mb-3">
                 <label asp-for="SelectedUnitId" class="form-label">Отдел</label>
-                <select asp-for="SelectedUnitId" asp-items="Model.AvailableUnits" class="form-select" id="SelectedUnitId"></select>
                 <span asp-validation-for="SelectedUnitId" class="text-danger"></span>
             </div>
 

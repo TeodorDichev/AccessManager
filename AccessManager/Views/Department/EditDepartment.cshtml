@@ -45,7 +45,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var unit in Model.Units)
+            @foreach (var unit in Model.Units.Items)
             {
                 <tr>
                     <td>@unit.UnitName</td>
@@ -65,6 +65,8 @@
             }
         </tbody>
     </table>
+
+    @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.Units)
 </div>
 
 

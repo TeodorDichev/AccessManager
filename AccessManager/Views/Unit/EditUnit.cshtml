@@ -52,7 +52,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var user in Model.UsersWithAccess)
+            @foreach (var user in Model.UsersWithAccess.Items)
             {
                 <tr>
                     <td>@user.UserName</td>
@@ -76,6 +76,8 @@
             }
         </tbody>
     </table>
+
+    @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.UsersWithAccess)
 </div>
 
 

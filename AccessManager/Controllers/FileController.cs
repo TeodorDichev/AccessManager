@@ -34,6 +34,9 @@ namespace AccessManager.Controllers
         [HttpGet]
         public IActionResult UserAccessCsv()
         {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
             var utf8WithBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
             var bytes = utf8WithBom.GetBytes(_fileService.GetUserAccessCsv(_userService.GetAccessibleUsers(loggedUser)).ToString());
 

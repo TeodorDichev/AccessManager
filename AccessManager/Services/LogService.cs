@@ -2,6 +2,7 @@
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Utills;
+using AccessManager.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Services
@@ -14,14 +15,14 @@ namespace AccessManager.Services
             _context = context;
         }
 
-        public List<Log> GetLogs(int page)
+        public PagedResult<Log> GetLogsPaged(int page)
         {
-            return _context.Logs.OrderByDescending(l => l.Date).Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).ToList();
-        }
-
-        public int GetLogsCount()
-        {
-            return _context.Logs.Count();
+            return new PagedResult<Log>
+            { 
+                Items = _context.Logs.OrderByDescending(l => l.Date).Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).ToList(),
+                TotalCount = _context.Logs.Count(),
+                Page = page
+            };
         }
 
         public void AddLog(User author, LogAction logType, User user)

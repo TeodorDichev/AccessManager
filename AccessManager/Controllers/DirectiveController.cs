@@ -13,21 +13,23 @@ namespace AccessManager.Controllers
         private readonly LogService _logService;
         private readonly UserService _userService;
         private readonly AccessService _accessService;
+        private readonly UserAccessService _userAccessService;
         private readonly DirectiveService _directiveService;
         private readonly DepartmentService _departmentUnitService;
 
         public DirectiveController(Context context, UserService userService, LogService logService,
-            AccessService accessService, DepartmentService departmentUnitService, DirectiveService directiveService)
+            AccessService accessService, DepartmentService departmentUnitService, DirectiveService directiveService, UserAccessService userAccessService)
         {
             _logService = logService;
             _userService = userService;
             _accessService = accessService;
             _departmentUnitService = departmentUnitService;
             _directiveService = directiveService;
+            _userAccessService = userAccessService;
         }
 
         [HttpGet]
-        public IActionResult GetDirectives(string q="")
+        public IActionResult GetDirectives(string q = "")
         {
             var all = _directiveService.GetDirectives().Select(a => new { a.Id, a.Name }).ToList();
             var qLower = (q ?? "").Trim().ToLowerInvariant();
@@ -59,14 +61,9 @@ namespace AccessManager.Controllers
                 .Take(Constants.ItemsPerPage)
                 .ToList();
 
-            var model = new DirectiveListViewModel
-            {
-                Directives = directives,
-                CurrentPage = page,
-                TotalPages = (int)Math.Ceiling(totalDirectives / (double)Constants.ItemsPerPage)
-            };
+            var result = _directiveService.GetDirectivesPaged(page);
 
-            return View(model);
+            return View(result);
         }
 
         [HttpPost]
@@ -76,7 +73,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            if(_directiveService.ExistsDirectiveWithName(name))
+            if (_directiveService.ExistsDirectiveWithName(name))
             {
                 TempData["Error"] = "Вече съществува заповед с това име";
                 return RedirectToAction("DirectiveList");
@@ -96,12 +93,12 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             Directive? directive = _directiveService.GetDirective(id);
-            if(directive == null)
-            {            
+            if (directive == null)
+            {
                 TempData["Error"] = "Не съществува такава заповед";
                 return RedirectToAction("DirectiveList");
             }
-            else if(!_directiveService.CanDeleteDirective(directive))
+            else if (!_directiveService.CanDeleteDirective(directive))
             {
                 TempData["Error"] = "Не може да изтриете тази заповед";
                 return RedirectToAction("DirectiveList");
@@ -142,12 +139,15 @@ namespace AccessManager.Controllers
             if (model == null || model.AccessId == Guid.Empty || model.DirectiveId == Guid.Empty)
                 return Json(new { success = false, message = "Невалидни данни" });
 
-            var user = _userService.GetUser(model.Username);
-            var userAccess = _accessService.GetUserAccess(model.AccessId, user.Id);
+            var userAccess = _userAccessService.GetUserAccess(model.AccessId, model.UserId);
             if (userAccess == null)
                 return Json(new { success = false, message = "Достъпът не е намерен" });
 
-            _directiveService.UpdateAccessDirective(userAccess, model.DirectiveId);
+            var directive = _directiveService.GetDirective(model.DirectiveId);
+            if (directive == null)
+                return Json(new { success = false, message = "Заповедта не е намерен" });
+
+            _userAccessService.UpdateUserAccessDirective(userAccess, directive);
             _logService.AddLog(loggedUser, LogAction.Edit, userAccess);
 
             return Json(new { success = true, message = "Заповедта е обновена успешно" });

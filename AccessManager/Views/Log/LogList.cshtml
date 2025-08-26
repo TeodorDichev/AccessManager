@@ -1,5 +1,7 @@
 ﻿@using AccessManager.Utills;
-@model AccessManager.ViewModels.Log.LogListViewModel
+@using AccessManager.Data.Entities;
+@using AccessManager.ViewModels;
+@model PagedResult<Log>
 
 @{
     ViewData["Title"] = "Справки";
@@ -38,7 +40,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var log in Model.Logs)
+        @foreach (var log in Model.Items)
         {
             <tr>
                 <td>@BulgarianLocalization.GetBulgarianLogAction(log.ActionType)</td>
@@ -49,19 +51,7 @@
     </tbody>
 </table>
 
-@if (Model.TotalPages > 1)
-{
-    <nav>
-        <ul class="pagination justify-content-center mt-4">
-            @for (int i = 1; i <= Model.TotalPages; i++)
-            {
-                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                    <a class="page-link" href="?page=@i">@i</a>
-                </li>
-            }
-        </ul>
-    </nav>
-}
+@await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.Items)
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

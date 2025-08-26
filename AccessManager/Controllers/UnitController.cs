@@ -2,6 +2,7 @@
 using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
+using AccessManager.ViewModels;
 using AccessManager.ViewModels.Department;
 using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
@@ -25,7 +26,7 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public ActionResult EditUnit(string id)
+        public ActionResult EditUnit(Guid id, int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
@@ -38,12 +39,9 @@ namespace AccessManager.Controllers
                 return RedirectToAction("UnitDepartmentList", "Department");
             }
 
-            UnitEditViewModel model = new UnitEditViewModel
+            var pagedRes = new PagedResult<UserListItemViewModel>
             {
-                UnitId = unit.Id,
-                DepartmentName = unit.Department.Description,
-                UnitName = unit.Description,
-                UsersWithAccess = unit.UsersWithAccess
+                Items = unit.UsersWithAccess
                     .Where(u => u.User != null && loggedUser.AccessibleUnits.Select(au => au.UnitId).Contains(u.User.UnitId))
                     .Select(u => new UserListItemViewModel
                     {
@@ -55,6 +53,16 @@ namespace AccessManager.Controllers
                         ReadAccess = u.User.ReadingAccess,
                         WriteAccess = u.User.WritingAccess
                     }).ToList(),
+                Page = page,
+                TotalCount = unit.UsersWithAccess.Count(u => u.User != null && loggedUser.AccessibleUnits.Select(au => au.UnitId).Contains(u.User.UnitId))
+            };
+
+            UnitEditViewModel model = new UnitEditViewModel
+            {
+                UnitId = unit.Id,
+                DepartmentName = unit.Department.Description,
+                UnitName = unit.Description,
+                UsersWithAccess = pagedRes,
                 WriteAuthority = loggedUser.WritingAccess
             };
 
@@ -70,15 +78,14 @@ namespace AccessManager.Controllers
 
             if (!ModelState.IsValid) return View(model);
 
-            Unit? unit = _unitService.GetUnit(model.UnitId.ToString());
+            Unit? unit = _unitService.GetUnit(model.UnitId);
             if (unit == null)
             {
                 TempData["Error"] = "Отделът не е намерен";
                 return RedirectToAction("EditUnit", new { model.UnitId });
             }
 
-            unit.Description = model.UnitName;
-            _userService.SaveChanges();
+            _unitService.UpdateUnitName(unit, model.UnitName);
             _logService.AddLog(loggedUser, LogAction.Edit, unit);
 
             return View(model);
@@ -106,24 +113,6 @@ namespace AccessManager.Controllers
             return Json(new { success = true, message = "Достъпът е премахнат успешно" });
         }
 
-        [HttpGet]
-        public IActionResult CreateUnit(string departmentId)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
-
-            CreateUnitViewModel model = new CreateUnitViewModel();
-
-            if (!string.IsNullOrEmpty(departmentId)) model.DepartmentId = Guid.Parse(departmentId);
-
-            var departments = _departmentService.GetDepartmentsByUserWriteAuthority(loggedUser).Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList();
-
-            model.Departments = departments;
-            return View(model);
-        }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult CreateUnit(CreateUnitViewModel model)
@@ -131,66 +120,36 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            if (!ModelState.IsValid) return View(model);
+           var department = _departmentService.GetDepartment(model.DepartmentId);
+            if (department == null)
+            {
+                TempData["Error"] = "Дирекцията не е намерена";
+                return RedirectToAction("UnitDepartmentList", "Department");
+            }
 
-            Unit uu = _unitService.CreateUnit(model.UnitName, model.DepartmentId);
+            Unit uu = _unitService.CreateUnit(model.UnitName, department);
             _logService.AddLog(loggedUser, LogAction.Add, uu);
+
             return RedirectToAction("UnitDepartmentList", "Department");
         }
 
         [HttpGet]
-        public IActionResult MapUserUnitAccess(string username, string filterDepartment1, string filterDepartment2, int page1 = 1, int page2 = 1)
+        public IActionResult MapUserUnitAccess(Guid userId, Guid? filterDepartmentId1, Guid? filterDepartmentId2, int page1 = 1, int page2 = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var user = _userService.GetUser(username);
+            var user = _userService.GetUser(userId);
             if (user == null)
             {
                 TempData["Error"] = "Потребителят не е намерен";
-                return RedirectToAction("EditUser", new { username });
+                return RedirectToAction("EditUser", new { userId });
             }
-
-            var departments = _departmentService.GetDepartmentsByUserWriteAuthority(loggedUser).OrderBy(d => d.Description)
-                                    .Select(d => new SelectListItem(d.Description, d.Id.ToString()))
-                                    .ToList();
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            var accessibleUnitsQuery = _unitService.GetMutualUserUnits(user, loggedUser);
-            var inaccessibleUnitsQuery = _unitService.GetMutualInaccessibleUserUnits(user, loggedUser);
-
-            if (!string.IsNullOrEmpty(filterDepartment1))
-                accessibleUnitsQuery = accessibleUnitsQuery.Where(u => u.Department.Id == Guid.Parse(filterDepartment1)).ToList();
-            if (!string.IsNullOrEmpty(filterDepartment2))
-                inaccessibleUnitsQuery = inaccessibleUnitsQuery.Where(u => u.Department.Id == Guid.Parse(filterDepartment2)).ToList();
-
-            var totalAccessible = accessibleUnitsQuery.Count();
-            var totalInaccessible = inaccessibleUnitsQuery.Count();
-
-            var accessibleUnits = accessibleUnitsQuery
-                .OrderBy(u => u.Description)
-                .Skip((page1 - 1) * Constants.ItemsPerPage)
-                .Take(Constants.ItemsPerPage)
-                .Select(u => new UnitDepartmentViewModel
-                {
-                    UnitId = u.Id,
-                    UnitName = u.Description,
-                    DepartmentName = u.Department.Description
-                })
-                .ToList();
-
-            var inaccessibleUnits = inaccessibleUnitsQuery
-                .OrderBy(u => u.Description)
-                .Skip((page2 - 1) * Constants.ItemsPerPage)
-                .Take(Constants.ItemsPerPage)
-                .Select(u => new UnitDepartmentViewModel
-                {
-                    UnitId = u.Id,
-                    UnitName = u.Description,
-                    DepartmentName = u.Department.Description
-                })
-                .ToList();
+            var filterDepartment1 = _departmentService.GetDepartment(filterDepartmentId1);
+            var filterDepartment2 = _departmentService.GetDepartment(filterDepartmentId2);
 
             var vm = new MapUserUnitAccessViewModel
             {
@@ -199,15 +158,12 @@ namespace AccessManager.Controllers
                 LastName = user.LastName,
                 Department = user.Unit.Department.Description,
                 Unit = user.Unit.Description,
-                FilterDepartments = departments,
-                FilterDepartment1 = filterDepartment1,
-                FilterDepartment2 = filterDepartment2,
-                AccessibleUnits = accessibleUnits,
-                InaccessibleUnits = inaccessibleUnits,
-                CurrentPage1 = page1,
-                TotalPages1 = (int)Math.Ceiling(totalAccessible / (double)Constants.ItemsPerPage),
-                CurrentPage2 = page2,
-                TotalPages2 = (int)Math.Ceiling(totalInaccessible / (double)Constants.ItemsPerPage)
+                FilterDepartmentId1 = filterDepartmentId1,
+                FilterDepartmentId2 = filterDepartmentId2,
+                FilterDepartmentDescription1 = filterDepartment1?.Description ?? "",
+                FilterDepartmentDescription2 = filterDepartment2?.Description ?? "",
+                AccessibleUnits = _unitService.GetAccessibleUnitsPaged(loggedUser, user, filterDepartment1, page1),
+                InaccessibleUnits = _unitService.GetInaccessibleUnitsPaged(loggedUser, user, filterDepartment1, page1),
             };
 
             return View(vm);
@@ -228,7 +184,14 @@ namespace AccessManager.Controllers
 
             foreach (var unitId in model.SelectedInaccessibleUnitIds)
             {
-                var uu = _unitService.AddUnitAccess(user.Id, unitId);
+                var unit = _unitService.GetUnit(unitId);
+                if (unit == null) 
+                {
+                    TempData["Error"] = "Отделът не е намерен";
+                    continue; 
+                }
+
+                var uu = _unitService.AddUnitUser(user, unit);
                 _logService.AddLog(loggedUser, LogAction.Add, uu);
             }
 
@@ -270,7 +233,7 @@ namespace AccessManager.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult SoftDeleteUnit(string unitId)
+        public IActionResult SoftDeleteUnit(Guid? unitId)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");

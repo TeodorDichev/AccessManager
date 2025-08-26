@@ -1,4 +1,7 @@
-﻿@model AccessManager.ViewModels.Department.DeletedUnitDepartmentListViewModel
+﻿@using AccessManager.ViewModels.Department;
+@using AccessManager.ViewModels;
+
+@model PagedResult<UnitDepartmentViewModel>
 
 @{
     ViewData["Title"] = "Отдели и дирекции";
@@ -36,7 +39,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var ud in Model.UnitDepartments)
+        @foreach (var ud in Model.Items)
         {
             <tr>
                 <td>@ud.DepartmentName</td>
@@ -81,19 +84,7 @@
     </tbody>
 </table>
 
-@if (Model.TotalPages > 1)
-{
-    <nav>
-        <ul class="pagination justify-content-center mt-4">
-            @for (int i = 1; i <= Model.TotalPages; i++)
-            {
-                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                    <a class="page-link" href="?page=@i">@i</a>
-                </li>
-            }
-        </ul>
-    </nav>
-}
+@await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.Items)
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

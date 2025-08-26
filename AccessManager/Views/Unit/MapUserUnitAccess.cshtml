@@ -18,19 +18,9 @@
         <h4>Достъпни отдели</h4>
         <form method="get" asp-action="MapUserUnitAccess" class="mb-2" as>
                 <input type="hidden" name="username" value="@Model.UserName" /> 
-                <input type="hidden" name="FilterDepartment2" value="@Model.FilterDepartment2" />
-                <input type="hidden" name="page1" value="1" />
-                <input type="hidden" name="page2" value="@Model.CurrentPage2" />
 
                 <label for="filterDepartment1" class="form-label">Филтър по дирекция:</label>
                 <select name="filterDepartment1" id="filterDepartment1" class="form-select" onchange="this.form.submit()">
-                <option value="">Всички</option>
-                @foreach (var department in Model.FilterDepartments)
-                {
-                    <option value="@department.Value" selected="@(department.Value == Model.FilterDepartment1 ? "selected" : null)">
-                        @department.Text
-                    </option>
-                }
                 </select>
         </form>
 
@@ -44,7 +34,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach(var unit in Model.AccessibleUnits)
+                    @foreach(var unit in Model.AccessibleUnits.Items)
                     {
                         <tr>
                             <td><input type="checkbox" name="SelectedAccessibleUnitIds" value="@unit.UnitId" /></td>
@@ -55,12 +45,7 @@
                 </tbody>
             </table>
 
-            @await Html.PartialAsync("_Pagination", 
-            (Model.CurrentPage1, Model.TotalPages1, "page1", (object)new { 
-            username = Model.UserName, 
-            page2 = Model.CurrentPage2, 
-            filterDept1 = Model.FilterDepartment1, 
-            filterDept2 = Model.FilterDepartment2}))
+            @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.AccessibleUnits)
 
             <input type="hidden" name="username" value="@Model.UserName" /> 
 
@@ -73,19 +58,9 @@
         <h4>Недостъпни отдели</h4>
         <form method="get" asp-action="MapUserUnitAccess" class="mb-2">
             <input type="hidden" name="username" value="@Model.UserName" />
-            <input type="hidden" name="FilterDepartment1" value="@Model.FilterDepartment1" />
-            <input type="hidden" name="page1" value="@Model.CurrentPage1" />
-            <input type="hidden" name="page2" value="1" />
             
             <label for="filterDepartment2" class="form-label">Филтър по дирекция:</label>
             <select name="filterDepartment2" id="filterDepartment2" class="form-select" onchange="this.form.submit()">
-            <option value="">Всички</option>
-            @foreach (var department in Model.FilterDepartments)
-            {
-                <option value="@department.Value" selected="@(department.Value == Model.FilterDepartment2 ? "selected" : null)">
-                    @department.Text
-                </option>
-            }
             </select>
         </form>
 
@@ -99,7 +74,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach(var unit in Model.InaccessibleUnits)
+                    @foreach(var unit in Model.InaccessibleUnits.Items)
                     {
                         <tr>
                             <td><input type="checkbox" name="SelectedInaccessibleUnitIds" value="@unit.UnitId" /></td>
@@ -110,12 +85,7 @@
                 </tbody>
             </table>
 
-            @await Html.PartialAsync("_Pagination", 
-            (Model.CurrentPage2, Model.TotalPages2, "page2", (object)new { 
-            username = Model.UserName, 
-            page2 = Model.CurrentPage2, 
-            filterDept1 = Model.FilterDepartment1, 
-            filterDept2 = Model.FilterDepartment2 }))
+            @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.InaccessibleUnits)
 
             <input type="hidden" name="username" value="@Model.UserName" /> 
 

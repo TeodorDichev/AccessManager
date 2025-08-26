@@ -4,11 +4,8 @@ using AccessManager.Services;
 using AccessManager.Utills;
 using AccessManager.ViewModels;
 using AccessManager.ViewModels.Department;
-using AccessManager.ViewModels.InformationSystem;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace AccessManager.Controllers
 {
@@ -16,6 +13,7 @@ namespace AccessManager.Controllers
     {
         private readonly UserService _userService;
         private readonly AccessService _accessService;
+        private readonly UserAccessService _userAccessService;
         private readonly DirectiveService _directiveService;
         private readonly PasswordService _passwordService;
         private readonly DepartmentService _departmentService;
@@ -23,7 +21,7 @@ namespace AccessManager.Controllers
         private readonly LogService _logService;
 
         public UserController(PasswordService passwordService, UserService userService, LogService logService,
-            AccessService accessService, DepartmentService departmentService, DirectiveService directiveService, UnitService unitService)
+            AccessService accessService, DepartmentService departmentService, DirectiveService directiveService, UnitService unitService, UserAccessService userAccessService)
         {
             _logService = logService;
             _passwordService = passwordService;
@@ -32,6 +30,7 @@ namespace AccessManager.Controllers
             _departmentService = departmentService;
             _directiveService = directiveService;
             _unitService = unitService;
+            _userAccessService = userAccessService;
         }
 
         [HttpGet]
@@ -52,16 +51,37 @@ namespace AccessManager.Controllers
                 WritingAccess = loggedUser.WritingAccess,
                 EGN = loggedUser.EGN ?? string.Empty,
                 Phone = loggedUser.Phone ?? string.Empty,
-                AvailableDepartments = _departmentService.GetDepartmentsByUserWriteAuthority(loggedUser)
-                    .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList(),
-                AvailableUnits = _unitService.GetUserUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
-                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList(),
                 SelectedDepartmentId = loggedUser.Unit.Department.Id,
                 SelectedUnitId = loggedUser.Unit.Id,
             };
 
             return View(model);
         }
+
+        [HttpPost]
+        public IActionResult MyProfile(MyProfileViewModel model, string? OldPassword, string? NewPassword)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            if (!string.IsNullOrWhiteSpace(NewPassword) && !string.IsNullOrWhiteSpace(loggedUser.Password))
+            {
+                if (string.IsNullOrWhiteSpace(OldPassword) || !_passwordService.VerifyPassword(loggedUser, OldPassword, loggedUser.Password))
+                {
+                    TempData["Error"] = ExceptionMessages.InvalidPassword;
+                    return RedirectToAction("MyProfile");
+                }
+
+                loggedUser.Password = _passwordService.HashPassword(loggedUser, NewPassword);
+            }
+
+            _userService.UpdateUser(model, loggedUser);
+            _logService.AddLog(loggedUser, LogAction.Edit, loggedUser);
+            return RedirectToAction("MyProfile");
+        }
+
 
         [HttpGet]
         public IActionResult GetAccessibleUnits(int page = 1)
@@ -97,92 +117,33 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var userAccesses = _accessService.GetGrantedUserAccesses(loggedUser).Select(ua => new AccessViewModel
-            {
-                Description = _accessService.GetAccessDescription(ua.Access),
-                DirectiveDescription = _directiveService.GetDirective(ua.GrantedByDirectiveId)?.Name ?? string.Empty,
-            }).ToList();
 
-            var totalCount = userAccesses.Count();
-
-            var paged = userAccesses
-                .Skip((page - 1) * Constants.ItemsPerPage)
-                .Take(Constants.ItemsPerPage)
-                .ToList();
-
-            var result = new PagedResult<AccessViewModel>
-            {
-                Items = paged,
-                Page = page,
-                TotalCount = totalCount
-            };
+            var result = _accessService.GetAccessesGrantedToUserPaged(loggedUser, null, page);
 
             return PartialView("_UserAccessesTable", result);
         }
 
-        [HttpPost]
-        public IActionResult MyProfile(MyProfileViewModel model, string? OldPassword, string? NewPassword)
-        {
-            if (!ModelState.IsValid) return View(model);
-
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            if (!string.IsNullOrWhiteSpace(NewPassword) && !string.IsNullOrWhiteSpace(loggedUser.Password))
-            {
-                if (string.IsNullOrWhiteSpace(OldPassword) || !_passwordService.VerifyPassword(loggedUser, OldPassword, loggedUser.Password))
-                {
-                    TempData["Error"] = ExceptionMessages.InvalidPassword;
-                    return RedirectToAction("MyProfile");
-                }
-
-                loggedUser.Password = _passwordService.HashPassword(loggedUser, NewPassword);
-            }
-
-            _userService.UpdateUser(model, loggedUser);
-            _logService.AddLog(loggedUser, LogAction.Edit, loggedUser);
-            return RedirectToAction("MyProfile");
-        }
-
         [HttpGet]
-        public IActionResult UserList(string sortBy, string filterUnit, string filterDepartment, int page = 1)
+        public IActionResult UserList(UserSortOptions sortBy, Guid? filterUnitId, Guid? filterDepartmentId, int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            List<UserListItemViewModel> allUsers = _userService.GetFilteredUsers(sortBy, filterUnit, filterDepartment, loggedUser);
-            int totalUsers = allUsers.Count();
-
-            List<UserListItemViewModel> users = allUsers.Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).ToList();
-
-            var paged = new PagedResult<UserListItemViewModel>()
-            {
-                Items = users,
-                Page = page,
-                TotalCount = totalUsers
-            };
+            var filterUnit = _unitService.GetUnit(filterUnitId);
+            var filterDepartment = _departmentService.GetDepartment(filterDepartmentId);
 
             var model = new UserListViewModel
             {
-                Users = paged,
-                SortOptions = _userService.GetSortOptions(),
+                Users = _userService.GetAccessibleUsersPaged(loggedUser, filterUnit, filterDepartment, page, sortBy),
                 SelectedSortOption = sortBy,
-                SelectedFilterUnit = filterUnit,
-                FilterDepartments = loggedUser.AccessibleUnits.Select(u => u.Unit.Department.Description).Distinct().ToList(),
-                SelectedFilterDepartment = filterDepartment,
+                FilterUnitId = filterUnitId,
+                FilterDepartmentId = filterDepartmentId,
+                FilterUnitDescription = filterUnit?.Description ?? "",
+                FilterDepartmentDescription = filterDepartment?.Description ?? "",
                 WriteAuthority = loggedUser.WritingAccess,
             };
-
-            if (string.IsNullOrEmpty(filterDepartment))
-            {
-                model.FilterUnits = loggedUser.AccessibleUnits.Select(au => au.Unit.Description).ToList();
-            }
-            else
-            {
-                model.FilterUnits = loggedUser.AccessibleUnits.Where(au => au.Unit.Department.Description == filterDepartment).Select(au => au.Unit.Description).ToList();
-            }
 
             return View(model);
         }
@@ -193,21 +154,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            CreateUserViewModel model = new CreateUserViewModel
-            {
-                Departments = _departmentService.GetDepartmentsByUserWriteAuthority(loggedUser).Select(d => new SelectListItem
-                {
-                    Value = d.Id.ToString(),
-                    Text = d.Description,
-                }).ToList(),
-            };
-
-            if (model.SelectedDepartmentId.HasValue)
-                model.Units = _unitService.GetUserUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
-                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList();
-            ;
-
-            return View(model);
+            return View(new CreateUserViewModel());
         }
 
         [HttpPost]
@@ -222,24 +169,7 @@ namespace AccessManager.Controllers
             if (loggedUser.WritingAccess < model.SelectedWritingAccess || loggedUser.ReadingAccess < model.SelectedReadingAccess)
                 ModelState.AddModelError("SelectedReadingAccess", "Не може да добавяш потребител с по-висок достъп.");
 
-            if (model.SelectedDepartmentId.HasValue)
-                model.Units = _unitService.GetUserUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
-                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList();
-
-            if (!ModelState.IsValid)
-            {
-                model.Departments = _departmentService.GetDepartmentsByUserWriteAuthority(loggedUser).Select(d => new SelectListItem
-                {
-                    Value = d.Id.ToString(),
-                    Text = d.Description,
-                }).ToList();
-
-                if (model.SelectedDepartmentId.HasValue)
-                    model.Units = _unitService.GetUserUnitsForDepartment(loggedUser, loggedUser.Unit.Department.Id)
-                        .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList();
-
-                return View(model);
-            }
+            if (!ModelState.IsValid) return View(model);
 
             var user = new User
             {
@@ -258,7 +188,7 @@ namespace AccessManager.Controllers
             _userService.AddUser(user);
 
             if (model.SelectedReadingAccess >= AuthorityType.Full)
-                _unitService.AddFullUnitAccess(user.Id);
+                _unitService.AddAllUnitUsers(user);
 
             _logService.AddLog(loggedUser, LogAction.Add, user);
 
@@ -271,21 +201,20 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult EditUser(string username)
+        public IActionResult EditUser(Guid userId)
         {
-            if (HttpContext.Session.GetString("Username") == username)
-                return RedirectToAction("MyProfile");
-
-            var user = _userService.GetUser(username);
-            if (user == null) return BadRequest();
-
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            else if (loggedUser.Id == userId) return RedirectToAction("MyProfile");
 
-            if (loggedUser.WritingAccess < user.WritingAccess)
+            var user = _userService.GetUser(userId);
+            if (user == null)
             {
-                ViewBag.IsReadOnly = true;
+                TempData["Error"] = "Потребителят не е намерен";
+                return RedirectToAction("UserList");
             }
+
+            ViewBag.IsReadOnly = loggedUser.WritingAccess < user.WritingAccess;
 
             var model = new EditUserViewModel
             {
@@ -301,13 +230,8 @@ namespace AccessManager.Controllers
                 LoggedUserWritingAccess = loggedUser.WritingAccess,
                 SelectedDepartmentId = user.Unit.Department.Id,
                 SelectedUnitId = user.Unit.Id,
-                AvailableDepartments = _departmentService.GetDepartmentsByUserWriteAuthority(loggedUser)
-                    .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Description }).ToList(),
-                AvailableUnits = _unitService.GetUserUnitsForDepartment(loggedUser, user.Unit.Department.Id)
-                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = u.Description }).ToList(),
             };
-            model.AvailableDepartments.ForEach(d => d.Selected = d.Value == model.SelectedDepartmentId.ToString());
-            model.AvailableUnits.ForEach(d => d.Selected = d.Value == model.SelectedUnitId.ToString());
+
             return View(model);
         }
 
@@ -329,9 +253,7 @@ namespace AccessManager.Controllers
             if (!ModelState.IsValid) return View(model);
 
             if (!string.IsNullOrWhiteSpace(model.NewPassword))
-            {
                 user.Password = _passwordService.HashPassword(user, model.NewPassword);
-            }
 
             _userService.UpdateUser(model, user);
             _logService.AddLog(loggedUser, LogAction.Edit, user);
@@ -433,19 +355,9 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
             if (loggedUser.WritingAccess < AuthorityType.SuperAdmin) return RedirectToAction("UserList");
 
-            List<UserListItemViewModel> allUsers = _userService.GetDeletedUsers();
-            int totalUsers = allUsers.Count();
 
-            List<UserListItemViewModel> users = allUsers.Skip((page - 1) * Constants.ItemsPerPage).Take(Constants.ItemsPerPage).ToList();
-
-            var model = new DeletedUserListViewModel
-            {
-                Users = users,
-                CurrentPage = page,
-                TotalPages = (int)Math.Ceiling((double)totalUsers / Constants.ItemsPerPage)
-            };
-
-            return View(model);
+            var result = _userService.GetDeletedUsersPaged(page);
+            return View(result);
         }
 
         [HttpGet]

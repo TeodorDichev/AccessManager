@@ -1,6 +1,10 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
+using AccessManager.Utills;
+using AccessManager.ViewModels;
+using AccessManager.ViewModels.Department;
+using AccessManager.ViewModels.Unit;
 using Microsoft.EntityFrameworkCore;
 
 namespace AccessManager.Services
@@ -13,12 +17,12 @@ namespace AccessManager.Services
             _context = context;
         }
 
-        internal Unit? GetUnit(string id)
+        internal Unit? GetUnit(Guid? id)
         {
-            return _context.Units.FirstOrDefault(u => u.Id == Guid.Parse(id));
+            return _context.Units.FirstOrDefault(u => u.Id == id);
         }
 
-        internal Unit? GetDeletedUnit(Guid id)
+        internal Unit? GetDeletedUnit(Guid? id)
         {
             return _context.Units.IgnoreQueryFilters().FirstOrDefault(u => u.Id == id && u.DeletedOn != null);
         }
@@ -113,20 +117,47 @@ namespace AccessManager.Services
                 .ToList();
         }
 
-        internal List<Unit> GetUserUnitsForDepartment(User user, Guid departmentId)
+        internal PagedResult<UnitViewModel> GetUserUnitsForDepartmentPaged(User user, Department department, int page)
         {
+            if (page < 1) page = 1;
+            int pageSize = Constants.ItemsPerPage;
+
+            IQueryable<Unit> query = _context.Units.Where(u => u.DepartmentId == department.Id);
+
             if (user.WritingAccess == AuthorityType.None)
-                return [];
+            {
+                return new PagedResult<UnitViewModel>
+                {
+                    Items = new List<UnitViewModel>(),
+                    TotalCount = 0,
+                    Page = page
+                };
+            }
             else if (user.WritingAccess == AuthorityType.Restricted)
             {
                 var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
-                return _context.Units
-                    .Where(u => allowedUnitIds.Contains(u.Id) && u.DepartmentId == departmentId)
-                    .Distinct()
-                    .ToList();
+                query = query.Where(u => allowedUnitIds.Contains(u.Id));
             }
-            else
-                return _context.Units.Where(u => u.DepartmentId == departmentId).ToList();
+
+            var totalCount = query.Count();
+
+            var items = query
+                .OrderBy(u => u.Description)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(u => new UnitViewModel
+                {
+                    UnitId = u.Id,
+                    UnitName = u.Description
+                })
+                .ToList();
+
+            return new PagedResult<UnitViewModel>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page
+            };
         }
 
         internal void UpdateUnitName(Unit unit, string name)
@@ -242,6 +273,58 @@ namespace AccessManager.Services
                 .ExecuteDelete();
 
             _context.SaveChanges();
+        }
+
+        internal PagedResult<UnitDepartmentViewModel> GetInaccessibleUnitsPaged(User loggedUser, User user, Department? filterDepartment, int page)
+        {
+            var inaccessibleUnitsQuery = GetMutualInaccessibleUserUnits(user, loggedUser);
+            var totalInaccessible = inaccessibleUnitsQuery.Count();
+
+            var inaccessibleUnits = inaccessibleUnitsQuery
+                .OrderBy(u => u.Description)
+                .Skip((page - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .Select(u => new UnitDepartmentViewModel
+                {
+                    UnitId = u.Id,
+                    UnitName = u.Description,
+                    DepartmentName = u.Department.Description
+                })
+                .ToList();
+
+            return new PagedResult<UnitDepartmentViewModel>
+            {
+                Items = filterDepartment == null ? inaccessibleUnits : inaccessibleUnits.Where(u => u.DepartmentId == filterDepartment.Id).ToList(),
+                TotalCount = totalInaccessible,
+                Page = page
+            };
+        }
+
+        internal PagedResult<UnitDepartmentViewModel> GetAccessibleUnitsPaged(User loggedUser, User user, Department? filterDepartment, int page)
+        {
+            var accessibleUnitsQuery = GetMutualUserUnits(user, loggedUser);
+
+            var totalAccessible = accessibleUnitsQuery.Count();
+
+            var accessibleUnits = accessibleUnitsQuery
+                .OrderBy(u => u.Description)
+                .Skip((page - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .Select(u => new UnitDepartmentViewModel
+                {
+                    UnitId = u.Id,
+                    UnitName = u.Description,
+                    DepartmentName = u.Department.Description
+                })
+                .ToList();
+
+            return new PagedResult<UnitDepartmentViewModel>
+            {
+                Items = filterDepartment == null ? accessibleUnits : accessibleUnits.Where(u => u.DepartmentId == filterDepartment.Id).ToList(),
+                TotalCount = totalAccessible,
+                Page = page
+            };
+
         }
     }
 }

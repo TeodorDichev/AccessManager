@@ -70,7 +70,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var access in Model.Accesses)
+        @foreach (var access in Model.Accesses.Items)
         {
             <tr>
                 <td>@access.Description</td>
@@ -96,16 +96,7 @@
 </table>
 
 
-    <nav>
-        <ul class="pagination justify-content-center mt-4">
-            @for (int i = 1; i <= Model.TotalPages; i++)
-            {
-                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                    <a class="page-link" href="?page=@i">@i</a>
-                </li>
-            }
-        </ul>
-    </nav>
+@await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.Accesses)
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
