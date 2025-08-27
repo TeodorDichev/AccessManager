@@ -1,32 +1,4 @@
-﻿function loadUnits(page) {
-    $.get("/User/GetAccessibleUnits", { page: page }, function (data) {
-        $("#accessibleUnitsContainer").html(data);
-    });
-}
-
-function loadAccesses(page) {
-    $.get("/User/GetUserAccesses", { page: page }, function (data) {
-        $("#userAccessesContainer").html(data);
-    });
-}
-
-$(function () {
-    loadUnits(1);
-    loadAccesses(1);
-
-    $(document).on("click", "#accessibleUnitsContainer .pagination a", function (e) {
-        e.preventDefault();
-        let page = $(this).data("page");
-        if (page) loadUnits(page);
-    });
-
-    $(document).on("click", "#userAccessesContainer .pagination a", function (e) {
-        e.preventDefault();
-        let page = $(this).data("page");
-        if (page) loadAccesses(page);
-    });
-});
-function debounce(func, delay = 300) {
+﻿function debounce(func, delay = 300) {
     let timer;
     return function (...args) {
         clearTimeout(timer);

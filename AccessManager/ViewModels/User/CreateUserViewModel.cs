@@ -9,10 +9,14 @@ namespace AccessManager.ViewModels.User
 {
     public class CreateUserViewModel : IValidatableObject
     {
-        public string UserName { get; set; } = string.Empty;
-        public string FirstName { get; set; } = string.Empty;
-        public string MiddleName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
+        public string UserName { get; set; } = null!;
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
+        public string FirstName { get; set; } = null!;
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
+        public string MiddleName { get; set; } = null!;
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
+        public string LastName { get; set; } = null!;
 
         [RegularExpression(@"^\d{10}$", ErrorMessage = ExceptionMessages.InvalidEGN)]
         public string? EGN { get; set; } = string.Empty;
@@ -24,16 +28,14 @@ namespace AccessManager.ViewModels.User
         public Guid? SelectedDepartmentId { get; set; }
 
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
-        public Guid SelectedUnitId { get; set; }
-        public string SelectedDepartmentDescription { get; set; } = null!;
-        public string SelectedUnitDescription { get; set; } = null!;
+        public Guid? SelectedUnitId { get; set; }
+        public string SelectedDepartmentDescription { get; set; } = string.Empty;
+        public string SelectedUnitDescription { get; set; } = string.Empty;
 
         public AuthorityType SelectedReadingAccess { get; set; } = AuthorityType.None;
         public AuthorityType SelectedWritingAccess { get; set; } = AuthorityType.None;
 
         public string? Password { get; set; }
-
-        public List<Guid> SelectedAccessibleUnitIds { get; set; } = [];
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

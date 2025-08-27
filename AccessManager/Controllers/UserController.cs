@@ -92,7 +92,6 @@ namespace AccessManager.Controllers
             return RedirectToAction("MyProfile");
         }
 
-
         [HttpGet]
         public IActionResult GetAccessibleUnits(int page = 1)
         {
@@ -179,7 +178,17 @@ namespace AccessManager.Controllers
             if (loggedUser.WritingAccess < model.SelectedWritingAccess || loggedUser.ReadingAccess < model.SelectedReadingAccess)
                 ModelState.AddModelError("SelectedReadingAccess", "Не може да добавяш потребител с по-висок достъп.");
 
+            if (model.SelectedDepartmentId == null) model.SelectedDepartmentDescription = "";
+            if (model.SelectedUnitDescription == null) model.SelectedDepartmentDescription = "";
+
             if (!ModelState.IsValid) return View(model);
+
+            var unit = _unitService.GetUnit(model.SelectedUnitId);
+            if (unit == null) 
+            {
+                ModelState.AddModelError("SelectedUnitId", "Отделът не съществува");
+                return View(model);
+            }
 
             var user = new User
             {
@@ -189,7 +198,8 @@ namespace AccessManager.Controllers
                 LastName = model.LastName,
                 EGN = model.EGN,
                 Phone = model.Phone,
-                UnitId = model.SelectedUnitId,
+                UnitId = unit.Id,
+                Unit = unit,
                 ReadingAccess = model.SelectedReadingAccess,
                 WritingAccess = model.SelectedWritingAccess,
             };
@@ -228,6 +238,7 @@ namespace AccessManager.Controllers
 
             var model = new EditUserViewModel
             {
+                UserId = user.Id,
                 UserName = user.UserName,
                 FirstName = user.FirstName,
                 MiddleName = user.MiddleName,
@@ -239,7 +250,9 @@ namespace AccessManager.Controllers
                 LoggedUserReadingAccess = loggedUser.ReadingAccess,
                 LoggedUserWritingAccess = loggedUser.WritingAccess,
                 SelectedDepartmentId = user.Unit.Department.Id,
+                SelectedDepartmentDescription = user.Unit.Department.Description ?? "",
                 SelectedUnitId = user.Unit.Id,
+                SelectedUnitDescription = user.Unit.Description ?? "" 
             };
 
             return View(model);
@@ -248,17 +261,24 @@ namespace AccessManager.Controllers
         [HttpPost]
         public IActionResult EditUser(EditUserViewModel model)
         {
-            var user = _userService.GetUser(model.UserName);
-            if (user == null) return BadRequest();
+            var user = _userService.GetUser(model.UserId);
+            if (user == null)
+            {
+                TempData["Error"] = "Потребителят не е намерен";
+                return RedirectToAction("UserList");
+            }
 
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             if (user.UserName != model.UserName && _userService.UserWithUsernameExists(model.UserName))
-                ModelState.AddModelError("UserName", "Потребител с това потребителско име вече съществува.");
+                ModelState.AddModelError("UserName", ExceptionMessages.InvalidUsername);
 
             if (loggedUser.WritingAccess < model.WritingAccess || loggedUser.ReadingAccess < model.ReadingAccess)
                 ModelState.AddModelError("SelectedReadingAccess", "Не може да добавяш потребител с по-висок достъп.");
+
+            if (model.SelectedDepartmentId == null) model.SelectedDepartmentDescription = "";
+            if (model.SelectedUnitId == null) model.SelectedUnitDescription = "";
 
             if (!ModelState.IsValid) return View(model);
 
@@ -268,7 +288,7 @@ namespace AccessManager.Controllers
             _userService.UpdateUser(model, user);
             _logService.AddLog(loggedUser, LogAction.Edit, user);
 
-            return RedirectToAction("UserList");
+            return View(model);
         }
 
         [HttpPost]

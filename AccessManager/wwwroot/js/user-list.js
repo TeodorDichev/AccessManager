@@ -1,6 +1,4 @@
-﻿// wwwroot/js/usersFilter.js
-document.addEventListener('DOMContentLoaded', function () {
-    // Clear individual filters by ID
+﻿document.addEventListener('DOMContentLoaded', function () {
     const clearDepartmentBtn = document.getElementById('clearDepartmentBtn');
     const clearUnitBtn = document.getElementById('clearUnitBtn');
 
@@ -13,12 +11,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const unitHidden = document.getElementById('filterUnit');
             const unitResults = document.getElementById('filterUnitResults');
 
-            // Clear department
             input.value = '';
             hidden.value = '';
             resultsDiv.innerHTML = '';
 
-            // Clear unit as well
             unitInput.value = '';
             unitHidden.value = '';
             unitResults.innerHTML = '';
@@ -53,8 +49,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const unitInput = document.getElementById('filterUnitInput');
     const unitHidden = document.getElementById('filterUnit');
     const unitResults = document.getElementById('filterUnitResults');
-
-    // --- Debounce helper ---
     function debounce(func, delay = 300) {
         let timer;
         return function (...args) {
@@ -62,8 +56,6 @@ document.addEventListener('DOMContentLoaded', function () {
             timer = setTimeout(() => func.apply(this, args), delay);
         };
     }
-
-    // --- Autocomplete setup ---
     function setupAutocomplete(input, hidden, resultsDiv, url, extraParamsFn, onSelected) {
         const handleInput = () => {
             const term = input.value.trim();
@@ -96,7 +88,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         input.addEventListener('input', debounce(handleInput, 300));
 
-        // Hide dropdown when clicking outside
         document.addEventListener('click', e => {
             if (!resultsDiv.contains(e.target) && e.target !== input) {
                 resultsDiv.innerHTML = '';
@@ -104,7 +95,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // --- Department autocomplete ---
     setupAutocomplete(departmentInput, departmentHidden, departmentResults, '/Department/SearchDepartments',
         () => ({}),
         (id, text) => {
@@ -115,7 +105,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     );
 
-    // --- Unit autocomplete ---
     setupAutocomplete(unitInput, unitHidden, unitResults, '/Unit/SearchUnits',
         () => ({ departmentId: departmentHidden.value }),
         (id, text) => {
@@ -123,7 +112,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     );
 
-    // --- Clear unit if department input changes ---
     departmentInput.addEventListener('input', function () {
         unitInput.value = '';
         unitHidden.value = '';
@@ -131,7 +119,5 @@ document.addEventListener('DOMContentLoaded', function () {
         unitResults.innerHTML = '';
     });
 
-    // --- Initial state ---
     unitInput.disabled = !departmentHidden.value;
-
 });

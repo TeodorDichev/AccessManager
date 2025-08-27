@@ -67,6 +67,7 @@ namespace AccessManager.Services
                     .Take(Utills.Constants.ItemsPerPage)
                     .Select(u => new UserListItemViewModel
                     {
+                        Id = u.Id,
                         UserName = u.UserName,
                         FirstName = u.FirstName,
                         LastName = u.LastName,

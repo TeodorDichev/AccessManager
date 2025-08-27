@@ -14,6 +14,15 @@
     @Html.AntiForgeryToken()
 </form>
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="text-success">@TempData["Success"]</div>
+}
+
 <form id="usersFilterForm" action="/User/UserList" method="get" class="mb-3 d-flex align-items-end gap-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
     <div>
         <label asp-for="SelectedSortOption" class="form-label">Сортиране</label>
@@ -70,12 +79,12 @@
                 @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Restricted)
                 {
                     <td>
-                        <a asp-controller="User" asp-action="EditUser" asp-route-username="@user.UserName" class="btn btn-sm btn-info">
+                        <a asp-controller="User" asp-action="EditUser" asp-route-userid="@user.Id" class="btn btn-sm btn-info">
                             Редактирай
                         </a>
                     </td>
                     <td>
-                        <form asp-controller="User" asp-action="SoftDeleteUser" method="post" asp-route-username="@user.UserName">
+                        <form asp-controller="User" asp-action="SoftDeleteUser" method="post" asp-route-userid="@user.Id">
                             <button type="submit" class="btn btn-danger me-2">
                                 Изтрий
                             </button>
