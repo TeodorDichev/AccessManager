@@ -8,11 +8,6 @@
 
 <h2 class="text-center fw-bold">Моят профил</h2>
 
-@if (ViewBag.Success != null && (bool)ViewBag.Success)
-{
-    <div class="alert alert-success">Профилът е обновен успешно.</div>
-}
-
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger">@TempData["Error"]</div>
@@ -74,13 +69,21 @@
 
             <div class="mb-3">
                 <label asp-for="SelectedDepartmentId" class="form-label">Дирекция</label>
+                <input type="text" class="form-control" id="departmentInput" value="@Model.SelectedDepartmentDescription" autocomplete="off">
+                <input type="hidden" asp-for="SelectedDepartmentId" id="SelectedDepartmentId">
+                <input type="hidden" asp-for="SelectedDepartmentDescription">
+                <div id="departmentResults" class="list-group position-absolute" style="z-index:1000;"></div>
                 <span asp-validation-for="SelectedDepartmentId" class="text-danger"></span>
             </div>
+
             <div class="mb-3">
                 <label asp-for="SelectedUnitId" class="form-label">Отдел</label>
+                <input type="text" class="form-control" id="unitInput" value="@Model.SelectedUnitDescription" autocomplete="off">
+                <input type="hidden" asp-for="SelectedUnitId" id="SelectedUnitId">
+                <input type="hidden" asp-for="SelectedUnitDescription">
+                <div id="unitResults" class="list-group position-absolute" style="z-index:1000;"></div>
                 <span asp-validation-for="SelectedUnitId" class="text-danger"></span>
             </div>
-
             <div class="mb-3">
                 <label class="form-label">Достъп за четене</label>
                 <input class="form-control" value="@BulgarianLocalization.GetBulgarianAuthorityType(Model.ReadingAccess)" readonly />
@@ -109,10 +112,7 @@
                     <i class="bi bi-eye fs-5" id="PasswordIcon"></i>
                 </button>
             </div>
-            @if (ViewData.ModelState["Password"]?.Errors.Count > 0)
-            {
-                <span class="text-danger">@ViewData?.ModelState["Password"]?.Errors[0].ErrorMessage</span>
-            }
+            <span asp-validation-for="Password" class="text-danger"></span>
         </div>
         <div class="col-md-6 mb-3">
             <label class="form-label">Нова парола</label>
@@ -151,6 +151,6 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
     <script src="~/js/unit-dropdown-load.js" asp-append-version="true"></script>
-    <script src="~/js/myprofile.js" asp-append-version="true"></script>
+    <script src="~/js/my-profile.js" asp-append-version="true"></script>
     <script src="~/js/password-visibility-toggle.js" asp-append-version="true"></script>
 }

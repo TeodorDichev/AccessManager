@@ -137,6 +137,8 @@ namespace AccessManager.Services
 
         internal PagedResult<AccessViewModel> GetAccessesGrantedToUserPaged(User user, Directive? filterDirective, int page)
         {
+            int itemsPerPage = Constants.ItemsPerPage;
+
             var query = _context.UserAccesses
                 .Include(ua => ua.User)
                     .ThenInclude(u => u.Unit)
@@ -151,17 +153,17 @@ namespace AccessManager.Services
 
             var items = query
                 .OrderBy(ua => ua.User.UserName)
-                .Skip((page - 1) * Constants.ItemsPerPage)
-                .Take(Constants.ItemsPerPage)
+                .Skip((page - 1) * itemsPerPage)
+                .Take(itemsPerPage)
+                .AsEnumerable() // ← materialize first
                 .Select(ua => new AccessViewModel
                 {
                     AccessId = ua.Access.Id,
-                    Description = GetAccessDescription(ua.Access),
+                    Description = GetAccessDescription(ua.Access), // now safe
                     DirectiveId = ua.GrantedByDirectiveId,
                     DirectiveDescription = ua.GrantedByDirective.Name
                 })
                 .ToList();
-
             return new PagedResult<AccessViewModel>
             {
                 Items = items,

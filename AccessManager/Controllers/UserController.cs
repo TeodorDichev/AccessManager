@@ -43,6 +43,7 @@ namespace AccessManager.Controllers
 
             MyProfileViewModel model = new()
             {
+                Id = loggedUser.Id,
                 UserName = loggedUser.UserName,
                 FirstName = loggedUser.FirstName,
                 MiddleName = loggedUser.MiddleName,
@@ -51,7 +52,9 @@ namespace AccessManager.Controllers
                 WritingAccess = loggedUser.WritingAccess,
                 EGN = loggedUser.EGN ?? string.Empty,
                 Phone = loggedUser.Phone ?? string.Empty,
+                SelectedDepartmentDescription = loggedUser.Unit.Department.Description,
                 SelectedDepartmentId = loggedUser.Unit.Department.Id,
+                SelectedUnitDescription = loggedUser.Unit.Description,
                 SelectedUnitId = loggedUser.Unit.Id,
             };
 
@@ -61,17 +64,23 @@ namespace AccessManager.Controllers
         [HttpPost]
         public IActionResult MyProfile(MyProfileViewModel model, string? OldPassword, string? NewPassword)
         {
-            if (!ModelState.IsValid) return View(model);
-
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            if (model.UserName != loggedUser.UserName && _userService.UserWithUsernameExists(model.UserName)) 
+                ModelState.AddModelError("UserName", ExceptionMessages.InvalidUsername);
+
+            if (model.SelectedDepartmentId == null) model.SelectedDepartmentDescription = "";
+            if (model.SelectedUnitId == null) model.SelectedUnitDescription = "";
+
+            if (!ModelState.IsValid) return View(model);
 
             if (!string.IsNullOrWhiteSpace(NewPassword) && !string.IsNullOrWhiteSpace(loggedUser.Password))
             {
                 if (string.IsNullOrWhiteSpace(OldPassword) || !_passwordService.VerifyPassword(loggedUser, OldPassword, loggedUser.Password))
                 {
-                    TempData["Error"] = ExceptionMessages.InvalidPassword;
-                    return RedirectToAction("MyProfile");
+                    ModelState.AddModelError("Password", ExceptionMessages.InvalidPassword);
+                    return View(model);
                 }
 
                 loggedUser.Password = _passwordService.HashPassword(loggedUser, NewPassword);
@@ -79,6 +88,7 @@ namespace AccessManager.Controllers
 
             _userService.UpdateUser(model, loggedUser);
             _logService.AddLog(loggedUser, LogAction.Edit, loggedUser);
+            TempData["Success"] = "Профилът беше обновен успешно";
             return RedirectToAction("MyProfile");
         }
 
@@ -124,24 +134,24 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult UserList(UserSortOptions sortBy, Guid? filterUnitId, Guid? filterDepartmentId, int page = 1)
+        public IActionResult UserList(UserSortOptions selectedSortOption, Guid? filterUnit, Guid? filterDepartment, int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            var filterUnit = _unitService.GetUnit(filterUnitId);
-            var filterDepartment = _departmentService.GetDepartment(filterDepartmentId);
+            var unit = _unitService.GetUnit(filterUnit);
+            var department = _departmentService.GetDepartment(filterDepartment);
 
             var model = new UserListViewModel
             {
-                Users = _userService.GetAccessibleUsersPaged(loggedUser, filterUnit, filterDepartment, page, sortBy),
-                SelectedSortOption = sortBy,
-                FilterUnitId = filterUnitId,
-                FilterDepartmentId = filterDepartmentId,
-                FilterUnitDescription = filterUnit?.Description ?? "",
-                FilterDepartmentDescription = filterDepartment?.Description ?? "",
+                Users = _userService.GetAccessibleUsersPaged(loggedUser, unit, department, page, selectedSortOption),
+                SelectedSortOption = selectedSortOption,
+                FilterUnitId = filterUnit,
+                FilterDepartmentId = filterDepartment,
+                FilterUnitDescription = unit?.Description ?? "",
+                FilterDepartmentDescription = department?.Description ?? "",
                 WriteAuthority = loggedUser.WritingAccess,
             };
 

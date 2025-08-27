@@ -29,19 +29,15 @@
             <option value="3">3</option>
         </select>
     </div>
+
     <div class="position-relative">
         <label class="form-label">Филтър по родителски достъп</label>
-        <input type="text" id="FilterSearch" class="form-control"
-               placeholder="Избор на родител" autocomplete="off"
-               value="@Model.FilterDescription" />
-
-        <input type="hidden" asp-for="FilterAccessId"
-               name="filterAccessId" id="FilterAccessId"
-               onchange="this.form.submit()" />
-
+        <input type="text" id="FilterSearch" class="form-control" placeholder="Избор на родител" autocomplete="off" value="@Model.FilterDescription" />
+        <input type="hidden" asp-for="FilterAccessId" name="filterAccessId" id="FilterAccessId" onchange="this.form.submit()" />
         <div id="filterCandidates" class="list-group dropdown-results"></div>
         <span asp-validation-for="FilterAccessId" class="text-danger"></span>
     </div>
+
     <div>
         @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
         {

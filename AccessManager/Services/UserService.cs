@@ -29,16 +29,19 @@ namespace AccessManager.Services
 
         public bool UserWithUsernameExists(string username)
         {
-            return _context.Users.IgnoreQueryFilters().Any(u => u.UserName == username);
+            return _context.Users.IgnoreQueryFilters().Any(u => u.UserName == username) || string.IsNullOrEmpty(username);
         }
 
-        // To be fixed
         private IQueryable<User> ApplySorting(IQueryable<User> query, UserSortOptions sortOption)
         {
             return sortOption switch
             {
-                // TO DO
-                _ => query.OrderBy(u => u.UserName)
+                UserSortOptions.Username => query.OrderBy(u => u.UserName),
+                UserSortOptions.FirstName => query.OrderBy(u => u.FirstName),
+                UserSortOptions.LastName => query.OrderBy(u => u.LastName),
+                UserSortOptions.ReadingAccess => query.OrderByDescending(u => u.ReadingAccess),
+                UserSortOptions.WritingAccess => query.OrderByDescending(u => u.WritingAccess),
+                _ => query.OrderBy(u => u.UserName),
             };
         }
 
@@ -154,7 +157,7 @@ namespace AccessManager.Services
         }
 
         private void UpdateUserFromModel(User user, string firstName, string middleName,
-            string lastName, string? egn, string? phone, Guid unitId, AuthorityType write, AuthorityType read)
+            string lastName, string? egn, string? phone, Guid? unitId, AuthorityType write, AuthorityType read)
         {
             if (user == null) return;
 
@@ -168,8 +171,9 @@ namespace AccessManager.Services
 
             if (unitId != user.UnitId)
             {
-                user.UnitId = unitId;
-                user.Unit = _context.Units.FirstOrDefault(u => u.Id == unitId) ?? throw new ArgumentException("Unit not found");
+                var unit = _context.Units.FirstOrDefault(u => u.Id == unitId);
+                if(unit != null) user.UnitId = unit.Id;
+                   
             }
         }
 

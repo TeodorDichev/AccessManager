@@ -30,7 +30,7 @@ namespace AccessManager.ViewModels.User
         public Guid? SelectedDepartmentId { get; set; }
 
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
-        public Guid SelectedUnitId { get; set; }
+        public Guid? SelectedUnitId { get; set; }
 
         public string? SelectedDepartmentDescription { get; set; }
         public string? SelectedUnitDescription { get; set; }

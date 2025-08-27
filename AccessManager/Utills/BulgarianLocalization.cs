@@ -28,5 +28,18 @@ namespace AccessManager.Utills
                 _ => throw new NotImplementedException(),
             };
         }
+
+        public static string GetBulgarianSort(UserSortOptions sort)
+        {
+            return sort switch
+            {
+                UserSortOptions.Username => "потребителско име",
+                UserSortOptions.FirstName => "собствено име",
+                UserSortOptions.LastName => "фамилия",
+                UserSortOptions.ReadingAccess => "достъп за четене",
+                UserSortOptions.WritingAccess => "достъп за писане",
+                _ => throw new NotImplementedException(),
+            };
+        }
     }
 }

@@ -26,6 +26,26 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
+        public IActionResult SearchUnits(Guid departmentId, string term)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var department = _departmentService.GetDepartment(departmentId);
+            if (department == null)
+            {
+                TempData["Error"] = "Дирекцията не е намерена";
+                return RedirectToAction("UnitDepartmentList", "Department");
+            }
+
+            var results = _unitService.GetUserUnitsForDepartment(loggedUser, department)
+                .Select(u => new { id = u.Id.ToString(), text = u.Description })
+                .ToList();
+
+            return Json(results);
+        }
+
+        [HttpGet]
         public ActionResult EditUnit(Guid id, int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));

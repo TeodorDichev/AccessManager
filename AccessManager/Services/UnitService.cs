@@ -90,7 +90,7 @@ namespace AccessManager.Services
                 return _context.Units.Where(u => u.DepartmentId == departmentId).Count();
         }
 
-        internal List<Unit> GetUserUnitsForDepartment(User user, Guid departmentId, int page)
+        internal List<Unit> GetUserUnitsForDepartment(User user, Department department)
         {
             if (user.WritingAccess == AuthorityType.None)
                 return [];
@@ -100,21 +100,12 @@ namespace AccessManager.Services
             if (user.WritingAccess == AuthorityType.Restricted)
             {
                 var allowedUnitIds = user.AccessibleUnits.Select(au => au.UnitId).ToList();
-
-                query = _context.Units
-                    .Where(u => allowedUnitIds.Contains(u.Id) && u.DepartmentId == departmentId)
-                    .Distinct();
+                query = _context.Units.Where(u => allowedUnitIds.Contains(u.Id) && u.DepartmentId == department.Id).Distinct();
             }
             else
-            {
-                query = _context.Units
-                    .Where(u => u.DepartmentId == departmentId);
-            }
+                query = _context.Units.Where(u => u.DepartmentId == department.Id);
 
-            return query
-                .Skip((page - 1) * Utills.Constants.ItemsPerPage)
-                .Take(Utills.Constants.ItemsPerPage)
-                .ToList();
+            return query.ToList();
         }
 
         internal PagedResult<UnitViewModel> GetUserUnitsForDepartmentPaged(User user, Department department, int page)

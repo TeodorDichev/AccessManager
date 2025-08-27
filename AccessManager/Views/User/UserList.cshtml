@@ -1,6 +1,7 @@
 ﻿@using AccessManager.Utills
 @using AccessManager.ViewModels
 @using AccessManager.ViewModels.User
+@using AccessManager.Data.Enums
 @model UserListViewModel
 
 @{
@@ -13,45 +14,32 @@
     @Html.AntiForgeryToken()
 </form>
 
-<form method="get" class="mb-3 d-flex align-items-end gap-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<form id="usersFilterForm" action="/User/UserList" method="get" class="mb-3 d-flex align-items-end gap-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
     <div>
-        <label for="sortBy" class="form-label">Сортиране по:</label>
-        <select name="sortBy" id="sortBy" class="form-select" onchange="this.form.submit()">
+        <label asp-for="SelectedSortOption" class="form-label">Сортиране</label>
+        <select asp-for="SelectedSortOption" class="form-select" id="selectedSortOption">
+            @foreach (UserSortOptions sort in Enum.GetValues(typeof(UserSortOptions)))
+            {
+                <option value="@((int)sort)">@BulgarianLocalization.GetBulgarianSort(sort)</option>
+            }
         </select>
     </div>
 
-    <div>
-        <label for="filterDepartment" class="form-label">Филтър по Дирекция:</label>
-        <select name="filterDepartment" id="filterDepartment" class="form-select" onchange="this.form.submit()">
-        </select>
+    <div class="position-relative">
+        <label for="filterDepartmentInput" class="form-label">Филтър по Дирекция:</label>
+        <input type="text" id="filterDepartmentInput" class="form-control" value="@Model.FilterDepartmentDescription" autocomplete="off">
+        <input type="hidden" id="filterDepartment" name="filterDepartment" value="@Model.FilterDepartmentId">
+        <div id="filterDepartmentResults" class="list-group position-absolute" style="z-index:1000;"></div>
     </div>
+    <button type="button" class="btn btn-sm btn-outline-danger clear-filter-btn" id="clearDepartmentBtn">×</button>
 
-    <div>
-        <label for="filterUnit" class="form-label">Филтър по Отдел:</label>
-        <select name="filterUnit" id="filterUnit" class="form-select" onchange="this.form.submit()">
-        </select>
+    <div class="position-relative">
+        <label for="filterUnitInput" class="form-label">Филтър по Отдел:</label>
+        <input type="text" id="filterUnitInput" class="form-control" value="@Model.FilterUnitDescription" autocomplete="off" disabled>
+        <input type="hidden" id="filterUnit" name="filterUnit" value="@Model.FilterUnitId">
+        <div id="filterUnitResults" class="list-group position-absolute" style="z-index:1000;"></div>
     </div>
-
-    <div>
-        <a asp-controller="User" asp-action="CreateUser" class="btn btn-success">
-            Добави потребител
-        </a>
-    </div>
-    <div>
-        <a asp-controller="User" asp-action="DeletedUsers" class="btn btn-danger">
-            Виж изтритите потребители
-        </a>
-    </div>
-    <div>
-        <a asp-controller="File" asp-action="UsersCsv" class="btn btn-primary">
-            Експортирай CSV с потребители
-        </a>
-    </div>
-    <div>
-        <a asp-controller="File" asp-action="UsersUnitsCsv" class="btn btn-primary">
-            Експортирай CSV с достъпните отдели за потребители
-        </a>
-    </div>
+    <button type="button" class="btn btn-sm btn-outline-danger" id="clearUnitBtn">×</button>
 </form>
 
 <table class="table table-bordered table-striped">
@@ -100,7 +88,22 @@
 </table>
 
 @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.Users)
+<div class="gap-5 wrapper row" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+        <a asp-controller="User" asp-action="CreateUser" class="btn btn-success col-md-2">
+            Добави потребител
+        </a>
+        <a asp-controller="User" asp-action="DeletedUsers" class="btn btn-danger col-md-2">
+            Виж изтритите потребители
+        </a>
+        <a asp-controller="File" asp-action="UsersCsv" class="btn btn-primary col-md-3">
+            Експортирай CSV с потребители
+        </a>
+        <a asp-controller="File" asp-action="UsersUnitsCsv" class="btn btn-primary col-md-3">
+            Експортирай CSV с достъпните отдели за потребители
+        </a>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/user-list.js" asp-append-version="true"></script>
 }

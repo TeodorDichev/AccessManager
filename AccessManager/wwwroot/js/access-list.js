@@ -39,7 +39,7 @@
                         parentSearch.value = item.text;
                         parentIdInput.value = item.id;
                         candidatesBox.innerHTML = "";
-                        form.submit(); // auto-submit on selection
+                        form.submit();
                     });
                     candidatesBox.appendChild(el);
                 });
@@ -49,7 +49,6 @@
             });
     }
 
-    // level changes
     levelSelect.addEventListener("change", function () {
         const level = parseInt(this.value || "0", 10) - 1;
         if (level <= 0) {
@@ -63,7 +62,6 @@
         }
     });
 
-    // typing in search
     parentSearch.addEventListener("input", function () {
         parentIdInput.value = "";
         const level = parseInt(levelSelect.value || "0", 10) - 1;
@@ -72,14 +70,12 @@
         debounceTimer = setTimeout(fetchCandidates, debounceMs);
     });
 
-    // hide suggestions on outside click
     document.addEventListener("click", function (e) {
         if (!candidatesBox.contains(e.target) && e.target !== parentSearch) {
             candidatesBox.innerHTML = "";
         }
     });
 
-    // init
     (function init() {
         const level = parseInt(levelSelect.value || "0", 10) - 1;
         setParentEnabled(level > 0);

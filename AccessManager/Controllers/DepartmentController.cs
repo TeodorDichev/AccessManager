@@ -21,6 +21,21 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
+        public IActionResult SearchDepartments(string term)
+       {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var results = _departmentService.GetDepartmentsByUserAuthority(loggedUser, loggedUser.WritingAccess)
+                .Where(d => string.IsNullOrEmpty(term) || d.Description.Contains(term))
+                .Select(d => new { id = d.Id, text = d.Description })
+                .Take(10)
+                .ToList();
+
+            return Json(results);
+        }
+
+        [HttpGet]
         public ActionResult UnitDepartmentList(Guid? filterDepartmentId, int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));

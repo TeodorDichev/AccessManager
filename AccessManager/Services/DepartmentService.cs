@@ -177,8 +177,6 @@ namespace AccessManager.Services
                     .ToList();
 
                 units = _context.Units
-                    .IgnoreQueryFilters()
-                    .Where(u => u.DeletedOn != null)
                     .Take(unitRows)
                     .Select(u => new UnitDepartmentViewModel
                     {
