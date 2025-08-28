@@ -113,6 +113,7 @@ namespace AccessManager.Services
             }
 
             var projected = query
+                .AsEnumerable()
                 .Select(a => new AccessListItemViewModel
                 {
                     AccessId = a.Id,

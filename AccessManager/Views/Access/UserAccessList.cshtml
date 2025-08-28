@@ -27,7 +27,7 @@
             <label>Филтър по достъп</label>
             <input type="text" id="FilterAccessSearch" class="form-control" placeholder="Избор на достъp" autocomplete="off" value="@Model.FilterAccessDescription" />
             <input type="hidden" asp-for="FilterAccessId" name="filterAccessId" id="FilterAccessId" onchange="this.form.submit()" />
-            <div id="filterAccessCandidates" class="list-group" style="position:relative; z-index:2000;"></div>
+            <div id="filterAccessCandidates" class="list-group" style="position:absolute; z-index:1000;"></div>
             <span asp-validation-for="FilterAccessId" class="text-danger"></span>
         </div>
 
@@ -35,7 +35,7 @@
             <label>Филтър по потребител</label>
             <input type="text" id="FilterUserSearch" class="form-control" placeholder="Избор на потребител" autocomplete="off" value="@Model.FilterUserName" />
             <input type="hidden" asp-for="FilterUserId" name="filterUserId" id="FilterUserId" onchange="this.form.submit()" />
-            <div id="filterUserCandidates" class="list-group" style="position:relative; z-index:2000;"></div>
+            <div id="filterUserCandidates" class="list-group" style="position:absolute; z-index:1000;"></div>
             <span asp-validation-for="FilterUserId" class="text-danger"></span>
         </div>
 
@@ -43,12 +43,12 @@
             <label>Филтър по заповед</label>
             <input type="text" id="FilterDirectiveSearch" class="form-control" placeholder="Избор на заповед" autocomplete="off" value="@Model.FilterDirectiveDescription" />
             <input type="hidden" asp-for="FilterDirectiveId" name="filterDirectiveId" id="FilterDirectiveId" onchange="this.form.submit()" />
-            <div id="filterDirectiveCandidates" class="list-group" style="position:relative; z-index:2000;"></div>
+            <div id="filterDirectiveCandidates" class="list-group" style="position:absolute; z-index:1000;"></div>
             <span asp-validation-for="FilterDirectiveId" class="text-danger"></span>
         </div>
 
         <div>
-            <button type="button" id="clearFiltersBtn" class="btn btn-secondary btn-sm">
+            <button type="button" id="clearFiltersBtn" class="btn btn-secondary">
                 Изчисти
             </button>
             <a asp-controller="File" asp-action="UserAccessCsv" class="btn btn-primary">

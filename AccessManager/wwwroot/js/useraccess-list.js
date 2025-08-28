@@ -53,8 +53,8 @@
     }
 
     function fetchDirectives() {
-        const q = directiveSearch.value || "";
-        fetch(`/Directive/GetDirectives?q=${encodeURIComponent(q)}`)
+        const term = directiveSearch.value || "";
+        fetch(`/Directive/SearchDirectives?term=${encodeURIComponent(term)}`)
             .then(r => r.json())
             .then(list => {
                 candidatesDirectiveBox.innerHTML = "";

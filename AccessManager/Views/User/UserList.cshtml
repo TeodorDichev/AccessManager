@@ -36,19 +36,23 @@
 
     <div class="position-relative">
         <label for="filterDepartmentInput" class="form-label">Филтър по Дирекция:</label>
-        <input type="text" id="filterDepartmentInput" class="form-control" value="@Model.FilterDepartmentDescription" autocomplete="off">
+        <div class="input-group">
+            <input type="text" id="filterDepartmentInput" class="form-control" value="@Model.FilterDepartmentDescription" autocomplete="off">
+            <button type="button" class="btn btn-sm btn-outline-danger" id="clearDepartmentBtn">×</button>
+        </div>
         <input type="hidden" id="filterDepartment" name="filterDepartment" value="@Model.FilterDepartmentId">
         <div id="filterDepartmentResults" class="list-group position-absolute" style="z-index:1000;"></div>
     </div>
-    <button type="button" class="btn btn-sm btn-outline-danger clear-filter-btn" id="clearDepartmentBtn">×</button>
 
     <div class="position-relative">
         <label for="filterUnitInput" class="form-label">Филтър по Отдел:</label>
-        <input type="text" id="filterUnitInput" class="form-control" value="@Model.FilterUnitDescription" autocomplete="off" disabled>
+        <div class="input-group">
+            <input type="text" id="filterUnitInput" class="form-control" value="@Model.FilterUnitDescription" autocomplete="off" disabled>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="clearUnitBtn">×</button>
+        </div>
         <input type="hidden" id="filterUnit" name="filterUnit" value="@Model.FilterUnitId">
         <div id="filterUnitResults" class="list-group position-absolute" style="z-index:1000;"></div>
     </div>
-    <button type="button" class="btn btn-sm btn-outline-danger" id="clearUnitBtn">×</button>
 </form>
 
 <table class="table table-bordered table-striped">

@@ -175,16 +175,30 @@ namespace AccessManager.Services
                     .Take(int.MaxValue)
                     .Select(d => d.Id)
                     .ToList();
-
-                units = _context.Units
-                    .Take(unitRows)
-                    .Select(u => new UnitDepartmentViewModel
-                    {
-                        DepartmentId = u.Department.Id,
-                        DepartmentName = u.Department.Description,
-                        UnitName = u.Description,
-                        UnitId = u.Id
-                    });
+                if(filterDepartment == null)
+                {
+                    units = _context.Units
+                        .Take(unitRows)
+                        .Select(u => new UnitDepartmentViewModel
+                        {
+                            DepartmentId = u.Department.Id,
+                            DepartmentName = u.Department.Description,
+                            UnitName = u.Description,
+                            UnitId = u.Id
+                        });
+                }
+                else
+                {
+                    units = filterDepartment.Units
+                        .Take(unitRows)
+                        .Select(u => new UnitDepartmentViewModel
+                        {
+                            DepartmentId = u.Department.Id,
+                            DepartmentName = u.Department.Description,
+                            UnitName = u.Description,
+                            UnitId = u.Id
+                        });
+                }
             }
 
             var result = departments.Concat(units).ToList();

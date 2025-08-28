@@ -235,19 +235,14 @@ namespace AccessManager.Controllers
 
             var filterDirective1 = _directiveService.GetDirective(filterDirectiveId1);
             var filterDirective2 = _directiveService.GetDirective(filterDirectiveId2);
-            if (filterDirective1 == null || filterDirective2 == null)
-            {
-                TempData["Error"] = "Филтърът за заповед не е намерен";
-                return RedirectToAction("AccessList");
-            }
 
             var model = new EditAccessViewModel
             {
                 AccessId = accessId,
                 Name = access.Description,
                 Description = _accessService.GetAccessDescription(access),
-                FilterDirectiveDescription1 = filterDirective1.Name,
-                FilterDirectiveDescription2 = filterDirective2.Name,
+                FilterDirectiveDescription1 = filterDirective1?.Name ?? "",
+                FilterDirectiveDescription2 = filterDirective2?.Name ?? "",
                 FilterDirectiveId1 = filterDirectiveId1,
                 FilterDirectiveId2 = filterDirectiveId2,
                 UsersWithAccess = _userAccessService.GetUsersWithAccessPaged(loggedUser, access, filterDirective1, page1),
@@ -325,7 +320,7 @@ namespace AccessManager.Controllers
             var access = _accessService.GetAccess(model.AccessId);
             if (access == null || !model.DirectiveToGrantAccess.HasValue)
             {
-                TempData["Error"] = "Please select a directive before adding access!";
+                TempData["Error"] = "Моле изберете заповед";
                 return RedirectToAction("EditAccess", new { accessId = model.AccessId });
             }
 
@@ -355,7 +350,7 @@ namespace AccessManager.Controllers
             var access = _accessService.GetAccess(model.AccessId);
             if (access == null || !model.DirectiveToRevokeAccess.HasValue)
             {
-                TempData["Error"] = "Please select a directive before revoking access!";
+                TempData["Error"] = "Моле изберете заповед";
                 return RedirectToAction("EditAccess", new { accessId = model.AccessId });
             }
 

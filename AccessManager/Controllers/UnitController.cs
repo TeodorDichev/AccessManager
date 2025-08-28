@@ -39,7 +39,9 @@ namespace AccessManager.Controllers
             }
 
             var results = _unitService.GetUserUnitsForDepartment(loggedUser, department)
-                .Select(u => new { id = u.Id.ToString(), text = u.Description })
+                .Where(d => string.IsNullOrEmpty(term) || d.Description.Contains(term))
+                .Select(u => new { id = u.Id, text = u.Description })
+                .Take(10)
                 .ToList();
 
             return Json(results);
@@ -154,6 +156,23 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
+        public IActionResult CreateUnit(Guid? departmentId)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var department = _departmentService.GetDepartment(departmentId);
+
+            var model = new CreateUnitViewModel
+            {
+                DepartmentId = department == null ? null : department.Id,
+                DepartmentDescription = department == null ? "" : department.Description
+            };
+
+            return View(model);
+        }
+
+        [HttpGet]
         public IActionResult MapUserUnitAccess(Guid userId, Guid? filterDepartmentId1, Guid? filterDepartmentId2, int page1 = 1, int page2 = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
@@ -173,6 +192,7 @@ namespace AccessManager.Controllers
 
             var vm = new MapUserUnitAccessViewModel
             {
+                UserId = user.Id,
                 UserName = user.UserName,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
@@ -215,7 +235,7 @@ namespace AccessManager.Controllers
                 _logService.AddLog(loggedUser, LogAction.Add, uu);
             }
 
-            return RedirectToAction("MapUserUnitAccess", new { model.UserName });
+            return RedirectToAction("MapUserUnitAccess", new { model.UserId });
         }
 
         [HttpPost]

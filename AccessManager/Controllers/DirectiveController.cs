@@ -29,15 +29,15 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetDirectives(string q = "")
+        public IActionResult SearchDirectives(string term = "")
         {
             var all = _directiveService.GetDirectives().Select(a => new { a.Id, a.Name }).ToList();
-            var qLower = (q ?? "").Trim().ToLowerInvariant();
+            var qLower = (term ?? "").Trim().ToLowerInvariant();
 
             var candidates = all
                 .Where(a => string.IsNullOrEmpty(qLower) || a.Name.ToLowerInvariant().Contains(qLower))
                 .OrderBy(a => a.Name)
-                .Take(30)
+                .Take(10)
                 .Select(a => new { id = a.Id, text = a.Name })
                 .ToList();
 
