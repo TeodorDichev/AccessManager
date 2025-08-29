@@ -7,6 +7,8 @@
         const resultsContainer = document.getElementById(wrapper.dataset.resultsId);
         const clearBtn = wrapper.querySelector(".btn-outline-danger");
 
+        const submitOnSelect = wrapper.dataset.submitOnSelect === "true";
+
         if (!input || !hiddenInput || !resultsContainer) return;
 
         input.addEventListener("input", async () => {
@@ -32,13 +34,15 @@
 
                 resultsContainer.querySelectorAll("button").forEach(btn => {
                     btn.addEventListener("click", () => {
-                        hiddenInput.value = btn.dataset.id;   // bind id
-                        input.value = btn.dataset.name;       // show text
+                        hiddenInput.value = btn.dataset.id;
+                        input.value = btn.dataset.name;
                         resultsContainer.innerHTML = "";
                         resultsContainer.style.display = "none";
 
-                        const form = input.closest("form");
-                        if (form) form.submit();             // auto-submit
+                        if (submitOnSelect) {
+                            const form = input.closest("form");
+                            if (form) form.submit();
+                        }
                     });
                 });
 
@@ -54,8 +58,11 @@
                 hiddenInput.value = "";
                 resultsContainer.innerHTML = "";
                 resultsContainer.style.display = "none";
-                const form = input.closest("form");
-                if (form) form.submit();
+
+                if (submitOnSelect) {
+                    const form = input.closest("form");
+                    if (form) form.submit();
+                }
             });
         }
 

@@ -17,18 +17,17 @@
     <div class="col-md-6">
         <h4>Достъпни отдели</h4>
         <form id="FilterForm1" method="get" asp-action="MapUserUnitAccess" class="mb-2">
-                <input type="hidden" name="userId" value="@Model.UserId" />
+             <input type="hidden" name="userId" value="@Model.UserId" />
 
-            <div class="position-relative">
-                <label for="filterDepartmentInput1" class="form-label">Филтър по Дирекция:</label>
-                <div class="input-group">
-                    <input type="text" id="filterDepartmentInput1" class="form-control" value="@Model.FilterDepartmentDescription1" autocomplete="off">
-                    <button type="button" class="btn btn-outline-danger" id="clearDepartmentBtn1">×</button>
-                </div>                
-                <input type="hidden" id="filterDepartment1" name="filterDepartmentId1" value="@Model.FilterDepartmentId1">
-                <div id="filterDepartmentResults1" class="list-group position-absolute" style="z-index:1000;"></div>
-            </div>
-
+            <filter form-id="DepartmentFilterForm1"
+                    label="Филтър по дирекция"
+                    controller="Department"
+                    action="SearchDepartments"
+                    hidden-input-id="filterDepartment1"
+                    hidden-name="filterDepartmentId1"
+                    filter-id="@Model.FilterDepartmentId1"
+                    filter-description="@Model.FilterDepartmentDescription1">
+            </filter>
         </form>
 
         <form asp-action="RevokeUnitAccess" method="post">
@@ -65,15 +64,15 @@
         <form method="get" id="FilterForm2" asp-action="MapUserUnitAccess" class="mb-2">
             <input type="hidden" name="userId" value="@Model.UserId" />
 
-            <div class="position-relative">
-                <label for="filterDepartmentInput2" class="form-label">Филтър по Дирекция:</label>
-                <div class="input-group">
-                    <input type="text" id="filterDepartmentInput2" class="form-control" value="@Model.FilterDepartmentDescription2" autocomplete="off">
-                    <button type="button" class="btn btn-outline-danger" id="clearDepartmentBtn2">×</button>
-                </div>
-                <input type="hidden" id="filterDepartment2" name="filterDepartmentId2" value="@Model.FilterDepartmentId2">
-                <div id="filterDepartmentResults2" class="list-group position-absolute" style="z-index:1000;"></div>
-            </div>
+            <filter form-id="DepartmentFilterForm2"
+                    label="Филтър по дирекция"
+                    controller="Department"
+                    action="SearchDepartments"
+                    hidden-input-id="filterDepartment2"
+                    hidden-name="filterDepartmentId2"
+                    filter-id="@Model.FilterDepartmentId2"
+                    filter-description="@Model.FilterDepartmentDescription2">
+            </filter>
         </form>
 
         <form asp-action="GrantUnitAccess" method="post">
@@ -113,4 +112,5 @@
 @section Scripts {
         <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
         <script src="~/js/map-unit-access.js" asp-append-version="true"></script>
+        <script src="~/js/filter.js" asp-append-version="true"></script>
 }

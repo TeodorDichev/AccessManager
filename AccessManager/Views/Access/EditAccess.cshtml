@@ -25,6 +25,7 @@
         <form method="get" asp-action="EditAccess">
             <input type="hidden" name="accessId" value="@Model.AccessId" />
             <filter form-id="DirectiveFilterForm1"
+                    label="Филтър по заповед"
                     controller="Directive"
                     action="SearchDirectives"
                     hidden-input-id="filterDirective1"
@@ -36,12 +37,16 @@
 
         <form asp-action="RevokeUserAccess" method="post">
             <div class="mb-2">
-                <label asp-for="DirectiveToRevokeAccess" class="form-label">Заповед за премахване на достъп</label>
-                <input type="text" class="form-control" id="directiveToRevokeAccessInput" value="@Model.DirectiveToRevokeAccessDescription" autocomplete="off">
-                <input type="hidden" asp-for="DirectiveToRevokeAccess" id="directiveToRevokeAccessId">
-                <input type="hidden" asp-for="DirectiveToRevokeAccessDescription">
-                <div id="directiveToRevokeAccessResults" class="list-group position-absolute" style="z-index:1000;"></div>
-                <span asp-validation-for="DirectiveToRevokeAccess" class="text-danger"></span>
+                <filter form-id="DirectiveToRevokeAccessForm"
+                        label="Заповед за спиране на достъп"
+                        controller="Directive"
+                        action="SearchDirectives"
+                        hidden-input-id="DirectiveToRevokeAccess"
+                        hidden-name="directiveToRevokeAccessId"
+                        filter-id="@Model.DirectiveToRevokeAccessId"
+                        filter-description="@Model.DirectiveToRevokeAccessDescription"
+                        submit-on-select="false">
+                </filter>
             </div>
             <table class="table table-bordered table-hover">
                 <thead>
@@ -89,6 +94,7 @@
             <input type="hidden" name="accessId" value="@Model.AccessId" />
 
             <filter form-id="DirectiveFilterForm2"
+                    label="Филтър по заповед"
                     controller="Directive"
                     action="SearchDirectives"
                     hidden-input-id="filterDirective2"
@@ -101,12 +107,16 @@
         <form asp-controller="Access" asp-action="GrantUserAccess" method="post">
             <input type="hidden" name="accessId" value="@Model.AccessId" />
             <div class="mb-2">
-                <label asp-for="DirectiveToGrantAccess" class="form-label">Заповед за даване на достъп</label>
-                <input type="text" class="form-control" id="directiveToGrantAccessInput" value="@Model.DirectiveToGrantAccessDescription" autocomplete="off">
-                <input type="hidden" asp-for="DirectiveToGrantAccess" id="directiveToGrantAccessId">
-                <input type="hidden" asp-for="DirectiveToGrantAccessDescription">
-                <div id="directiveToGrantAccessResults" class="list-group position-absolute" style="z-index:1000;"></div>
-                <span asp-validation-for="DirectiveToGrantAccess" class="text-danger"></span>
+                <filter form-id="DirectiveToGrantAccessForm"
+                        label="Заповед за даване на достъп"
+                        controller="Directive"
+                        action="SearchDirectives"
+                        hidden-input-id="DirectiveToGrantAccess"
+                        hidden-name="directiveToGrantAccessId"
+                        filter-id="@Model.DirectiveToGrantAccessId"
+                        filter-description="@Model.DirectiveToGrantAccessDescription"
+                        submit-on-select="false">
+                </filter>
             </div>
 
             <table class="table table-bordered table-hover">

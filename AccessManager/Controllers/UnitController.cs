@@ -1,13 +1,10 @@
 ﻿using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
-using AccessManager.Utills;
 using AccessManager.ViewModels;
-using AccessManager.ViewModels.Department;
 using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AccessManager.Controllers
 {
@@ -26,7 +23,7 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult SearchUnits(Guid departmentId, string term)
+        public IActionResult SearchDepartmentUnits(Guid departmentId, string term)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
@@ -40,7 +37,25 @@ namespace AccessManager.Controllers
 
             var results = _unitService.GetUserUnitsForDepartment(loggedUser, department)
                 .Where(d => string.IsNullOrEmpty(term) || d.Description.Contains(term))
+                .DistinctBy(u => u.Description)
                 .Select(u => new { id = u.Id, text = u.Description })
+                .Take(10)
+                .ToList();
+
+            return Json(results);
+        }
+
+        [HttpGet]
+        public IActionResult SearchUnits(string term)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+
+            var results = loggedUser.AccessibleUnits
+                .Where(uu => string.IsNullOrEmpty(term) || uu.Unit.Description.Contains(term))
+                .DistinctBy(uu => uu.Unit.Description)
+                .Select(uu => new { id = uu.UnitId, text = uu.Unit.Description })
                 .Take(10)
                 .ToList();
 
@@ -124,7 +139,7 @@ namespace AccessManager.Controllers
 
             var uu = _unitService.GetUnitUser(user.Id, unitId);
 
-            if(uu == null) return Json(new { success = false, message = "Not Found" });
+            if (uu == null) return Json(new { success = false, message = "Not Found" });
             if (user.WritingAccess == Data.Enums.AuthorityType.SuperAdmin) return Json(new { success = false, message = "Cannot remove unit access from superadmin" });
 
             if (user.WritingAccess == Data.Enums.AuthorityType.Full) user.WritingAccess = Data.Enums.AuthorityType.Restricted;
@@ -142,7 +157,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-           var department = _departmentService.GetDepartment(model.DepartmentId);
+            var department = _departmentService.GetDepartment(model.DepartmentId);
             if (department == null)
             {
                 TempData["Error"] = "Дирекцията не е намерена";
@@ -173,22 +188,22 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult MapUserUnitAccess(Guid userId, Guid? filterDepartmentId1, Guid? filterDepartmentId2, int page1 = 1, int page2 = 1)
+        public IActionResult MapUserUnitAccess(MapUserUnitAccessViewModel model, int page1 = 1, int page2 = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var user = _userService.GetUser(userId);
+            var user = _userService.GetUser(model.UserId);
             if (user == null)
             {
                 TempData["Error"] = "Потребителят не е намерен";
-                return RedirectToAction("EditUser", new { userId });
+                return RedirectToAction("EditUser", new { model.UserId });
             }
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            var filterDepartment1 = _departmentService.GetDepartment(filterDepartmentId1);
-            var filterDepartment2 = _departmentService.GetDepartment(filterDepartmentId2);
+            var filterDepartment1 = _departmentService.GetDepartment(model.FilterDepartmentId1);
+            var filterDepartment2 = _departmentService.GetDepartment(model.FilterDepartmentId2);
 
             var vm = new MapUserUnitAccessViewModel
             {
@@ -198,12 +213,12 @@ namespace AccessManager.Controllers
                 LastName = user.LastName,
                 Department = user.Unit.Department.Description,
                 Unit = user.Unit.Description,
-                FilterDepartmentId1 = filterDepartmentId1,
-                FilterDepartmentId2 = filterDepartmentId2,
+                FilterDepartmentId1 = model.FilterDepartmentId1,
+                FilterDepartmentId2 = model.FilterDepartmentId2,
                 FilterDepartmentDescription1 = filterDepartment1?.Description ?? "",
                 FilterDepartmentDescription2 = filterDepartment2?.Description ?? "",
                 AccessibleUnits = _unitService.GetAccessibleUnitsPaged(loggedUser, user, filterDepartment1, page1),
-                InaccessibleUnits = _unitService.GetInaccessibleUnitsPaged(loggedUser, user, filterDepartment1, page1),
+                InaccessibleUnits = _unitService.GetInaccessibleUnitsPaged(loggedUser, user, filterDepartment2, page2),
             };
 
             return View(vm);
@@ -225,10 +240,10 @@ namespace AccessManager.Controllers
             foreach (var unitId in model.SelectedInaccessibleUnitIds)
             {
                 var unit = _unitService.GetUnit(unitId);
-                if (unit == null) 
+                if (unit == null)
                 {
                     TempData["Error"] = "Отделът не е намерен";
-                    continue; 
+                    continue;
                 }
 
                 var uu = _unitService.AddUnitUser(user, unit);
@@ -261,7 +276,7 @@ namespace AccessManager.Controllers
             foreach (var unitId in model.SelectedAccessibleUnitIds)
             {
                 var uu = _unitService.GetUnitUser(user.Id, unitId);
-                if(uu != null)
+                if (uu != null)
                 {
                     _logService.AddLog(loggedUser, LogAction.Add, uu);
                     _unitService.HardDeleteUnitUser(uu);

@@ -34,6 +34,22 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
+        public IActionResult SearchUsers(string term)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+
+            var results = _userService.GetAccessibleUsers(loggedUser)
+                .Where(u => string.IsNullOrEmpty(term) || u.UserName.Contains(term))
+                .Select(u => new { id = u.Id, text = u.UserName })
+                .Take(10)
+                .ToList();
+
+            return Json(results);
+        }
+
+        [HttpGet]
         public IActionResult MyProfile()
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
@@ -133,28 +149,28 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult UserList(UserSortOptions selectedSortOption, Guid? filterUnit, Guid? filterDepartment, int page = 1)
+        public IActionResult UserList(UserListViewModel model, int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            var unit = _unitService.GetUnit(filterUnit);
-            var department = _departmentService.GetDepartment(filterDepartment);
+            var unit = _unitService.GetUnit(model.FilterUnitId);
+            var department = _departmentService.GetDepartment(model.FilterDepartmentId);
 
-            var model = new UserListViewModel
+            var result = new UserListViewModel
             {
-                Users = _userService.GetAccessibleUsersPaged(loggedUser, unit, department, page, selectedSortOption),
-                SelectedSortOption = selectedSortOption,
-                FilterUnitId = filterUnit,
-                FilterDepartmentId = filterDepartment,
+                Users = _userService.GetAccessibleUsersPaged(loggedUser, unit, department, page, model.SelectedSortOption),
+                SelectedSortOption = model.SelectedSortOption,
+                FilterUnitId = model.FilterUnitId,
+                FilterDepartmentId = model.FilterDepartmentId,
                 FilterUnitDescription = unit?.Description ?? "",
                 FilterDepartmentDescription = department?.Description ?? "",
                 WriteAuthority = loggedUser.WritingAccess,
             };
 
-            return View(model);
+            return View(result);
         }
 
         [HttpGet]
@@ -288,7 +304,7 @@ namespace AccessManager.Controllers
             _userService.UpdateUser(model, user);
             _logService.AddLog(loggedUser, LogAction.Edit, user);
 
-            return View(model);
+            return RedirectToAction("EditUser", new { user.Id });
         }
 
         [HttpPost]

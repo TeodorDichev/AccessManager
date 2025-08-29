@@ -20,10 +20,10 @@ namespace AccessManager.ViewModels.Access
         public PagedResult<AccessViewModel> AccessibleSystems { get; set; } = new();
         public PagedResult<AccessViewModel> InaccessibleSystems { get; set; } = new();
 
-        public Guid? DirectiveToRevokeAccess { get; set; }
+        public Guid? DirectiveToRevokeAccessId { get; set; }
         public string DirectiveToRevokeAccessDescription { get; set; } = string.Empty;
         public List<Guid> SelectedAccessibleSystemIds { get; set; } = [];
-        public Guid? DirectiveToGrantAccess { get; set; }
+        public Guid? DirectiveToGrantAccessId { get; set; }
         public List<Guid> SelectedInaccessibleSystemIds { get; set; } = [];
         public string DirectiveToGrantAccessDescription { get; set; } = string.Empty;
     }

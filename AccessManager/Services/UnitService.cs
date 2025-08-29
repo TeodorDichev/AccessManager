@@ -279,7 +279,8 @@ namespace AccessManager.Services
                 {
                     UnitId = u.Id,
                     UnitName = u.Description,
-                    DepartmentName = u.Department.Description
+                    DepartmentName = u.Department.Description,
+                    DepartmentId = u.Department.Id
                 })
                 .ToList();
 
@@ -305,7 +306,8 @@ namespace AccessManager.Services
                 {
                     UnitId = u.Id,
                     UnitName = u.Description,
-                    DepartmentName = u.Department.Description
+                    DepartmentName = u.Department.Description,
+                    DepartmentId = u.Department.Id
                 })
                 .ToList();
 

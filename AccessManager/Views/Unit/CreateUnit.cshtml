@@ -19,12 +19,16 @@
     @Html.AntiForgeryToken()
 
     <div class="mb-3">
-        <label asp-for="DepartmentId" class="form-label">Дирекция</label>
-        <input type="text" class="form-control" id="departmentInput" value="@Model.DepartmentDescription" autocomplete="off">
-        <input type="hidden" asp-for="DepartmentId" id="departmentId">
-        <input type="hidden" asp-for="DepartmentDescription">
-        <div id="departmentResults" class="list-group position-absolute" style="z-index:1000;"></div>
-        <span asp-validation-for="DepartmentId" class="text-danger"></span>
+        <filter form-id="DepartmentForm"
+                label="Дирекция"
+                controller="Department"
+                action="SearchDepartments"
+                hidden-input-id="Department"
+                hidden-name="DepartmentId"
+                filter-id="@Model.DepartmentId"
+                filter-description="@Model.DepartmentDescription"
+                submit-on-select="false">
+        </filter>
     </div>
 
     <div class="mb-3">
@@ -39,6 +43,6 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/create-unit.js" asp-append-version="true"></script>
+    <script src="~/js/filter.js" asp-append-version="true"></script>
 
 }

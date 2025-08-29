@@ -22,64 +22,61 @@
         };
     }
 
-    function setupAutocomplete(input, hidden, resultsDiv, url, extraParamsFn, onSelected) {
-        const handleInput = () => {
+    document.querySelectorAll('.directive-search').forEach(input => {
+        const container = input.closest('.position-relative');
+        const hidden = container.querySelector('.directive-hidden');
+        const resultsDiv = container.querySelector('.directive-results');
+
+        const handleInput = debounce(async () => {
             const term = input.value.trim();
             hidden.value = '';
             resultsDiv.innerHTML = '';
 
             if (!term) return;
 
-            const params = { term, ...extraParamsFn() };
-            const query = new URLSearchParams(params).toString();
+            try {
+                const query = new URLSearchParams({ term }).toString();
+                const response = await fetch(`/Directive/SearchDirectives?${query}`);
+                const items = await response.json();
 
-            fetch(`${url}?${query}`)
-                .then(res => res.json())
-                .then(data => {
-                    resultsDiv.innerHTML = '';
-                    data.forEach(item => {
-                        const div = document.createElement('div');
-                        div.textContent = item.text;
-                        div.classList.add('list-group-item', 'list-group-item-action');
-                        div.addEventListener('click', function () {
-                            input.value = item.text;
-                            hidden.value = item.id;
-                            resultsDiv.innerHTML = '';
-                            if (onSelected) onSelected(item.id, item.text);
+                resultsDiv.innerHTML = '';
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.textContent = item.text;
+                    div.classList.add('list-group-item', 'list-group-item-action');
+
+                    div.addEventListener('click', async () => {
+                        input.value = item.text;
+                        hidden.value = item.id;
+                        resultsDiv.innerHTML = '';
+
+                        const userId = input.dataset.userid;
+                        const accessId = input.dataset.accessid;
+
+                        await fetch(`/Access/UpdateUserDirective`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "RequestVerificationToken": document.querySelector("input[name='__RequestVerificationToken']").value
+                            },
+                            body: JSON.stringify({ userId, accessId, directiveId: item.id })
                         });
-                        resultsDiv.appendChild(div);
                     });
-                });
-        };
 
-        input.addEventListener('input', debounce(handleInput, 300));
+                    resultsDiv.appendChild(div);
+                });
+
+            } catch (err) {
+                console.error(err);
+            }
+        }, 300);
+
+        input.addEventListener('input', handleInput);
 
         document.addEventListener('click', e => {
-            if (!resultsDiv.contains(e.target) && e.target !== input) {
+            if (!container.contains(e.target)) {
                 resultsDiv.innerHTML = '';
             }
         });
-    }
-
-        setupAutocomplete(
-            input,
-            hidden,
-            resultsDiv,
-            '/Directive/SearchDirectives',
-            () => ({}),
-            (id) => {
-                const userId = input.dataset.userid;
-                const accessId = input.dataset.accessid;
-
-                fetch(`/Access/UpdateUserDirective`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "RequestVerificationToken": document.querySelector("input[name='__RequestVerificationToken']").value
-                    },
-                    body: JSON.stringify({ userId, accessId, directiveId: id })
-                });
-            }
-        );
     });
 });

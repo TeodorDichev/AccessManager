@@ -20,23 +20,15 @@
 }
 
 <form method="get" class="d-flex justify-content-start align-items-end gap-2 mb-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
-    <div>
-        <label class="form-label">Ниво</label>
-        <select asp-for="Level" id="LevelSelect" class="form-select" onchange="this.form.submit()">
-            <option value="0">0</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-        </select>
-    </div>
-
-    <div class="position-relative">
-        <label class="form-label">Филтър по родителски достъп</label>
-        <input type="text" id="FilterSearch" class="form-control" placeholder="Избор на родител" autocomplete="off" value="@Model.FilterDescription" />
-        <input type="hidden" asp-for="FilterAccessId" name="filterAccessId" id="FilterAccessId" onchange="this.form.submit()" />
-        <div id="filterCandidates" class="list-group dropdown-results"></div>
-        <span asp-validation-for="FilterAccessId" class="text-danger"></span>
-    </div>
+    <filter form-id="AccessFilterForm"
+            label="Филтър по достъп"
+            controller="Access"
+            action="SearchAccesses"
+            hidden-input-id="filterAccess"
+            hidden-name="filterAccessId"
+            filter-id="@Model.FilterAccessId"
+            filter-description="@Model.FilterAccessDescription">
+    </filter>
 
     <div>
         @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
@@ -96,6 +88,6 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/access-list.js" asp-append-version="true"></script>
     <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
+    <script src="~/js/filter.js" asp-append-version="true"></script>
 }

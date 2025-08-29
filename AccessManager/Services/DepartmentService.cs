@@ -138,7 +138,7 @@ namespace AccessManager.Services
             return deletedDepartmentsCount + deletedUnitsCount;
         }
 
-        internal PagedResult<UnitDepartmentViewModel> GetUnitDepartmentsPaged(User loggedUser, Department? filterDepartment, int page)
+        internal PagedResult<UnitDepartmentViewModel> GetUnitDepartmentsPaged(User loggedUser, Department? filterDepartment, Unit filterUnit, int page)
         {
             if (page < 1) page = 1;
             int pageSize = Constants.ItemsPerPage;
@@ -175,10 +175,12 @@ namespace AccessManager.Services
                     .Take(int.MaxValue)
                     .Select(d => d.Id)
                     .ToList();
+
                 if(filterDepartment == null)
                 {
                     units = _context.Units
                         .Take(unitRows)
+                        .Where(u => filterUnit == null || u.Description == filterUnit.Description)
                         .Select(u => new UnitDepartmentViewModel
                         {
                             DepartmentId = u.Department.Id,
@@ -191,6 +193,7 @@ namespace AccessManager.Services
                 {
                     units = filterDepartment.Units
                         .Take(unitRows)
+                        .Where(u => filterUnit == null || u.Description == filterUnit.Description)
                         .Select(u => new UnitDepartmentViewModel
                         {
                             DepartmentId = u.Department.Id,
@@ -201,10 +204,10 @@ namespace AccessManager.Services
                 }
             }
 
-            var result = departments.Concat(units).ToList();
+            var result = (filterUnit != null) ? units.ToList() : departments.Concat(units).ToList();
             return new PagedResult<UnitDepartmentViewModel>
             {
-                Items = departments.Concat(units).ToList(),
+                Items = result,
                 TotalCount = result.Count,
                 Page = page
             };

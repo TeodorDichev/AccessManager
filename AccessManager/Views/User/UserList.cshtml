@@ -34,25 +34,25 @@
         </select>
     </div>
 
-    <div class="position-relative">
-        <label for="filterDepartmentInput" class="form-label">Филтър по Дирекция:</label>
-        <div class="input-group">
-            <input type="text" id="filterDepartmentInput" class="form-control" value="@Model.FilterDepartmentDescription" autocomplete="off">
-            <button type="button" class="btn btn-sm btn-outline-danger" id="clearDepartmentBtn">×</button>
-        </div>
-        <input type="hidden" id="filterDepartment" name="filterDepartment" value="@Model.FilterDepartmentId">
-        <div id="filterDepartmentResults" class="list-group position-absolute" style="z-index:1000;"></div>
-    </div>
+    <filter form-id="DepartmentFilterForm"
+            label="Филтър по дирекция"
+            controller="Department"
+            action="SearchDepartments"
+            hidden-input-id="filterDepartment"
+            hidden-name="filterDepartmentId"
+            filter-id="@Model.FilterDepartmentId"
+            filter-description="@Model.FilterDepartmentDescription">
+    </filter>
 
-    <div class="position-relative">
-        <label for="filterUnitInput" class="form-label">Филтър по Отдел:</label>
-        <div class="input-group">
-            <input type="text" id="filterUnitInput" class="form-control" value="@Model.FilterUnitDescription" autocomplete="off" disabled>
-            <button type="button" class="btn btn-sm btn-outline-danger" id="clearUnitBtn">×</button>
-        </div>
-        <input type="hidden" id="filterUnit" name="filterUnit" value="@Model.FilterUnitId">
-        <div id="filterUnitResults" class="list-group position-absolute" style="z-index:1000;"></div>
-    </div>
+    <filter form-id="UnitFilterForm"
+            label="Филтър по отдел"
+            controller="Unit"
+            action="SearchUnits"
+            hidden-input-id="filterUnit"
+            hidden-name="filterUnitId"
+            filter-id="@Model.FilterUnitId"
+            filter-description="@Model.FilterUnitDescription">
+    </filter>
 </form>
 
 <table class="table table-bordered table-striped">
@@ -118,5 +118,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/user-list.js" asp-append-version="true"></script>
+    <script src="~/js/filter.js" asp-append-version="true"></script>
 }

@@ -36,24 +36,27 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public ActionResult UnitDepartmentList(Guid? filterDepartmentId, int page = 1)
+        public ActionResult UnitDepartmentList(UnitDepartmentListViewModel model, int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            var dep = _departmentService.GetDepartment(filterDepartmentId);
+            var dep = _departmentService.GetDepartment(model.FilterDepartmentId);
+            var unit = _unitService.GetUnit(model.FilterUnitId);
 
-            UnitDepartmentListViewModel model = new UnitDepartmentListViewModel
+            UnitDepartmentListViewModel result = new UnitDepartmentListViewModel
             {
-                UnitDepartments = _departmentService.GetUnitDepartmentsPaged(loggedUser, dep, page),
+                UnitDepartments = _departmentService.GetUnitDepartmentsPaged(loggedUser, dep, unit, page),
                 WriteAuthority = loggedUser.WritingAccess,
-                FilterDepartmentId = filterDepartmentId,
+                FilterDepartmentId = model.FilterDepartmentId,
                 FilterDepartmentDescription = dep?.Description ?? "",
+                FilterUnitId = model.FilterUnitId,
+                FilterUnitDescription = unit?.Description ?? "",
             };
 
-            return View(model);
+            return View(result);
         }
 
         [HttpGet]

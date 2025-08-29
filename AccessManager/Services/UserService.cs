@@ -54,8 +54,8 @@ namespace AccessManager.Services
             var query = _context.Users.Where(u => accessibleUnitIds.Contains(u.UnitId));
 
             if(filterUnit != null)
-                query = query.Where(u => u.UnitId == filterUnit.Id);
-            else if (filterDepartment != null)
+                query = query.Where(u => u.Unit.Description == filterUnit.Description);
+            if (filterDepartment != null)
                 query = query.Where(u => u.Unit.DepartmentId == filterDepartment.Id);
 
             query = ApplySorting(query, sortOption);

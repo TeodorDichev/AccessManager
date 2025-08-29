@@ -81,36 +81,9 @@ namespace AccessManager.Services
                 .ToList();
         }
 
-        internal PagedResult<AccessListItemViewModel> GetAccessesPaged(Access? filterAccess, int level, int page)
+        internal PagedResult<AccessListItemViewModel> GetAccessesPaged(Access? filterAccess, int page)
         {
             IQueryable<Access> query = _context.Accesses;
-
-            if (level == 1) query = query.Where(a => a.ParentAccessId == null);
-            else if (level >= 2 && filterAccess != null)
-            {
-                var allAccesses = _context.Accesses
-                    .Select(a => new { a.Id, a.ParentAccessId })
-                    .ToList();
-
-                var lookup = allAccesses
-                    .Where(a => a.ParentAccessId.HasValue)
-                    .GroupBy(a => a.ParentAccessId.Value)
-                    .ToDictionary(g => g.Key, g => g.Select(x => x.Id).ToList());
-
-                var collectedIds = new HashSet<Guid>();
-
-                void Collect(Guid parentId)
-                {
-                    if (!lookup.TryGetValue(parentId, out var children)) return;
-                    foreach (var childId in children)
-                        if (collectedIds.Add(childId))
-                            Collect(childId);
-                }
-
-                Collect(filterAccess.Id);
-
-                query = query.Where(a => collectedIds.Contains(a.Id));
-            }
 
             var projected = query
                 .AsEnumerable()
@@ -123,6 +96,7 @@ namespace AccessManager.Services
             var total = projected.Count();
 
             var items = projected
+                .Where(a => filterAccess == null || a.Description.Contains(GetAccessDescription(filterAccess)))
                 .OrderBy(a => a.Description)
                 .Skip((page - 1) * Constants.ItemsPerPage)
                 .Take(Constants.ItemsPerPage)
@@ -175,13 +149,15 @@ namespace AccessManager.Services
 
         internal PagedResult<AccessViewModel> GetAccessesNotGrantedToUserPaged(User user, Directive? filterDirective, int page)
         {
-            var revoked = _context.UserAccesses.Where(ua => ua.UserId == user.Id && ua.RevokedOn != null).ToList()
+            var revoked = _context.UserAccesses
+                .Where(ua => ua.UserId == user.Id && ua.RevokedOn != null)
+                .Where(ua => filterDirective == null || ua.RevokedByDirectiveId == filterDirective.Id).ToList()
             .Select(ua => new AccessViewModel
             {
                 AccessId = ua.AccessId,
                 Description = GetAccessDescription(ua.Access),
-                DirectiveId = ua.GrantedByDirectiveId,
-                DirectiveDescription = ua.RevokedByDirective != null ? ua.GrantedByDirective.Name : ""
+                DirectiveId = ua.RevokedByDirectiveId.Value,
+                DirectiveDescription = ua.RevokedByDirective != null ? ua.RevokedByDirective.Name : ""
             }).ToList();
 
             var notGranted = Enumerable.Empty<AccessViewModel>();

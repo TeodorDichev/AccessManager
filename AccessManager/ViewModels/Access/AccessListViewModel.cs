@@ -7,11 +7,9 @@ namespace AccessManager.ViewModels.Access
     {
         public PagedResult<AccessListItemViewModel> Accesses { get; set; } = new();
 
-        [Range(0, 5, ErrorMessage = "Ниво трябва да е между 0 и 5")]
-        public int Level { get; set; } = 0;
         public Guid? FilterAccessId { get; set; }
 
-        public string? FilterDescription { get; set; }
+        public string FilterAccessDescription { get; set; } = string.Empty;
 
         public AuthorityType WriteAuthority { get; set; }
     }

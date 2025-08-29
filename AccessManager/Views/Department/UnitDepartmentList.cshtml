@@ -20,15 +20,25 @@
 <h2>Дирекции и отдели</h2>
 
 <form method="get" id="FilterForm" class="mb-3 d-flex align-items-end gap-3">
-    <div class="position-relative">
-        <label for="filterDepartmentInput" class="form-label">Филтър по Дирекция:</label>
-        <div class="input-group">
-            <input type="text" id="filterDepartmentInput" class="form-control" value="@Model.FilterDepartmentDescription" autocomplete="off">
-            <button type="button" class="btn btn-sm btn-outline-danger" id="clearDepartmentBtn">×</button>
-        </div>
-        <input type="hidden" id="filterDepartment" name="filterDepartmentId" value="@Model.FilterDepartmentId">
-        <div id="filterDepartmentResults" class="list-group position-absolute" style="z-index:1000;"></div>
-    </div>
+    <filter form-id="DepartmentFilterForm"
+            label="Филтър по дирекция"
+            controller="Department"
+            action="SearchDepartments"
+            hidden-input-id="filterDepartment"
+            hidden-name="filterDepartmentId"
+            filter-id="@Model.FilterDepartmentId"
+            filter-description="@Model.FilterDepartmentDescription">
+    </filter>
+
+    <filter form-id="UnitFilterForm"
+            label="Филтър по отдел"
+            controller="Unit"
+            action="SearchUnits"
+            hidden-input-id="filterUnit"
+            hidden-name="filterUnitId"
+            filter-id="@Model.FilterUnitId"
+            filter-description="@Model.FilterUnitDescription">
+    </filter>
 
     <div class="d-flex justify-content-start gap-2 mb-3 align-items-end">
         @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
@@ -107,7 +117,6 @@
 
 @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.UnitDepartments)
 
-<!-- Modal -->
 <div class="modal fade" id="createDepartmentModal" tabindex="-1" aria-labelledby="createDepartmentModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -135,5 +144,5 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
-    <script src="~/js/unit-department-list.js" asp-append-version="true"></script>
+    <script src="~/js/filter.js" asp-append-version="true"></script>
 }

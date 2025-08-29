@@ -23,29 +23,34 @@
 
 <form method="get">
     <div class="mb-3 d-flex align-items-end gap-3">
-        <div>
-            <label>Филтър по достъп</label>
-            <input type="text" id="FilterAccessSearch" class="form-control" placeholder="Избор на достъp" autocomplete="off" value="@Model.FilterAccessDescription" />
-            <input type="hidden" asp-for="FilterAccessId" name="filterAccessId" id="FilterAccessId" onchange="this.form.submit()" />
-            <div id="filterAccessCandidates" class="list-group" style="position:absolute; z-index:1000;"></div>
-            <span asp-validation-for="FilterAccessId" class="text-danger"></span>
-        </div>
+        <filter form-id="AccessFilterForm"
+                label="Филтър по достъп"
+                controller="Access"
+                action="SearchAccesses"
+                hidden-input-id="filterAccess"
+                hidden-name="filterAccessId"
+                filter-id="@Model.FilterAccessId"
+                filter-description="@Model.FilterAccessDescription">
+        </filter>
 
-        <div>
-            <label>Филтър по потребител</label>
-            <input type="text" id="FilterUserSearch" class="form-control" placeholder="Избор на потребител" autocomplete="off" value="@Model.FilterUserName" />
-            <input type="hidden" asp-for="FilterUserId" name="filterUserId" id="FilterUserId" onchange="this.form.submit()" />
-            <div id="filterUserCandidates" class="list-group" style="position:absolute; z-index:1000;"></div>
-            <span asp-validation-for="FilterUserId" class="text-danger"></span>
-        </div>
+        <filter form-id="UserNameFilterForm"
+                label="Филтър по потребителско име"
+                controller="User"
+                action="SearchUsers"
+                hidden-input-id="filterUser"
+                hidden-name="filterUserId"
+                filter-id="@Model.FilterUserId"
+                filter-description="@Model.FilterUserName">
+        </filter>
 
         <filter form-id="DirectiveFilterForm"
-        controller="Directive"
-        action="SearchDirectives"
-        hidden-input-id="filterDirective"
-        hidden-name="filterDirectiveId"
-        filter-id="@Model.FilterDirectiveId"
-        filter-description="@Model.FilterDirectiveDescription">
+            label="Филтър по заповед"
+            controller="Directive"
+            action="SearchDirectives"
+            hidden-input-id="filterDirective"
+            hidden-name="filterDirectiveId"
+            filter-id="@Model.FilterDirectiveId"
+            filter-description="@Model.FilterDirectiveDescription">
         </filter>
 
         <div>
@@ -99,7 +104,6 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/useraccess-list.js" asp-append-version="true"></script>
     <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
     <script src="~/js/filter.js" asp-append-version="true"></script>
 }

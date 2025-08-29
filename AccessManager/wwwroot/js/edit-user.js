@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     setupAutocomplete(departmentInput, departmentHidden, departmentResults, '/Department/SearchDepartments', () => ({}));
 
-    setupAutocomplete(unitInput, unitHidden, unitResults, '/Unit/SearchUnits', () => ({
+    setupAutocomplete(unitInput, unitHidden, unitResults, '/Unit/SearchDepartmentUnits', () => ({
         departmentId: departmentHidden.value
     }));
 

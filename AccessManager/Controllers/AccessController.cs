@@ -29,7 +29,7 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult AccessList(int page = 1, int level = 0, Guid? filterAccessId = null)
+        public IActionResult AccessList(AccessListViewModel model, int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
@@ -37,16 +37,15 @@ namespace AccessManager.Controllers
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
 
-            var model = new AccessListViewModel
+            var result = new AccessListViewModel
             {
-                Accesses = _accessService.GetAccessesPaged(_accessService.GetAccess(filterAccessId), level, page),
+                Accesses = _accessService.GetAccessesPaged(_accessService.GetAccess(model.FilterAccessId), page),
                 WriteAuthority = loggedUser.WritingAccess,
-                Level = level,
-                FilterAccessId = filterAccessId,
-                FilterDescription = _accessService.GetAccessDescription(_accessService.GetAccess(filterAccessId))
+                FilterAccessId = model.FilterAccessId,
+                FilterAccessDescription = _accessService.GetAccessDescription(_accessService.GetAccess(model.FilterAccessId))
             };
 
-            return View(model);
+            return View(result);
         }
 
         [HttpGet]
@@ -162,13 +161,13 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult SearchAccesses(string q = "")
+        public IActionResult SearchAccesses(string term = "")
         {
             var all = _accessService.GetAccesses().Select(a => new { a.Id, a.Description }).ToList();
-            var qLower = (q ?? "").Trim().ToLowerInvariant();
+            var termLower = (term ?? "").Trim().ToLowerInvariant();
 
             var candidates = all
-                .Where(a => string.IsNullOrEmpty(qLower) || a.Description.ToLowerInvariant().Contains(qLower))
+                .Where(a => string.IsNullOrEmpty(termLower) || a.Description.ToLowerInvariant().Contains(termLower))
                 .OrderBy(a => a.Description)
                 .Take(10)
                 .Select(a => new { id = a.Id, text = _accessService.GetAccessDescription(_accessService.GetAccess(a.Id)) })
@@ -178,22 +177,22 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult MapUserAccess(Guid userId, Guid? filterDirectiveId1 = null, Guid? filterDirectiveId2 = null, int page1 = 1, int page2 = 1)
+        public IActionResult MapUserAccess(MapUserAccessViewModel model, int page1 = 1, int page2 = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            var user = _userService.GetUser(userId);
+            var user = _userService.GetUser(model.UserId);
             if (user == null)
             {
                 TempData["Error"] = "Потребителят не е намерен";
-                return RedirectToAction("EditUser", "User", new { userId });
+                return RedirectToAction("EditUser", "User", new { model.UserId });
             }
 
-            var filterDirective1 = _directiveService.GetDirective(filterDirectiveId1);
-            var filterDirective2 = _directiveService.GetDirective(filterDirectiveId2);
+            var filterDirective1 = _directiveService.GetDirective(model.FilterDirectiveId1);
+            var filterDirective2 = _directiveService.GetDirective(model.FilterDirectiveId2);
 
             var vm = new MapUserAccessViewModel
             {
@@ -205,8 +204,8 @@ namespace AccessManager.Controllers
                 Unit = user.Unit.Description,
                 FilterDirectiveDescription1 = filterDirective1?.Name ?? "",
                 FilterDirectiveDescription2 = filterDirective2?.Name ?? "",
-                FilterDirectiveId1 = filterDirectiveId1,
-                FilterDirectiveId2 = filterDirectiveId2,
+                FilterDirectiveId1 = model.FilterDirectiveId1,
+                FilterDirectiveId2 = model.FilterDirectiveId2,
                 AccessibleSystems = _accessService.GetAccessesGrantedToUserPaged(user, filterDirective1, page1),
                 InaccessibleSystems = _accessService.GetAccessesNotGrantedToUserPaged(user, filterDirective2, page2),
             };
@@ -215,12 +214,12 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult EditAccess(Guid accessId, Guid? filterDirectiveId1 = null, Guid? filterDirectiveId2 = null, int page1 = 1, int page2 = 1)
+        public IActionResult EditAccess(EditAccessViewModel model, int page1 = 1, int page2 = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var access = _accessService.GetAccess(accessId);
+            var access = _accessService.GetAccess(model.AccessId);
             if (access == null)
             {
                 TempData["Error"] = "Достъпът не е намерен";
@@ -229,23 +228,23 @@ namespace AccessManager.Controllers
 
             ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
-            var filterDirective1 = _directiveService.GetDirective(filterDirectiveId1);
-            var filterDirective2 = _directiveService.GetDirective(filterDirectiveId2);
+            var filterDirective1 = _directiveService.GetDirective(model.FilterDirectiveId1);
+            var filterDirective2 = _directiveService.GetDirective(model.FilterDirectiveId2);
 
-            var model = new EditAccessViewModel
+            var vm = new EditAccessViewModel
             {
-                AccessId = accessId,
+                AccessId = access.Id,
                 Name = access.Description,
                 Description = _accessService.GetAccessDescription(access),
                 FilterDirectiveDescription1 = filterDirective1?.Name ?? "",
                 FilterDirectiveDescription2 = filterDirective2?.Name ?? "",
-                FilterDirectiveId1 = filterDirectiveId1,
-                FilterDirectiveId2 = filterDirectiveId2,
+                FilterDirectiveId1 = model.FilterDirectiveId1,
+                FilterDirectiveId2 = model.FilterDirectiveId2,
                 UsersWithAccess = _userAccessService.GetUsersWithAccessPaged(loggedUser, access, filterDirective1, page1),
                 UsersWithoutAccess = _userAccessService.GetUsersWithoutAccessPaged(loggedUser, access, filterDirective2, page2),
             };
 
-            return View(model);
+            return View(vm);
         }
 
         [HttpPost]
@@ -255,7 +254,7 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var user = _userService.GetUser(model.UserId);
-            if (user == null || !model.DirectiveToGrantAccess.HasValue)
+            if (user == null || !model.DirectiveToGrantAccessId.HasValue)
             {
                 TempData["Error"] = "Моля изберете заповед преди да дадете достъп!";
                 return RedirectToAction("MapUserAccess", new { username = model.UserName });
@@ -263,7 +262,7 @@ namespace AccessManager.Controllers
 
             foreach (var accId in model.SelectedInaccessibleSystemIds)
             {
-                var directive = _directiveService.GetDirective(model.DirectiveToGrantAccess.Value);
+                var directive = _directiveService.GetDirective(model.DirectiveToGrantAccessId.Value);
                 var access = _accessService.GetAccess(accId);
                 if (access == null || directive == null)
                 {
@@ -275,7 +274,7 @@ namespace AccessManager.Controllers
                 _logService.AddLog(loggedUser, LogAction.Add, ua);
             }
 
-            return RedirectToAction("MapUserAccess", new { username = model.UserName });
+            return RedirectToAction("MapUserAccess", new { userId = model.UserId });
         }
 
         [HttpPost]
@@ -285,7 +284,7 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var user = _userService.GetUser(model.UserId);
-            if (user == null || !model.DirectiveToRevokeAccess.HasValue)
+            if (user == null || !model.DirectiveToRevokeAccessId.HasValue)
             {
                 TempData["Error"] = "Моля изберете заповед преди да премахнете достъп!";
                 return RedirectToAction("MapUserAccess", new { username = model.UserName });
@@ -293,7 +292,7 @@ namespace AccessManager.Controllers
 
             foreach (var accId in model.SelectedAccessibleSystemIds)
             {
-                var directive = _directiveService.GetDirective(model.DirectiveToRevokeAccess.Value);
+                var directive = _directiveService.GetDirective(model.DirectiveToRevokeAccessId.Value);
                 UserAccess? userAccess = _userAccessService.GetUserAccess(user.Id, accId);
                 if (userAccess == null || directive == null)
                 {
@@ -304,7 +303,7 @@ namespace AccessManager.Controllers
                 _logService.AddLog(loggedUser, LogAction.Edit, userAccess);
             }
 
-            return RedirectToAction("MapUserAccess", new { username = model.UserName });
+            return RedirectToAction("MapUserAccess", new { userId = model.UserId });
         }
 
         [HttpPost]
@@ -314,7 +313,7 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var access = _accessService.GetAccess(model.AccessId);
-            if (access == null || !model.DirectiveToGrantAccess.HasValue)
+            if (access == null || !model.DirectiveToGrantAccessId.HasValue)
             {
                 TempData["Error"] = "Моле изберете заповед";
                 return RedirectToAction("EditAccess", new { accessId = model.AccessId });
@@ -322,7 +321,7 @@ namespace AccessManager.Controllers
 
             foreach (var userId in model.SelectedUsersWithoutAccessIds)
             {
-                var directive = _directiveService.GetDirective(model.DirectiveToGrantAccess.Value);
+                var directive = _directiveService.GetDirective(model.DirectiveToGrantAccessId.Value);
                 var user = _userService.GetUser(userId);
                 if (user == null || directive == null)
                 {
@@ -344,7 +343,7 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var access = _accessService.GetAccess(model.AccessId);
-            if (access == null || !model.DirectiveToRevokeAccess.HasValue)
+            if (access == null || !model.DirectiveToRevokeAccessId.HasValue)
             {
                 TempData["Error"] = "Моле изберете заповед";
                 return RedirectToAction("EditAccess", new { accessId = model.AccessId });
@@ -352,7 +351,7 @@ namespace AccessManager.Controllers
 
             foreach (var userId in model.SelectedUsersWithAccessIds)
             {
-                var directive = _directiveService.GetDirective(model.DirectiveToRevokeAccess.Value);
+                var directive = _directiveService.GetDirective(model.DirectiveToRevokeAccessId.Value);
                 UserAccess? userAccess = _userAccessService.GetUserAccess(userId, access.Id);
                 if (userAccess == null || directive == null)
                 {
