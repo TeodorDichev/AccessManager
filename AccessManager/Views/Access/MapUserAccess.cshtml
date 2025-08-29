@@ -15,19 +15,28 @@
 <div class="row wrapper mt-5" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
     <div class="col-md-6">
         <h4>Достъпни системи</h4>
-        <form method="get" asp-action="MapUserAccess" class="mb-2" as>
-                <input type="hidden" name="username" value="@Model.UserName" /> 
+        <form method="get" asp-action="MapUserAccess">
+            <input type="hidden" name="userId" value="@Model.UserId" />
 
-                <label for="filterDirective1" class="form-label">Филтър по заповед:</label>
-                <select name="filterDirective1" id="filterDirective1" class="form-select" onchange="this.form.submit()">
-                </select>
+            <filter form-id="DirectiveFilterForm1"
+                    controller="Directive"
+                    action="SearchDirectives"
+                    hidden-input-id="filterDirective1"
+                    hidden-name="filterDirectiveId1"
+                    filter-id="@Model.FilterDirectiveId1"
+                    filter-description="@Model.FilterDirectiveDescription1">
+            </filter>
         </form>
 
         <form asp-action="RevokeAccessFromUsers" method="post">
-            <label for="directiveToRevokeAccess" class="form-label">Заповед за спиране на достъп:</label>
-            <select name="directiveToRevokeAccess" id="directiveToRevokeAccess" class="form-select mb-2">
-                <option value=""></option>
-            </select>
+            <div class="mb-2">
+                <label asp-for="DirectiveToRevokeAccess" class="form-label">Заповед за премахване на достъп</label>
+                <input type="text" class="form-control" id="directiveToRevokeAccessInput" value="@Model.DirectiveToRevokeAccessDescription" autocomplete="off">
+                <input type="hidden" asp-for="DirectiveToRevokeAccess" id="directiveToRevokeAccessId">
+                <input type="hidden" asp-for="DirectiveToRevokeAccessDescription">
+                <div id="directiveToRevokeAccessResults" class="list-group position-absolute" style="z-index:1000;"></div>
+                <span asp-validation-for="DirectiveToRevokeAccess" class="text-danger"></span>
+            </div>
 
             <table class="table table-bordered table-hover">
                 <thead>
@@ -44,17 +53,24 @@
                             <td><input type="checkbox" name="SelectedAccessibleSystemIds" value="@acc.AccessId" /></td>
                             <td>@acc.Description</td>
                             <td>
-                                <select name="directiveToRevokeAccessInner" class="form-select" data-accessid="@acc.AccessId" data-username="@Model.UserName">
-                                </select>
+                                <div class="position-relative">
+                                    <input type="text" class="form-control directive-search"
+                                           data-userid="@Model.UserId"
+                                           data-accessid="@acc.AccessId"
+                                           autocomplete="off"
+                                           value="@acc.DirectiveDescription" />
+                                    <input type="hidden" class="directive-hidden" />
+                                    <div class="list-group position-absolute directive-results" style="z-index:1000;"></div>
+                                </div>
                             </td>
                         </tr>
                     }
                 </tbody>
             </table>
 
-            @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.AccessibleSystems.Items)
+            @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.AccessibleSystems)
 
-            <input type="hidden" name="username" value="@Model.UserName" /> 
+            <input type="hidden" name="userId" value="@Model.UserId" />
             <button type="submit" class="btn btn-danger mt-2">Премахни избраните</button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllAccessibleBtn">Избери всички</button>
         </form>
@@ -62,18 +78,28 @@
 
     <div class="col-md-6">
         <h4>Недостъпни системи</h4>
-        <form method="get" asp-action="MapUserAccess" class="mb-2">
-            <input type="hidden" name="username" value="@Model.UserName" />
-            
-            <label for="filterDirective2" class="form-label">Филтър по заповед:</label>
-            <select name="filterDirective2" id="filterDirective2" class="form-select" onchange="this.form.submit()">
-            </select>
+        <form method="get" asp-action="MapUserAccess">
+            <input type="hidden" name="userId" value="@Model.UserId" />
+
+            <filter form-id="DirectiveFilterForm2"
+                    controller="Directive"
+                    action="SearchDirectives"
+                    hidden-input-id="filterDirective2"
+                    hidden-name="filterDirectiveId2"
+                    filter-id="@Model.FilterDirectiveId2"
+                    filter-description="@Model.FilterDirectiveDescription2">
+            </filter>
         </form>
 
         <form asp-action="GrantAccessToUsers" method="post">
-            <label for="directiveToGrantAccess" class="form-label">Заповед за даване на достъп:</label>
-            <select name="directiveToGrantAccess" id="directiveToGrantAccess" class="form-select mb-2">
-            </select>
+            <div class="mb-2">
+                <label asp-for="DirectiveToGrantAccess" class="form-label">Заповед за даване на достъп</label>
+                <input type="text" class="form-control" id="directiveToGrantAccessInput" value="@Model.DirectiveToGrantAccessDescription" autocomplete="off">
+                <input type="hidden" asp-for="DirectiveToGrantAccess" id="directiveToGrantAccessId">
+                <input type="hidden" asp-for="DirectiveToGrantAccessDescription">
+                <div id="directiveToGrantAccessResults" class="list-group position-absolute" style="z-index:1000;"></div>
+                <span asp-validation-for="DirectiveToGrantAccess" class="text-danger"></span>
+            </div>
 
             <table class="table table-bordered table-hover">
                 <thead>
@@ -90,20 +116,23 @@
                             <td><input type="checkbox" name="SelectedInaccessibleSystemIds" value="@acc.AccessId" /></td>
                             <td>@acc.Description</td>
                             <td>
-                                @if(acc.DirectiveId != Guid.Empty && acc.DirectiveDescription != "") 
-                                {
-                                    <select name="directiveToGrantAccessInner" id="directiveToGrantAccessInner" class="form-select" data-accessid="@acc.AccessId" data-username="@Model.UserName">
-                                    </select>
-                                }
-                            </td>
+                                <div class="position-relative">
+                                    <input type="text" class="form-control directive-search"
+                                           data-userid="@Model.UserId"
+                                           data-accessid="@acc.AccessId"
+                                           autocomplete="off"
+                                           value="@acc.DirectiveDescription" />
+                                    <input type="hidden" class="directive-hidden" />
+                                    <div class="list-group position-absolute directive-results" style="z-index:1000;"></div>
+                                </div>
                         </tr>
                     }
                 </tbody>
             </table>
 
-            @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.InaccessibleSystems.Items)
+            @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.InaccessibleSystems)
 
-            <input type="hidden" name="username" value="@Model.UserName" /> 
+            <input type="hidden" name="userId" value="@Model.UserId" /> 
             <button type="submit" class="btn btn-success mt-2">Добави избраните</button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllInaccessibleBtn">Избери всички</button>
         </form>
@@ -116,4 +145,5 @@
 @section Scripts {
         <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
         <script src="~/js/map-system-access.js" asp-append-version="true"></script>
+    <script src="~/js/filter.js" asp-append-version="true"></script>
 }

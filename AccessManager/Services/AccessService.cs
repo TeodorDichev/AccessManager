@@ -175,23 +175,25 @@ namespace AccessManager.Services
 
         internal PagedResult<AccessViewModel> GetAccessesNotGrantedToUserPaged(User user, Directive? filterDirective, int page)
         {
-            var revoked = _context.UserAccesses.Where(ua => ua.UserId == user.Id && ua.RevokedOn != null).Select(ua => new AccessViewModel
+            var revoked = _context.UserAccesses.Where(ua => ua.UserId == user.Id && ua.RevokedOn != null).ToList()
+            .Select(ua => new AccessViewModel
             {
                 AccessId = ua.AccessId,
                 Description = GetAccessDescription(ua.Access),
                 DirectiveId = ua.GrantedByDirectiveId,
                 DirectiveDescription = ua.RevokedByDirective != null ? ua.GrantedByDirective.Name : ""
-            });
+            }).ToList();
 
             var notGranted = Enumerable.Empty<AccessViewModel>();
             if (filterDirective == null)
-                notGranted = GetNotGrantedAccesses(user).Select(a => new AccessViewModel
+                notGranted = GetNotGrantedAccesses(user).ToList()
+                .Select(a => new AccessViewModel
                 {
                     AccessId = a.Id,
                     Description = GetAccessDescription(a),
                     DirectiveId = Guid.Empty,
                     DirectiveDescription = ""
-                });
+                }).ToList();
 
             var allWithoutAccess = revoked.Concat(notGranted).ToList();
 
@@ -209,7 +211,6 @@ namespace AccessManager.Services
                 Page = page
             };
         }
-
 
         internal int GetDeletedAccessesCount()
         {

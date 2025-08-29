@@ -170,7 +170,7 @@ namespace AccessManager.Controllers
             var candidates = all
                 .Where(a => string.IsNullOrEmpty(qLower) || a.Description.ToLowerInvariant().Contains(qLower))
                 .OrderBy(a => a.Description)
-                .Take(30)
+                .Take(10)
                 .Select(a => new { id = a.Id, text = _accessService.GetAccessDescription(_accessService.GetAccess(a.Id)) })
                 .ToList();
 
@@ -194,21 +194,17 @@ namespace AccessManager.Controllers
 
             var filterDirective1 = _directiveService.GetDirective(filterDirectiveId1);
             var filterDirective2 = _directiveService.GetDirective(filterDirectiveId2);
-            if (filterDirective1 == null || filterDirective2 == null)
-            {
-                TempData["Error"] = "Филтърът за заповед не е намерен";
-                return RedirectToAction("AccessList");
-            }
 
             var vm = new MapUserAccessViewModel
             {
+                UserId = user.Id,
                 UserName = user.UserName,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Department = user.Unit.Department.Description,
                 Unit = user.Unit.Description,
-                FilterDirectiveDescription1 = filterDirective1.Name,
-                FilterDirectiveDescription2 = filterDirective2.Name,
+                FilterDirectiveDescription1 = filterDirective1?.Name ?? "",
+                FilterDirectiveDescription2 = filterDirective2?.Name ?? "",
                 FilterDirectiveId1 = filterDirectiveId1,
                 FilterDirectiveId2 = filterDirectiveId2,
                 AccessibleSystems = _accessService.GetAccessesGrantedToUserPaged(user, filterDirective1, page1),
@@ -258,7 +254,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var user = _userService.GetUser(model.UserName);
+            var user = _userService.GetUser(model.UserId);
             if (user == null || !model.DirectiveToGrantAccess.HasValue)
             {
                 TempData["Error"] = "Моля изберете заповед преди да дадете достъп!";
@@ -288,7 +284,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var user = _userService.GetUser(model.UserName);
+            var user = _userService.GetUser(model.UserId);
             if (user == null || !model.DirectiveToRevokeAccess.HasValue)
             {
                 TempData["Error"] = "Моля изберете заповед преди да премахнете достъп!";

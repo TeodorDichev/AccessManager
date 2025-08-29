@@ -1,6 +1,4 @@
-﻿using AccessManager.ViewModels.InformationSystem;
-using AccessManager.ViewModels.User;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using AccessManager.ViewModels.User;
 
 namespace AccessManager.ViewModels.Access
 {
