@@ -13,7 +13,8 @@ namespace AccessManager.Data.Entities
         public string FirstName { get; set; } = string.Empty;
         public string MiddleName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
-
+        public Guid? PositionId { get; set; }
+        public virtual Position? Position { get; set; }
         public Guid UnitId { get; set; }
         public virtual Unit Unit { get; set; } = null!;
 

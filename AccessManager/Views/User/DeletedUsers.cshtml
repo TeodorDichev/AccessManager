@@ -1,4 +1,7 @@
-﻿@model AccessManager.ViewModels.User.DeletedUserListViewModel
+﻿@using AccessManager.ViewModels.User
+@using AccessManager.ViewModels
+
+@model PagedResult<UserListItemViewModel>
 
 @{
     ViewData["Title"] = "Потребители";
@@ -33,7 +36,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var user in Model.Users.Items)
+        @foreach (var user in Model.Items)
         {
             <tr>
                 <td>@user.UserName</td>

@@ -35,8 +35,10 @@ namespace AccessManager.Controllers
                 return RedirectToAction("UnitDepartmentList", "Department");
             }
 
+            var termLower = (term ?? "").Trim().ToLowerInvariant();
+
             var results = _unitService.GetUserUnitsForDepartment(loggedUser, department)
-                .Where(d => string.IsNullOrEmpty(term) || d.Description.Contains(term))
+                .Where(d => string.IsNullOrEmpty(term) || d.Description.ToLowerInvariant().Contains(termLower))
                 .DistinctBy(u => u.Description)
                 .Select(u => new { id = u.Id, text = u.Description })
                 .Take(10)

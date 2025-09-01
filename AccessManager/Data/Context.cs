@@ -18,11 +18,12 @@ namespace AccessManager.Data
         public DbSet<Log> Logs { get; set; } = null!;
         public DbSet<UnitUser> UnitUsers { get; set; } = null!;
         public DbSet<Directive> Directives { get; set; } = null!;
+        public DbSet<Position> Positions { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
+            ConfigurePosition(modelBuilder);
             ConfigureAccess(modelBuilder);
             ConfigureUsers(modelBuilder);
             ConfigureUserAccess(modelBuilder);
@@ -54,6 +55,17 @@ namespace AccessManager.Data
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.NoAction)
                       .IsRequired(false);
+            });
+        }
+
+        private void ConfigurePosition(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Position>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Description)
+                    .IsRequired();
             });
         }
 

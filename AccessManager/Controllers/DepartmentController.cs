@@ -26,8 +26,10 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
+            var termLower = (term ?? "").Trim().ToLowerInvariant();
+
             var results = _departmentService.GetDepartmentsByUserAuthority(loggedUser, loggedUser.WritingAccess)
-                .Where(d => string.IsNullOrEmpty(term) || d.Description.Contains(term))
+                .Where(d => string.IsNullOrEmpty(term) || d.Description.ToLowerInvariant().Contains(termLower))
                 .Select(d => new { id = d.Id, text = d.Description })
                 .Take(10)
                 .ToList();

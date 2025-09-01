@@ -34,14 +34,29 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
+        public IActionResult SearchPositions(string term)
+        {
+            var termLower = (term ?? "").Trim().ToLowerInvariant();
+
+            var results = _userService.GetPositions()
+                .Where(u => string.IsNullOrEmpty(term) || u.Description.ToLowerInvariant().Contains(termLower))
+                .Select(u => new { id = u.Id, text = u.Description })
+                .Take(10)
+                .ToList();
+
+            return Json(results);
+        }
+
+        [HttpGet]
         public IActionResult SearchUsers(string term)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
+            var termLower = (term ?? "").Trim().ToLowerInvariant();
 
             var results = _userService.GetAccessibleUsers(loggedUser)
-                .Where(u => string.IsNullOrEmpty(term) || u.UserName.Contains(term))
+                .Where(u => string.IsNullOrEmpty(term) || u.UserName.ToLowerInvariant().Contains(termLower))
                 .Select(u => new { id = u.Id, text = u.UserName })
                 .Take(10)
                 .ToList();

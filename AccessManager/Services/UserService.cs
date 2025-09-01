@@ -264,5 +264,10 @@ namespace AccessManager.Services
                 TotalCount = deletedUsers.Count()
             };
         }
+
+        internal IEnumerable<Position> GetPositions()
+        {
+           return _context.Positions.OrderBy(p => p.Description).ToList();
+        }
     }
 }

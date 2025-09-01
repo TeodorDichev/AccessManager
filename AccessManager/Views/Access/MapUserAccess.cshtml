@@ -147,13 +147,13 @@
             <button type="button" class="btn btn-secondary mt-2" id="selectAllInaccessibleBtn">Избери всички</button>
         </form>
     </div>
-    <a asp-controller="Unit" asp-action="MapUserUnitAccess" asp-route-username="@Model.UserName" class="btn btn-primary m-2">
+    <a asp-controller="Unit" asp-action="MapUserUnitAccess" asp-route-userId="@Model.UserId" class="btn btn-primary m-2">
          Достъпи до отдели
     </a>
 </div>
 
 @section Scripts {
-        <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
-        <script src="~/js/map-system-access.js" asp-append-version="true"></script>
+    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
+    <script src="~/js/map-system-access.js" asp-append-version="true"></script>
     <script src="~/js/filter.js" asp-append-version="true"></script>
 }
