@@ -2,7 +2,7 @@
 
 namespace AccessManager.ViewModels.Access
 {
-    public class MapUserAccessViewModel
+    public class MapUserAccessViewModel : IAuthAwareViewModel
     {
         public Guid UserId { get; set; }
         public string UserName { get; set; } = "";
@@ -10,6 +10,7 @@ namespace AccessManager.ViewModels.Access
         public string LastName { get; set; } = "";
         public string Department { get; set; } = "";
         public string Unit { get; set; } = "";
+        public string Position { get; set; } = "";
 
         public Guid? FilterDirectiveId1 { get; set; }
         public string? FilterDirectiveDescription1 { get; set; }

@@ -14,6 +14,5 @@ namespace AccessManager.ViewModels.User
         public AuthorityType ReadAccess { get; set; }
         public Guid DirectiveId { get; set; }
         public string DirectiveDescription { get; set; } = string.Empty;
-
     }
 }

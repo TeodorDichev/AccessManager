@@ -1,13 +1,10 @@
 ﻿using AccessManager.Data.Enums;
 using AccessManager.Utills;
-using AccessManager.ViewModels.InformationSystem;
-using AccessManager.ViewModels.Unit;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
 namespace AccessManager.ViewModels.User
 {
-    public class CreateUserViewModel : IValidatableObject
+    public class CreateUserViewModel : IAuthAwareViewModel, IValidatableObject
     {
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public string UserName { get; set; } = null!;
@@ -26,11 +23,13 @@ namespace AccessManager.ViewModels.User
 
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public Guid? SelectedDepartmentId { get; set; }
+        public string SelectedDepartmentDescription { get; set; } = string.Empty;
 
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public Guid? SelectedUnitId { get; set; }
-        public string SelectedDepartmentDescription { get; set; } = string.Empty;
         public string SelectedUnitDescription { get; set; } = string.Empty;
+        public Guid? SelectedPositionId { get; set; }
+        public string SelectedPositionDescription { get; set; } = string.Empty;
 
         public AuthorityType SelectedReadingAccess { get; set; } = AuthorityType.None;
         public AuthorityType SelectedWritingAccess { get; set; } = AuthorityType.None;
@@ -44,11 +43,10 @@ namespace AccessManager.ViewModels.User
                 if (string.IsNullOrWhiteSpace(Password))
                 {
                     yield return new ValidationResult(
-                        "Паролата е задължителна при избран достъп за четене или писане.",
+                        ExceptionMessages.RequiredField,
                         new[] { nameof(Password) });
                 }
             }
         }
-
     }
 }

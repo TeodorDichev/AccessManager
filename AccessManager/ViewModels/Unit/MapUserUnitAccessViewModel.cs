@@ -2,7 +2,7 @@
 
 namespace AccessManager.ViewModels.Unit
 {
-    public class MapUserUnitAccessViewModel
+    public class MapUserUnitAccessViewModel : IAuthAwareViewModel
     {
         public Guid UserId { get; set; }
         public string UserName { get; set; } = "";

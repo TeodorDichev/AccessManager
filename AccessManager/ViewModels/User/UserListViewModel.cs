@@ -2,7 +2,7 @@
 using AccessManager.ViewModels;
 using AccessManager.ViewModels.User;
 
-public class UserListViewModel
+public class UserListViewModel : IAuthAwareViewModel
 {
     public PagedResult<UserListItemViewModel> Users { get; set; } = new();
     public UserSortOptions SelectedSortOption { get; set; }
@@ -10,5 +10,4 @@ public class UserListViewModel
     public string FilterDepartmentDescription { get; set; } = string.Empty;
     public Guid? FilterUnitId { get; set; }
     public string FilterUnitDescription { get; set; } = string.Empty;
-    public AuthorityType WriteAuthority { get; set; }
 }

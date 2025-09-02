@@ -2,7 +2,7 @@
 
 namespace AccessManager.ViewModels.Access
 {
-    public class EditAccessViewModel
+    public class EditAccessViewModel : IAuthAwareViewModel
     {
         public string Description { get; set; } = "";
         public string Name { get; set; } = "";
@@ -23,6 +23,5 @@ namespace AccessManager.ViewModels.Access
         public List<Guid> SelectedUsersWithoutAccessIds { get; set; } = new();
         public Guid? DirectiveToGrantAccessId { get; set; }
         public string DirectiveToGrantAccessDescription { get; set; } = string.Empty;
-
     }
 }

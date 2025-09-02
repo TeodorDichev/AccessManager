@@ -1,6 +1,6 @@
 ﻿namespace AccessManager.ViewModels.Access
 {
-    public class UserAccessListViewModel
+    public class UserAccessListViewModel : IAuthAwareViewModel
     {
         public PagedResult<UserAccessListItemViewModel> UserAccessList { get; set; } = new();
         public Guid? FilterAccessId { get; set; }

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace AccessManager.ViewModels.User
 {
-    public class EditUserViewModel
+    public class EditUserViewModel : IAuthAwareViewModel
     {
         public Guid UserId { get; set; }
 
@@ -24,16 +24,16 @@ namespace AccessManager.ViewModels.User
 
         public AuthorityType ReadingAccess { get; set; } = AuthorityType.None;
         public AuthorityType WritingAccess { get; set; } = AuthorityType.None;
-        public AuthorityType LoggedUserReadingAccess { get; set; } = AuthorityType.None;
-        public AuthorityType LoggedUserWritingAccess { get; set; } = AuthorityType.None;
 
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public Guid? SelectedDepartmentId { get; set; }
+        public string SelectedDepartmentDescription { get; set; } = string.Empty;
 
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public Guid? SelectedUnitId { get; set; }
-
-        public string SelectedDepartmentDescription { get; set; } = string.Empty;
         public string SelectedUnitDescription { get; set; } = string.Empty;
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
+        public Guid? SelectedPositionId { get; set; }
+        public string SelectedPositionDescription { get; set; } = string.Empty;
     }
 }

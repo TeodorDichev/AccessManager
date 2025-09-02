@@ -10,6 +10,7 @@ namespace AccessManager.ViewModels.Access
         public string LastName { get; set; } = "";
         public string Department { get; set; } = "";
         public string Unit { get; set; } = "";
+        public string Position { get; set; } = "";
         public string AccessDescription { get; set; } = "";
         public string GrantDirectiveDescription { get; set; } = "";
         public string RevokeDirectiveDescription { get; set; } = "";

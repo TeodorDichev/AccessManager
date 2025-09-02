@@ -1,13 +1,11 @@
-﻿using AccessManager.Data.Enums;
-using AccessManager.ViewModels.Unit;
+﻿using AccessManager.ViewModels.Unit;
 
 namespace AccessManager.ViewModels.Department
 {
-    public class DepartmentEditViewModel
+    public class DepartmentEditViewModel : IAuthAwareViewModel
     {
         public Guid DepartmentId { get; set; }
         public string DepartmentName { get; set; } = string.Empty;
         public PagedResult<UnitViewModel> Units { get; set; } = new();
-        public AuthorityType WriteAuthority { get; set; }
     }
 }
