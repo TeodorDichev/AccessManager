@@ -54,6 +54,7 @@
                     <tr>
                         <th><input type="checkbox" id="selectAllWithAccess" /></th>
                         <th>Потребител</th>
+                        <th>Служба</th>
                         <th>Отдел</th>
                         <th>Заповед</th>
                     </tr>
@@ -64,6 +65,7 @@
                         <tr>
                             <td> <input type="checkbox" name="SelectedUsersWithAccessIds" value="@user.UserId" /> </td>
                             <td>@user.FirstName @user.LastName (@user.UserName)</td>
+                            <td>@user.Position</td>
                             <td>@user.Department - @user.Unit</td>
                             <td>
                                 <div class="position-relative">
@@ -126,6 +128,7 @@
                     <tr>
                         <th><input type="checkbox" id="selectAllWithoutAccess" /></th>
                         <th>Потребител</th>
+                        <th>Служба</th>
                         <th>Отдел</th>
                         <th>Заповед</th>
                     </tr>
@@ -136,6 +139,7 @@
                         <tr>
                             <td> <input type="checkbox" name="SelectedUsersWithoutAccessIds" value="@user.UserId" /> </td>
                             <td>@user.FirstName @user.LastName (@user.UserName)</td>
+                            <td>@user.Position</td>
                             <td>@user.Department - @user.Unit</td>
                             <td>
                                 <div class="position-relative">

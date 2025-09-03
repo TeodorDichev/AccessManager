@@ -87,6 +87,10 @@ namespace AccessManager.Controllers
                 SelectedDepartmentId = loggedUser.Unit.Department.Id,
                 SelectedUnitDescription = loggedUser.Unit.Description,
                 SelectedUnitId = loggedUser.Unit.Id,
+
+                // For safety if changed inside the view
+                LoggedUserWriteAuthority = loggedUser.WritingAccess,
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
             };
 
             return View(model);

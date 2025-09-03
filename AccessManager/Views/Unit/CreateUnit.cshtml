@@ -1,4 +1,5 @@
-﻿@model AccessManager.ViewModels.Unit.CreateUnitViewModel
+﻿@using AccessManager.Data.Enums
+@model AccessManager.ViewModels.Unit.CreateUnitViewModel
 
 @{
     ViewData["Title"] = "Създаване на отдел";
@@ -33,16 +34,15 @@
 
     <div class="mb-3">
         <label asp-for="UnitName" class="form-label">Име на отдел</label>
-        <input asp-for="UnitName" class="form-control" placeholder="Въведете име" required />
+        <input asp-for="UnitName" class="form-control" placeholder="Въведете име" required auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted" />
         <span asp-validation-for="UnitName" class="text-danger"></span>
     </div>
 
-    <button type="submit" class="btn btn-success">Създай</button>
+    <button type="submit" class="btn btn-success" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">Създай</button>
     <a asp-action="Index" class="btn btn-secondary">Отказ</a>
 </form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/filter.js" asp-append-version="true"></script>
-
 }

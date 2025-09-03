@@ -1,6 +1,7 @@
 ﻿using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
+using AccessManager.Utills;
 using AccessManager.ViewModels;
 using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
@@ -23,7 +24,7 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult SearchDepartmentUnits(Guid departmentId, string term)
+        public IActionResult SearchDepartmentUnits(Guid? departmentId, string term)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
@@ -31,7 +32,7 @@ namespace AccessManager.Controllers
             var department = _departmentService.GetDepartment(departmentId);
             if (department == null)
             {
-                TempData["Error"] = "Дирекцията не е намерена";
+                TempData["Error"] = ExceptionMessages.DepartmentNotFount;
                 return RedirectToAction("UnitDepartmentList", "Department");
             }
 
@@ -53,7 +54,6 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-
             var results = loggedUser.AccessibleUnits
                 .Where(uu => string.IsNullOrEmpty(term) || uu.Unit.Description.Contains(term))
                 .DistinctBy(uu => uu.Unit.Description)
@@ -65,16 +65,15 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public ActionResult EditUnit(Guid id, int page = 1)
+        public ActionResult EditUnit(Guid? id, int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
             Unit? unit = _unitService.GetUnit(id);
             if (unit == null)
             {
-                TempData["Error"] = "Отделът не е намерена";
+                TempData["Error"] = ExceptionMessages.UnitNotFound;
                 return RedirectToAction("UnitDepartmentList", "Department");
             }
 
@@ -84,6 +83,8 @@ namespace AccessManager.Controllers
                     .Where(u => u.User != null && loggedUser.AccessibleUnits.Select(au => au.UnitId).Contains(u.User.UnitId))
                     .Select(u => new UserListItemViewModel
                     {
+                        Id = u.User.Id,
+                        Position = u.User.Position?.Description ?? "",
                         UserName = u.User.UserName,
                         FirstName = u.User.FirstName,
                         LastName = u.User.LastName,
@@ -102,7 +103,8 @@ namespace AccessManager.Controllers
                 DepartmentName = unit.Department.Description,
                 UnitName = unit.Description,
                 UsersWithAccess = pagedRes,
-                WriteAuthority = loggedUser.WritingAccess
+                LoggedUserWriteAuthority = loggedUser.WritingAccess,
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
             };
 
             return View(model);
@@ -113,14 +115,13 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
             if (!ModelState.IsValid) return View(model);
 
             Unit? unit = _unitService.GetUnit(model.UnitId);
             if (unit == null)
             {
-                TempData["Error"] = "Отделът не е намерен";
+                TempData["Error"] = ExceptionMessages.UnitNotFound;
                 return RedirectToAction("EditUnit", new { model.UnitId });
             }
 
@@ -131,18 +132,21 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        public IActionResult RemoveUnitAccess(string username, Guid unitId)
+        public IActionResult RemoveUnitAccess(Guid? userId, Guid? unitId)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var user = _userService.GetUser(username);
-            if (user == null) return Json(new { success = false, message = "User not found" });
+            var user = _userService.GetUser(userId);
+            if (user == null) return Json(new { success = false, message = ExceptionMessages.UserNotFound });
 
-            var uu = _unitService.GetUnitUser(user.Id, unitId);
+            var unit = _unitService.GetUnit(userId);
+            if (unit == null) return Json(new { success = false, message = ExceptionMessages.UnitNotFound });
 
-            if (uu == null) return Json(new { success = false, message = "Not Found" });
-            if (user.WritingAccess == Data.Enums.AuthorityType.SuperAdmin) return Json(new { success = false, message = "Cannot remove unit access from superadmin" });
+            var uu = _unitService.GetUnitUser(user.Id, unit.Id);
+
+            if (uu == null) return Json(new { success = false, messages = ExceptionMessages.UnitUserNotFound });
+            if (user.WritingAccess >= loggedUser.WritingAccess) return Json(new { success = false, message = ExceptionMessages.InsufficientAuthority });
 
             if (user.WritingAccess == Data.Enums.AuthorityType.Full) user.WritingAccess = Data.Enums.AuthorityType.Restricted;
             if (user.ReadingAccess == Data.Enums.AuthorityType.Full) user.ReadingAccess = Data.Enums.AuthorityType.Restricted;
@@ -153,7 +157,6 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult CreateUnit(CreateUnitViewModel model)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
@@ -162,7 +165,7 @@ namespace AccessManager.Controllers
             var department = _departmentService.GetDepartment(model.DepartmentId);
             if (department == null)
             {
-                TempData["Error"] = "Дирекцията не е намерена";
+                TempData["Error"] = ExceptionMessages.DepartmentNotFount;
                 return RedirectToAction("UnitDepartmentList", "Department");
             }
 
@@ -179,11 +182,18 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             var department = _departmentService.GetDepartment(departmentId);
+            if (department == null)
+            {
+                TempData["Error"] = ExceptionMessages.DepartmentNotFount;
+                return RedirectToAction("UnitDepartmentList", "Department");
+            }
 
             var model = new CreateUnitViewModel
             {
-                DepartmentId = department == null ? null : department.Id,
-                DepartmentDescription = department == null ? "" : department.Description
+                DepartmentId = department.Id,
+                DepartmentDescription = department == null ? "" : department.Description,
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
+                LoggedUserWriteAuthority = loggedUser.WritingAccess,
             };
 
             return View(model);
@@ -198,11 +208,9 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(model.UserId);
             if (user == null)
             {
-                TempData["Error"] = "Потребителят не е намерен";
+                TempData["Error"] = ExceptionMessages.UserNotFound;
                 return RedirectToAction("EditUser", new { model.UserId });
             }
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
             var filterDepartment1 = _departmentService.GetDepartment(model.FilterDepartmentId1);
             var filterDepartment2 = _departmentService.GetDepartment(model.FilterDepartmentId2);
@@ -210,6 +218,7 @@ namespace AccessManager.Controllers
             var vm = new MapUserUnitAccessViewModel
             {
                 UserId = user.Id,
+                Position = user.Position?.Description ?? "",
                 UserName = user.UserName,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
@@ -221,6 +230,8 @@ namespace AccessManager.Controllers
                 FilterDepartmentDescription2 = filterDepartment2?.Description ?? "",
                 AccessibleUnits = _unitService.GetAccessibleUnitsPaged(loggedUser, user, filterDepartment1, page1),
                 InaccessibleUnits = _unitService.GetInaccessibleUnitsPaged(loggedUser, user, filterDepartment2, page2),
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
+                LoggedUserWriteAuthority = loggedUser.WritingAccess,
             };
 
             return View(vm);
@@ -235,7 +246,7 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(model.UserName);
             if (user == null)
             {
-                TempData["Error"] = "Потребителят не е намерен";
+                TempData["Error"] = ExceptionMessages.UserNotFound;
                 return RedirectToAction("MapUserUnitAccess", new { model.UserName });
             }
 
@@ -244,7 +255,7 @@ namespace AccessManager.Controllers
                 var unit = _unitService.GetUnit(unitId);
                 if (unit == null)
                 {
-                    TempData["Error"] = "Отделът не е намерен";
+                    TempData["Error"] = ExceptionMessages.UnitNotFound;
                     continue;
                 }
 
@@ -264,7 +275,7 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(model.UserName);
             if (user == null)
             {
-                TempData["Error"] = "Потребителят не е намерен";
+                TempData["Error"] = ExceptionMessages.UserNotFound;
                 return RedirectToAction("MapUserUnitAccess", new { model.UserName });
             }
 
@@ -273,7 +284,6 @@ namespace AccessManager.Controllers
                 user.WritingAccess = AuthorityType.Restricted;
                 user.ReadingAccess = AuthorityType.Restricted;
             }
-
 
             foreach (var unitId in model.SelectedAccessibleUnitIds)
             {
@@ -285,25 +295,29 @@ namespace AccessManager.Controllers
                 }
             }
 
-            return RedirectToAction("MapUserUnitAccess", new { model.UserName });
+            return RedirectToAction("MapUserUnitAccess", new { model.UserId });
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult SoftDeleteUnit(Guid? unitId)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if(loggedUser.WritingAccess < AuthorityType.Full)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("UnitDepartmentList", "Department");
+            }
 
             Unit? unit = _unitService.GetUnit(unitId);
             if (unit == null)
             {
-                TempData["Error"] = "Не съществува такъв отдел";
+                TempData["Error"] = ExceptionMessages.UnitNotFound;
                 return RedirectToAction("UnitDepartmentList", "Department");
             }
             else if (!_unitService.CanDeleteUnit(unit))
             {
-                TempData["Error"] = "Отделът не е изтрит успешно";
+                TempData["Error"] = ExceptionMessages.EntityCannotBeDeletedDueToDependencies;
                 return RedirectToAction("UnitDepartmentList", "Department");
             }
 
@@ -318,16 +332,21 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (loggedUser.WritingAccess < AuthorityType.SuperAdmin)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("DeletedUnitDepartments", "Department");
+            }
 
             var unit = _unitService.GetDeletedUnit(unitId);
             if (unit == null)
             {
-                TempData["Error"] = "Отделът не е намерена";
+                TempData["Error"] = ExceptionMessages.UnitNotFound;
                 return RedirectToAction("DeletedUnitDepartments", "Department");
             }
             else if (!_unitService.CanRestoreUnit(unit))
             {
-                TempData["Error"] = "Отделът не е може да бъде възстановен понеже не съществува съответната дирекция";
+                TempData["Error"] = ExceptionMessages.EntityCannotBeRestoredDueToDeletedDependencies;
                 return RedirectToAction("DeletedUnitDepartments", "Department");
             }
 
@@ -343,11 +362,16 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (loggedUser.WritingAccess < AuthorityType.SuperAdmin)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("DeletedUnitDepartments", "Department");
+            }
 
             var unit = _unitService.GetDeletedUnit(unitId);
             if (unit == null)
             {
-                TempData["Error"] = "Отделът не е намеренa";
+                TempData["Error"] = ExceptionMessages.UnitNotFound;
                 return RedirectToAction("DeletedUnitDepartments", "Department");
             }
 
@@ -357,6 +381,5 @@ namespace AccessManager.Controllers
             TempData["Success"] = "Дирекцията е успешно изтритa.";
             return RedirectToAction("DeletedUnitDepartments", "Department");
         }
-
     }
 }

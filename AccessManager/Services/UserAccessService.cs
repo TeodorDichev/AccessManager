@@ -25,12 +25,15 @@ namespace AccessManager.Services
         {
             return _context.UserAccesses.FirstOrDefault(ua => ua.AccessId == accessId && ua.UserId == userId);
         }
+
         internal PagedResult<UserAccessListItemViewModel> GetUserAccessesPaged(
             User loggedUser, User? userFilter, Access? accessFilter, Directive? directiveFilter, int page)
         {
             var query = _context.UserAccesses
-                .Include(ua => ua.User)
-                    .ThenInclude(u => u.Unit)
+                .Include(ua => ua.User)                   
+                    .ThenInclude(u => u.Position)         
+                .Include(ua => ua.User)                  
+                    .ThenInclude(u => u.Unit)            
                         .ThenInclude(unit => unit.Department)
                 .Include(ua => ua.Access)
                 .Include(ua => ua.GrantedByDirective)
@@ -62,6 +65,8 @@ namespace AccessManager.Services
                 .Take(Constants.ItemsPerPage)
                 .Select(ua => new UserAccessListItemViewModel
                 {
+                    Id = ua.User.Id,
+                    Position = ua.User.Position?.Description ?? "",
                     UserName = ua.User.UserName,
                     FirstName = ua.User.FirstName,
                     LastName = ua.User.LastName,
@@ -83,12 +88,13 @@ namespace AccessManager.Services
             };
         }
 
-
         internal PagedResult<UserAccessViewModel> GetUsersWithAccessPaged(User loggedUser, Access access, Directive? filterDirective, int page)
         {
             var accessibleUserIds = _userService.GetAccessibleUsers(loggedUser).Select(u => u.Id);
 
             var query = _context.UserAccesses
+                .Include(ua => ua.User)
+                    .ThenInclude(u => u.Position)
                 .Include(ua => ua.User)
                     .ThenInclude(u => u.Unit)
                         .ThenInclude(unit => unit.Department)
@@ -110,6 +116,7 @@ namespace AccessManager.Services
                     UserId = ua.UserId,
                     UserName = ua.User.UserName,
                     FirstName = ua.User.FirstName,
+                    Position = ua.User.Position?.Description ?? "",
                     LastName = ua.User.LastName,
                     Department = ua.User.Unit.Department.Description,
                     Unit = ua.User.Unit.Description,

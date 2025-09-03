@@ -8,7 +8,6 @@ namespace AccessManager.ViewModels.Unit
         public Guid UnitId { get; set; }
         public string DepartmentName { get; set; } = string.Empty;
         public string UnitName { get; set; } = string.Empty;
-        public AuthorityType WriteAuthority { get; set; }
         public PagedResult<UserListItemViewModel> UsersWithAccess { get; set; } = new();
     }
 }

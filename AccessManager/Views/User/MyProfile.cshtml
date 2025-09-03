@@ -26,36 +26,36 @@
     }
 </style>
 
-<form asp-action="MyProfile" method="post" class="wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<form asp-action="MyProfile" method="post">
     <div class="row">
         <div class="col-md-6">
-            <div class="mb-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+            <div class="mb-3">
                 <label asp-for="FirstName" class="form-label">Първо име</label>
-                <input asp-for="FirstName" class="form-control" />
+                <input asp-for="FirstName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.SuperAdmin" />
                 <span asp-validation-for="FirstName" class="text-danger"></span>
             </div>
 
-            <div class="mb-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+            <div class="mb-3">
                 <label asp-for="MiddleName" class="form-label">Второ име</label>
-                <input asp-for="MiddleName" class="form-control" />
+                <input asp-for="MiddleName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.SuperAdmin" />
                 <span asp-validation-for="MiddleName" class="text-danger"></span>
             </div>
 
-            <div class="mb-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+            <div class="mb-3">
                 <label asp-for="LastName" class="form-label">Фамилия</label>
-                <input asp-for="LastName" class="form-control" />
+                <input asp-for="LastName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.SuperAdmin" />
                 <span asp-validation-for="LastName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="EGN" class="form-label">ЕГН</label>
                 <span asp-validation-for="EGN" class="text-danger"></span>
-                <input asp-for="EGN" class="form-control" />
+                <input asp-for="EGN" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted" />
             </div>
 
             <div class="mb-3">
                 <label asp-for="Phone" class="form-label">Телефонен номер</label>
-                <input asp-for="Phone" class="form-control" />
+                <input asp-for="Phone" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted" />
                 <span asp-validation-for="Phone" class="text-danger"></span>
             </div>
         </div>
@@ -63,13 +63,13 @@
         <div class="col-md-6">
             <div class="mb-3">
                 <label asp-for="UserName" class="form-label">Потребителско име</label>
-                <input asp-for="UserName" class="form-control" />
+                <input asp-for="UserName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.SuperAdmin" />
                 <span asp-validation-for="UserName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="SelectedDepartmentId" class="form-label">Дирекция</label>
-                <input type="text" class="form-control" id="departmentInput" value="@Model.SelectedDepartmentDescription" autocomplete="off">
+                <input type="text" class="form-control" id="departmentInput" value="@Model.SelectedDepartmentDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.SuperAdmin"/>
                 <input type="hidden" asp-for="SelectedDepartmentId" id="SelectedDepartmentId">
                 <input type="hidden" asp-for="SelectedDepartmentDescription">
                 <div id="departmentResults" class="list-group position-absolute" style="z-index:1000;"></div>
@@ -78,7 +78,7 @@
 
             <div class="mb-3">
                 <label asp-for="SelectedUnitId" class="form-label">Отдел</label>
-                <input type="text" class="form-control" id="unitInput" value="@Model.SelectedUnitDescription" autocomplete="off">
+                <input type="text" class="form-control" id="unitInput" value="@Model.SelectedUnitDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.SuperAdmin"/>
                 <input type="hidden" asp-for="SelectedUnitId" id="SelectedUnitId">
                 <input type="hidden" asp-for="SelectedUnitDescription">
                 <div id="unitResults" class="list-group position-absolute" style="z-index:1000;"></div>
@@ -87,13 +87,13 @@
 
             <div class="mb-3">
                 <label class="form-label">Достъп за четене</label>
-                <input class="form-control" value="@BulgarianLocalization.GetBulgarianAuthorityType(Model.ReadingAccess)" readonly />
+                <input class="form-control" value="@BulgarianLocalization.GetBulgarianAuthorityType(Model.ReadingAccess)" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.SuperAdmin" />
                 <input type="hidden" asp-for="ReadingAccess" />
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Достъп за писане</label>
-                <input class="form-control" value="@BulgarianLocalization.GetBulgarianAuthorityType(Model.WritingAccess)" readonly />
+                <input class="form-control" value="@BulgarianLocalization.GetBulgarianAuthorityType(Model.WritingAccess)" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.SuperAdmin" />
                 <input type="hidden" asp-for="WritingAccess" />
             </div>
         </div>
@@ -150,7 +150,6 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
     <script src="~/js/unit-dropdown-load.js" asp-append-version="true"></script>
     <script src="~/js/my-profile.js" asp-append-version="true"></script>
     <script src="~/js/password-visibility-toggle.js" asp-append-version="true"></script>

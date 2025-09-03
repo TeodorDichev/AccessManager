@@ -37,6 +37,11 @@ header {
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
+table td, table th {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+}
+
 body {
   margin-bottom: 60px;
 }
@@ -66,11 +71,11 @@ body {
     min-height: 400px;
 }
 
-    .card.h-100 {
-        height: 100%;
-    }
+.card.h-100 {
+    height: 100%;
+}
 
-    .card img {
-        max-height: 160px;
-        object-fit: contain;
-    }
+.card img {
+    max-height: 160px;
+    object-fit: contain;
+}

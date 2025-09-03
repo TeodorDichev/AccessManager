@@ -106,7 +106,7 @@ namespace AccessManager.Controllers
             }
             else if (!_directiveService.CanDeleteDirective(directive))
             {
-                TempData["Error"] = ExceptionMessages.EntityCannotBeDeletedDueToDependencies
+                TempData["Error"] = ExceptionMessages.EntityCannotBeDeletedDueToDependencies;
                 return RedirectToAction("DirectiveList");
             }
 

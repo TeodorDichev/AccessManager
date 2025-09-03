@@ -1,16 +1,16 @@
 ﻿document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".remove-access-btn").forEach(btn => {
         btn.addEventListener("click", function () {
-            let username = this.dataset.username;
+            let userId = this.dataset.userId;
             let unitId = this.dataset.unitid;
 
-            fetch(`/Unit/RemoveUnitAccess?username=${encodeURIComponent(username)}&unitId=${encodeURIComponent(unitId)}`, {
+            fetch(`/Unit/RemoveUnitAccess?userId=${encodeURIComponent(userId)}&unitId=${encodeURIComponent(unitId)}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
                 },
-                body: JSON.stringify({ username: username, unitId: unitId })
+                body: JSON.stringify({ userId: userId, unitId: unitId })
             })
                 .then(response => response.json())
                 .then(data => {

@@ -23,5 +23,7 @@
         public const string DepartmentNotFount = "Дирекцията не е намерена.";
         public const string DepartmentWithNameExists = "Вече съществува дирекция с това име.";
         public const string DirectiveWithNameExists = "Вече съществува заповед с това име.";
+        public const string UnitNotFound = "Отделът не е намерен.";
+        public const string UnitUserNotFound = "Достъпът на потребителя до отдела не е намерен.";
     }
 }

@@ -18,17 +18,18 @@
 }
 
 <div class="d-flex align-items-bottom">
-    <form asp-action="EditUnit" method="post" class="wrapper m-3" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+    <form asp-action="EditUnit" method="post" class="m-3">
         <div class="p-0">
             <label asp-for="UnitName" class="form-label">Име</label>
-            <input asp-for="UnitName" class="form-control" />
+            <input asp-for="UnitName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted" />
             <span asp-validation-for="UnitName" class="text-danger"></span>
         </div>
         @*sending the rest of the model so it does not leave null fields*@
         <input asp-for="UnitId" type="hidden" />
         <input asp-for="UsersWithAccess" type="hidden" />
         <input asp-for="DepartmentName" type="hidden" />
-        <input asp-for="WriteAuthority" type="hidden" />
+        <input asp-for="LoggedUserWriteAuthority" type="hidden" />
+        <input asp-for="LoggedUserReadAuthority" type="hidden" />
     </form>
 </div>
 
@@ -44,6 +45,7 @@
                 <th>Собствено име</th>
                 <th>Фамилия</th>
                 <th>Дирекция</th>
+                <th>Служба</th>
                 <th>Отдел</th>
                 <th>Достъп за писане</th>
                 <th>Достъп за четене</th>
@@ -58,17 +60,18 @@
                     <td>@user.UserName</td>
                     <td>@user.FirstName</td>
                     <td>@user.LastName</td>
+                    <td>@user.Position</td>
                     <td>@user.Department</td>
                     <td>@user.Unit</td>
                     <td>@BulgarianLocalization.GetBulgarianAuthorityType(user.WriteAccess)</td>
                     <td>@BulgarianLocalization.GetBulgarianAuthorityType(user.ReadAccess)</td>
                     <td>
-                        <button class="btn btn-danger remove-access-btn" data-username="@user.UserName" data-unitid="@Model.UnitId">
+                        <button class="btn btn-danger remove-access-btn" data-userId="@user.Id" data-unitid="@Model.UnitId" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
                             Премахни достъпа
                         </button>
                     </td>
                     <td>
-                        <a asp-controller="User" asp-action="EditUser" asp-route-username="@user.UserName" class="btn btn-primary">
+                        <a asp-controller="User" asp-action="EditUser" asp-route-userId="@user.Id" class="btn btn-primary" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">
                             Редактирай
                         </a>
                     </td>
@@ -82,6 +85,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
     <script src="~/js/remove-unit-access.js" asp-append-version="true"></script>
 }
