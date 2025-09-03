@@ -4,7 +4,7 @@ namespace AccessManager.ViewModels
 {
     public abstract class IAuthAwareViewModel
     {
-        AuthorityType LoggedUserWriteAuthority { get; set; }
-        AuthorityType LoggedUserReadAuthority { get; set; }
+        public AuthorityType LoggedUserWriteAuthority { get; set; }
+        public AuthorityType LoggedUserReadAuthority { get; set; }
     }
 }

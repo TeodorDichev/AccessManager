@@ -26,7 +26,6 @@ namespace AccessManager.Controllers
             return View();
         }
 
-
         [HttpGet]
         public IActionResult Login()
         {
@@ -40,7 +39,7 @@ namespace AccessManager.Controllers
         public IActionResult Login(LoginViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
-            if (_userService.GetUser(HttpContext.Session.GetString("Username")) != null) ModelState.AddModelError("", "Излесте от профила си!");
+            if (_userService.GetUser(HttpContext.Session.GetString("Username")) != null) ModelState.AddModelError("", ExceptionMessages.LoggedInLogInAttempt);
 
             User? user = _userService.GetUser(model.Username);
             if (user != null && user.Password != null && _passwordService.VerifyPassword(user, model.Password, user.Password))

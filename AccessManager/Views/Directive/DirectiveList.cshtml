@@ -1,7 +1,7 @@
 ﻿@using AccessManager.Data.Entities;
-@using AccessManager.ViewModels;
-@model PagedResult<Directive>
-
+@using AccessManager.Data.Enums
+@using AccessManager.ViewModels.Directive;
+@model DirectiveListViewModel
 
 @{
     ViewData["Title"] = "Заповеди";
@@ -9,11 +9,20 @@
 
 <h2>Заповеди</h2>
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="text-success">@TempData["Success"]</div>
+}
+
 <form style="display:none;">
     @Html.AntiForgeryToken()
 </form>
 
-<table class="table table-bordered table-striped wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<table class="table table-bordered table-striped">
     <thead class="table-light">
         <tr>
             <th>Име</th>
@@ -21,7 +30,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var dir in Model.Items)
+        @foreach (var dir in Model.Directives.Items)
         {
             <tr data-id="@dir.Id">
                 <td>
@@ -30,7 +39,8 @@
                 <td>
                     <form asp-controller="Directive" asp-action="SoftDeleteDirective" method="post" asp-route-id="@dir.Id">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-danger me-2">Изтрий</button>
+                        @*Here the user must be SuperAdmin to delete a directive because it is directly a hard delete despite name and behavior*@
+                        <button type="submit" class="btn btn-danger me-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.SuperAdmin">Изтрий</button>
                     </form>
                 </td>
             </tr>
@@ -39,20 +49,19 @@
             <tr>
                 @Html.AntiForgeryToken()
                 <td>
-                    <input type="text" name="Name" class="form-control" placeholder="Въведи нова заповед" required />
+                    <input type="text" name="Name" class="form-control" placeholder="Въведи нова заповед" required auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full"/>
                 </td>
                 <td colspan="2">
-                    <button type="submit" class="btn btn-success">Добави</button>
+                    <button type="submit" class="btn btn-success"  auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">Добави</button>
                 </td>
             </tr>
         </form>
     </tbody>
 </table>
 
-@await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model)
+@await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.Directives)
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
     <script src="~/js/update-directive-name.js" asp-append-version="true"></script>
 }

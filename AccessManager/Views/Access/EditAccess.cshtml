@@ -1,4 +1,5 @@
-﻿@model AccessManager.ViewModels.Access.EditAccessViewModel
+﻿@using AccessManager.Data.Enums
+@model AccessManager.ViewModels.Access.EditAccessViewModel
 
 <h2 class="text-center">@Model.Description</h2>
 
@@ -11,15 +12,15 @@
     <div class="text-success">@TempData["Success"]</div>
 }
 
-<div class="row wrapper mb-2" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<div class="row mb-2">
     <form method="post" asp-action="EditAccessName" class="mb-2">
       <input type="hidden" name="accessId" value="@Model.AccessId" /> 
       <label asp-for="Name" class="form-label">Ново име</label>
-      <input asp-for="Name" class="form-control" onchange="this.form.submit()"/>
+        <input asp-for="Name" class="form-control" onchange="this.form.submit()" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
     </form>
 </div>
 
-<div class="row wrapper mt-5" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<div class="row mt-5">
     <div class="col-md-6">
         <h4>Потребители с достъп</h4>
         <form method="get" asp-action="EditAccess">
@@ -70,7 +71,8 @@
                                            data-userid="@user.UserId"
                                            data-accessid="@Model.AccessId"
                                            autocomplete="off" 
-                                           value="@user.DirectiveDescription"/>
+                                           value="@user.DirectiveDescription"
+                                           auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
                                     <input type="hidden" class="directive-hidden" />
                                     <div class="list-group position-absolute directive-results" style="z-index:1000;"></div>
                                 </div>
@@ -83,7 +85,7 @@
             @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.UsersWithAccess)
 
             <input type="hidden" name="accessId" value="@Model.AccessId" /> 
-            <button type="submit" class="btn btn-danger mt-2">Премахни избраните</button>
+            <button type="submit" class="btn btn-danger mt-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">Премахни избраните</button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllWithAccessBtn">Избери всички</button>
         </form>
     </div>
@@ -141,7 +143,8 @@
                                            data-userid="@user.UserId"
                                            data-accessid="@Model.AccessId"
                                            autocomplete="off" 
-                                           value="@user.DirectiveDescription" />
+                                           value="@user.DirectiveDescription"
+                                           auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
                                     <input type="hidden" class="directive-hidden" />
                                     <div class="list-group position-absolute directive-results" style="z-index:1000;"></div>
                                 </div>
@@ -154,7 +157,7 @@
             @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.UsersWithoutAccess)
 
             <input type="hidden" name="accessId" value="@Model.AccessId" /> 
-            <button type="submit" class="btn btn-success mt-2">Добави избраните</button>
+            <button type="submit" class="btn btn-success mt-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">Добави избраните</button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllWithoutAccessBtn">Избери всички</button>
         </form>
     </div>
@@ -162,6 +165,5 @@
 
 @section Scripts {
     <script src="~/js/edit-access.js" asp-append-version="true"></script>
-    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
     <script src="~/js/filter.js" asp-append-version="true"></script>
 }

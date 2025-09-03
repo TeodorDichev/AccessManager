@@ -1,4 +1,5 @@
-﻿@model AccessManager.ViewModels.Access.MapUserAccessViewModel
+﻿@using AccessManager.Data.Enums
+@model AccessManager.ViewModels.Access.MapUserAccessViewModel
 
 <h2 class="text-center">@Model.FirstName @Model.LastName</h2>
 <h4 class="text-center">@Model.Department - @Model.Unit</h4>
@@ -12,7 +13,7 @@
     <div class="text-success">@TempData["Success"]</div>
 }
 
-<div class="row wrapper mt-5" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<div class="row mt-5">
     <div class="col-md-6">
         <h4>Достъпни системи</h4>
         <form method="get" asp-action="MapUserAccess">
@@ -63,7 +64,8 @@
                                            data-userid="@Model.UserId"
                                            data-accessid="@acc.AccessId"
                                            autocomplete="off"
-                                           value="@acc.DirectiveDescription" />
+                                           value="@acc.DirectiveDescription"
+                                           auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
                                     <input type="hidden" class="directive-hidden" />
                                     <div class="list-group position-absolute directive-results" style="z-index:1000;"></div>
                                 </div>
@@ -76,7 +78,7 @@
             @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.AccessibleSystems)
 
             <input type="hidden" name="userId" value="@Model.UserId" />
-            <button type="submit" class="btn btn-danger mt-2">Премахни избраните</button>
+            <button type="submit" class="btn btn-danger mt-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">Премахни избраните</button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllAccessibleBtn">Избери всички</button>
         </form>
     </div>
@@ -131,7 +133,8 @@
                                            data-userid="@Model.UserId"
                                            data-accessid="@acc.AccessId"
                                            autocomplete="off"
-                                           value="@acc.DirectiveDescription" />
+                                           value="@acc.DirectiveDescription"
+                                           auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
                                     <input type="hidden" class="directive-hidden" />
                                     <div class="list-group position-absolute directive-results" style="z-index:1000;"></div>
                                 </div>
@@ -143,7 +146,7 @@
             @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.InaccessibleSystems)
 
             <input type="hidden" name="userId" value="@Model.UserId" /> 
-            <button type="submit" class="btn btn-success mt-2">Добави избраните</button>
+            <button type="submit" class="btn btn-success mt-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">Добави избраните</button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllInaccessibleBtn">Избери всички</button>
         </form>
     </div>
@@ -153,7 +156,6 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
     <script src="~/js/map-system-access.js" asp-append-version="true"></script>
     <script src="~/js/filter.js" asp-append-version="true"></script>
 }

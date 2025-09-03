@@ -45,25 +45,19 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        [AutoValidateAntiforgeryToken]
         public IActionResult DirectiveList(int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
+            DirectiveListViewModel model = new DirectiveListViewModel
+            {
+                Directives = _directiveService.GetDirectivesPaged(page),
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
+                LoggedUserWriteAuthority = loggedUser.WritingAccess,
+            };
 
-            var totalDirectives = _directiveService.GetDirectives().Count();
-
-            var directives = _directiveService.GetDirectives()
-                .OrderBy(d => d.Name)
-                .Skip((page - 1) * Constants.ItemsPerPage)
-                .Take(Constants.ItemsPerPage)
-                .ToList();
-
-            var result = _directiveService.GetDirectivesPaged(page);
-
-            return View(result);
+            return View(model);
         }
 
         [HttpPost]
@@ -72,10 +66,15 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (loggedUser.WritingAccess < AuthorityType.Full)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("DirectiveList");
+            }
 
             if (_directiveService.ExistsDirectiveWithName(name))
             {
-                TempData["Error"] = "Вече съществува заповед с това име";
+                TempData["Error"] = ExceptionMessages.DirectiveWithNameExists;
                 return RedirectToAction("DirectiveList");
             }
 
@@ -92,15 +91,22 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
+            // Here the user must be SuperAdmin to delete a directive because it is directly a hard delete despite name and behavior
+            if (loggedUser.WritingAccess < AuthorityType.SuperAdmin)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("DirectiveList");
+            }
+
             Directive? directive = _directiveService.GetDirective(id);
             if (directive == null)
             {
-                TempData["Error"] = "Не съществува такава заповед";
+                TempData["Error"] = ExceptionMessages.DirectiveNotFound;
                 return RedirectToAction("DirectiveList");
             }
             else if (!_directiveService.CanDeleteDirective(directive))
             {
-                TempData["Error"] = "Не може да изтриете тази заповед";
+                TempData["Error"] = ExceptionMessages.EntityCannotBeDeletedDueToDependencies
                 return RedirectToAction("DirectiveList");
             }
 
@@ -120,37 +126,13 @@ namespace AccessManager.Controllers
             var directive = _directiveService.GetDirective(model.Id);
             if (directive == null)
             {
-                return Json(new { success = false, message = "Заповедта не е намерена" });
+                return Json(new { success = false, message = ExceptionMessages.DirectiveNotFound });
             }
 
             _directiveService.UpdateDirectiveName(directive, model.Name);
             _logService.AddLog(loggedUser, LogAction.Edit, directive);
 
             return Json(new { success = true });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult UpdateDirective([FromBody] UpdateUserAccessDirectiveViewModel model)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            if (model == null || model.AccessId == Guid.Empty || model.DirectiveId == Guid.Empty)
-                return Json(new { success = false, message = "Невалидни данни" });
-
-            var userAccess = _userAccessService.GetUserAccess(model.AccessId, model.UserId);
-            if (userAccess == null)
-                return Json(new { success = false, message = "Достъпът не е намерен" });
-
-            var directive = _directiveService.GetDirective(model.DirectiveId);
-            if (directive == null)
-                return Json(new { success = false, message = "Заповедта не е намерен" });
-
-            _userAccessService.UpdateUserAccessDirective(userAccess, directive);
-            _logService.AddLog(loggedUser, LogAction.Edit, userAccess);
-
-            return Json(new { success = true, message = "Заповедта е обновена успешно" });
         }
     }
 }

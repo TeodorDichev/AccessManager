@@ -138,7 +138,7 @@ namespace AccessManager.Services
             return deletedDepartmentsCount + deletedUnitsCount;
         }
 
-        internal PagedResult<UnitDepartmentViewModel> GetUnitDepartmentsPaged(User loggedUser, Department? filterDepartment, Unit filterUnit, int page)
+        internal PagedResult<UnitDepartmentViewModel> GetUnitDepartmentsPaged(User loggedUser, Department? filterDepartment, Unit? filterUnit, int page)
         {
             if (page < 1) page = 1;
             int pageSize = Constants.ItemsPerPage;

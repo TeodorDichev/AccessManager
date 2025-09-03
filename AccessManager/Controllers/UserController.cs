@@ -182,7 +182,7 @@ namespace AccessManager.Controllers
                 FilterDepartmentId = model.FilterDepartmentId,
                 FilterUnitDescription = unit?.Description ?? "",
                 FilterDepartmentDescription = department?.Description ?? "",
-                WriteAuthority = loggedUser.WritingAccess,
+                LoggedUserWriteAuthority = loggedUser.WritingAccess,
             };
 
             return View(result);
@@ -278,8 +278,8 @@ namespace AccessManager.Controllers
                 Phone = user.Phone ?? string.Empty,
                 ReadingAccess = user.ReadingAccess,
                 WritingAccess = user.WritingAccess,
-                LoggedUserReadingAccess = loggedUser.ReadingAccess,
-                LoggedUserWritingAccess = loggedUser.WritingAccess,
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
+                LoggedUserWriteAuthority = loggedUser.WritingAccess,
                 SelectedDepartmentId = user.Unit.Department.Id,
                 SelectedDepartmentDescription = user.Unit.Department.Description ?? "",
                 SelectedUnitId = user.Unit.Id,

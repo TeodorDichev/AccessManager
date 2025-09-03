@@ -22,7 +22,7 @@
     <div class="text-success">@TempData["Success"]</div>
 }
 
-<div class="wrapper mb-2" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<div class="mb-2">
     <form asp-controller="Log" asp-action="DeleteAllLogs" method="post">
         <button type="submit" class="btn btn-sm btn-danger">
             Изтрий всички записи
@@ -31,7 +31,7 @@
 
 </div>
 
-<table class="wrapper table table-bordered table-striped" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<table class="table table-bordered table-striped">
     <thead class="table-light">
         <tr>
             <th>Вид</th>
@@ -55,5 +55,4 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/wrapper-is-readonly.js asp-append-version="true"></script>
-}
+ю}

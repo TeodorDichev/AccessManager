@@ -74,14 +74,14 @@
             (id) => {
                 const userId = input.dataset.userid;
                 const accessId = input.dataset.accessid;
-
+                const redirectTo = 'EditAccess';
                 fetch(`/Access/UpdateUserDirective`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "RequestVerificationToken": document.querySelector("input[name='__RequestVerificationToken']").value
                     },
-                    body: JSON.stringify({ userId, accessId, directiveId: id })
+                    body: JSON.stringify({ userId, accessId, directiveId: id, redirectTo })
                 });
             }
         );

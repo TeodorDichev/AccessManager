@@ -9,7 +9,7 @@ namespace AccessManager.TagHelpers
     public class AuthTagHelper : TagHelper
     {
         [HtmlAttributeName("auth")]
-        public string RequiresAuth { get; set; } = string.Empty;
+        public bool Allowed { get; set; }
 
         [ViewContext]
         [HtmlAttributeNotBound]
@@ -20,14 +20,7 @@ namespace AccessManager.TagHelpers
             if (ViewContext.ViewData.Model is not IAuthAwareViewModel authModel)
                 return;
 
-            bool allow = RequiresAuth switch
-            {
-                "write" => authModel.HasWriteAccess,
-                "read" => authModel.HasReadAccess,
-                _ => true
-            };
-
-            if (!allow)
+            if (!Allowed)
                 output.Attributes.SetAttribute("disabled", "disabled");
         }
     }

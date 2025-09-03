@@ -2,8 +2,10 @@
 using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
+using AccessManager.Utills;
 using AccessManager.ViewModels;
 using AccessManager.ViewModels.Access;
+using AccessManager.ViewModels.Directive;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
@@ -34,13 +36,11 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
-
-
             var result = new AccessListViewModel
             {
                 Accesses = _accessService.GetAccessesPaged(_accessService.GetAccess(model.FilterAccessId), page),
-                WriteAuthority = loggedUser.WritingAccess,
+                LoggedUserWriteAuthority = loggedUser.WritingAccess,
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
                 FilterAccessId = model.FilterAccessId,
                 FilterAccessDescription = _accessService.GetAccessDescription(_accessService.GetAccess(model.FilterAccessId))
             };
@@ -53,8 +53,11 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
+            if(loggedUser.WritingAccess < AuthorityType.Restricted)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("AccessList");
+            }
 
             var model = new CreateAccessViewModel();
             return View("CreateAccess", model);
@@ -71,7 +74,7 @@ namespace AccessManager.Controllers
 
             if (model.Level > 0 && !model.ParentAccessId.HasValue)
             {
-                ModelState.AddModelError(nameof(model.ParentAccessId), "Моля изберете родителски достъп за това ниво.");
+                ModelState.AddModelError(nameof(model.ParentAccessId), ExceptionMessages.ChooseParentAccess);
                 return View("CreateAccess", model);
             }
 
@@ -82,7 +85,7 @@ namespace AccessManager.Controllers
 
                 if (!dict.TryGetValue(model.ParentAccessId.Value, out var parent))
                 {
-                    ModelState.AddModelError(nameof(model.ParentAccessId), "Избраният родител не е валиден.");
+                    ModelState.AddModelError(nameof(model.ParentAccessId), ExceptionMessages.AccessNotFound);
                     return View("CreateAccess", model);
                 }
 
@@ -100,7 +103,7 @@ namespace AccessManager.Controllers
 
                 if (parentDepth != model.Level - 1)
                 {
-                    ModelState.AddModelError(nameof(model.ParentAccessId), $"Избраният родител не е на правилното ниво (очаквано ниво: {model.Level - 1}).");
+                    ModelState.AddModelError(nameof(model.ParentAccessId), ExceptionMessages.AccessNotFound);
                     return View("CreateAccess", model);
                 }
             }
@@ -182,12 +185,10 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
-
             var user = _userService.GetUser(model.UserId);
             if (user == null)
             {
-                TempData["Error"] = "Потребителят не е намерен";
+                TempData["Error"] = ExceptionMessages.UserNotFound;
                 return RedirectToAction("EditUser", "User", new { model.UserId });
             }
 
@@ -208,6 +209,8 @@ namespace AccessManager.Controllers
                 FilterDirectiveId2 = model.FilterDirectiveId2,
                 AccessibleSystems = _accessService.GetAccessesGrantedToUserPaged(user, filterDirective1, page1),
                 InaccessibleSystems = _accessService.GetAccessesNotGrantedToUserPaged(user, filterDirective2, page2),
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
+                LoggedUserWriteAuthority = loggedUser.WritingAccess
             };
 
             return View(vm);
@@ -222,11 +225,9 @@ namespace AccessManager.Controllers
             var access = _accessService.GetAccess(model.AccessId);
             if (access == null)
             {
-                TempData["Error"] = "Достъпът не е намерен";
+                TempData["Error"] = ExceptionMessages.AccessNotFound;
                 return RedirectToAction("AccessList");
             }
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
             var filterDirective1 = _directiveService.GetDirective(model.FilterDirectiveId1);
             var filterDirective2 = _directiveService.GetDirective(model.FilterDirectiveId2);
@@ -242,6 +243,8 @@ namespace AccessManager.Controllers
                 FilterDirectiveId2 = model.FilterDirectiveId2,
                 UsersWithAccess = _userAccessService.GetUsersWithAccessPaged(loggedUser, access, filterDirective1, page1),
                 UsersWithoutAccess = _userAccessService.GetUsersWithoutAccessPaged(loggedUser, access, filterDirective2, page2),
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
+                LoggedUserWriteAuthority = loggedUser.WritingAccess
             };
 
             return View(vm);
@@ -256,8 +259,8 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(model.UserId);
             if (user == null || !model.DirectiveToGrantAccessId.HasValue)
             {
-                TempData["Error"] = "Моля изберете заповед преди да дадете достъп!";
-                return RedirectToAction("MapUserAccess", new { username = model.UserName });
+                TempData["Error"] = ExceptionMessages.MissingDirective;
+                return RedirectToAction("MapUserAccess", new { userId = model.UserId });
             }
 
             foreach (var accId in model.SelectedInaccessibleSystemIds)
@@ -266,7 +269,7 @@ namespace AccessManager.Controllers
                 var access = _accessService.GetAccess(accId);
                 if (access == null || directive == null)
                 {
-                    TempData["Error"] = "Неуспешно даден достъп!";
+                    TempData["Error"] = ExceptionMessages.GrantingAccessFailed;
                     continue;
                 }
 
@@ -286,7 +289,7 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(model.UserId);
             if (user == null || !model.DirectiveToRevokeAccessId.HasValue)
             {
-                TempData["Error"] = "Моля изберете заповед преди да премахнете достъп!";
+                TempData["Error"] = ExceptionMessages.MissingDirective;
                 return RedirectToAction("MapUserAccess", new { username = model.UserName });
             }
 
@@ -296,7 +299,7 @@ namespace AccessManager.Controllers
                 UserAccess? userAccess = _userAccessService.GetUserAccess(user.Id, accId);
                 if (userAccess == null || directive == null)
                 {
-                    TempData["Error"] = "Неуспешно премахнат достъп!";
+                    TempData["Error"] = ExceptionMessages.RevokingAccessFailed;
                     continue;
                 }
                 _userAccessService.RevokeUserAccess(userAccess, directive);
@@ -315,7 +318,7 @@ namespace AccessManager.Controllers
             var access = _accessService.GetAccess(model.AccessId);
             if (access == null || !model.DirectiveToGrantAccessId.HasValue)
             {
-                TempData["Error"] = "Моле изберете заповед";
+                TempData["Error"] = ExceptionMessages.MissingDirective;
                 return RedirectToAction("EditAccess", new { accessId = model.AccessId });
             }
 
@@ -325,7 +328,7 @@ namespace AccessManager.Controllers
                 var user = _userService.GetUser(userId);
                 if (user == null || directive == null)
                 {
-                    TempData["Error"] = "Неуспешно даден достъп!";
+                    TempData["Error"] = ExceptionMessages.GrantingAccessFailed;
                     continue;
                 }
 
@@ -345,7 +348,7 @@ namespace AccessManager.Controllers
             var access = _accessService.GetAccess(model.AccessId);
             if (access == null || !model.DirectiveToRevokeAccessId.HasValue)
             {
-                TempData["Error"] = "Моле изберете заповед";
+                TempData["Error"] = ExceptionMessages.MissingDirective;
                 return RedirectToAction("EditAccess", new { accessId = model.AccessId });
             }
 
@@ -355,7 +358,7 @@ namespace AccessManager.Controllers
                 UserAccess? userAccess = _userAccessService.GetUserAccess(userId, access.Id);
                 if (userAccess == null || directive == null)
                 {
-                    TempData["Error"] = "Неуспешно премахнат достъп!";
+                    TempData["Error"] = ExceptionMessages.RevokingAccessFailed;
                     continue;
                 }
                 _userAccessService.RevokeUserAccess(userAccess, directive);
@@ -366,28 +369,38 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        public IActionResult UpdateUserDirective([FromBody] UpdateUserDirectiveViewModel model)
+        public IActionResult UpdateUserDirective([FromBody] UpdateUserAccessDirectiveViewModel model)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (loggedUser == null)
+                return RedirectToAction("Login", "Home");
 
             var userAccess = _userAccessService.GetUserAccess(model.UserId, model.AccessId);
             var directive = _directiveService.GetDirective(model.DirectiveId);
-            if (userAccess == null)
+
+            IActionResult RedirectWithError(string errorMessage)
             {
-                TempData["Error"] = "Достъпът не е намерен";
-                return RedirectToAction("EditAccess", new { accessId = model.AccessId }); // Subject to change
-            }
-            else if (directive == null)
-            {
-                TempData["Error"] = "Заповедта не е намерена";
-                return RedirectToAction("EditAccess", new { accessId = model.AccessId }); // Subject to change
+                TempData["Error"] = errorMessage;
+                return model.RedirectTo switch
+                {
+                    "EditAccess" => RedirectToAction(model.RedirectTo, new { accessId = model.AccessId }),
+                    "MapUserAccess" => RedirectToAction(model.RedirectTo, new { userId = model.UserId }),
+                    _ => RedirectToAction("AccessList")
+                };
             }
 
-            UserAccess ua = _userAccessService.UpdateUserAccessDirective(userAccess, directive);
+            if (userAccess == null) return RedirectWithError(ExceptionMessages.AccessNotFound);
+            if (directive == null) return RedirectWithError(ExceptionMessages.DirectiveNotFound);
+
+            var ua = _userAccessService.UpdateUserAccessDirective(userAccess, directive);
             _logService.AddLog(loggedUser, LogAction.Edit, ua);
 
-            return RedirectToAction("EditAccess", new { accessId = model.AccessId });
+            return model.RedirectTo switch
+            {
+                "EditAccess" => RedirectToAction(model.RedirectTo, new { accessId = model.AccessId }),
+                "MapUserAccess" => RedirectToAction(model.RedirectTo, new { userId = model.UserId }),
+                _ => RedirectToAction("AccessList")
+            };
         }
 
         [HttpPost]
@@ -395,9 +408,18 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if(loggedUser.WritingAccess <= AuthorityType.Restricted)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("EditAccess", new { accessId = model.AccessId });
+            }
 
             var access = _accessService.GetAccess(model.AccessId);
-            if (access == null) return NotFound();
+            if (access == null)
+            {
+                TempData["Error"] = ExceptionMessages.AccessNotFound;
+                return RedirectToAction("AccessList");
+            }
 
             if (!string.IsNullOrEmpty(model.Name))
             {
@@ -414,17 +436,15 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
-            List<UserAccess> userAccesses = new List<UserAccess>();
-
             var user = _userService.GetUser(model.FilterUserId);
             var access = _accessService.GetAccess(model.FilterAccessId);
             var directive = _directiveService.GetDirective(model.FilterDirectiveId);
 
+            model.LoggedUserWriteAuthority = loggedUser.WritingAccess;
+            model.LoggedUserReadAuthority = loggedUser.ReadingAccess;
             model.FilterUserName = user == null ? "" : user.UserName;
             model.FilterAccessDescription = access == null ? "" : _accessService.GetAccessDescription(access);
             model.FilterDirectiveDescription = directive == null ? "" : directive.Name;
-
 
             model.UserAccessList = _userAccessService.GetUserAccessesPaged(loggedUser, user, access, directive, page);
 
@@ -436,16 +456,21 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (loggedUser.WritingAccess < AuthorityType.Full)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("AccessList");
+            }
 
             var accessToDelete = _accessService.GetAccess(id);
             if (accessToDelete == null)
             {
-                TempData["Error"] = "Достъпът не е намерен";
+                TempData["Error"] = ExceptionMessages.AccessNotFound;
                 return RedirectToAction("AccessList");
             }
             else if (!_accessService.CanDeleteAccess(accessToDelete))
             {
-                TempData["Error"] = "Достъпът не може да бъде изтрит понеже той или някой от поддостъпите му е свързан с потребител!";
+                TempData["Error"] = ExceptionMessages.EntityCannotBeDeletedDueToDependencies;
                 return RedirectToAction("DeletedAccesses");
             }
 
@@ -460,8 +485,11 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.SuperAdmin;
+            if(loggedUser.ReadingAccess < AuthorityType.SuperAdmin)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("AccessList");
+            }
 
             var result = new PagedResult<AccessListItemViewModel>
             {
@@ -484,16 +512,21 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if(loggedUser.WritingAccess < AuthorityType.SuperAdmin)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("AccessList");
+            }
 
             var access = _accessService.GetDeletedAccess(accessId);
             if (access == null)
             {
-                TempData["Error"] = "Достъпът не е намерен";
+                TempData["Error"] = ExceptionMessages.AccessNotFound;
                 return RedirectToAction("DeletedAccesses");
             }
             else if (!_accessService.CanRestoreAccess(access))
             {
-                TempData["Error"] = "Достъпът не може да бъде възстановен защото липсва такъв родителски достъп";
+                TempData["Error"] = ExceptionMessages.EntityCannotBeRestoredDueToDeletedDependencies;
                 return RedirectToAction("DeletedAccesses");
             }
 
@@ -509,11 +542,16 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (loggedUser.WritingAccess < AuthorityType.SuperAdmin)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("AccessList");
+            }
 
             var access = _accessService.GetDeletedAccess(accessId);
             if (access == null)
             {
-                TempData["Error"] = "Достъпът не е намерен";
+                TempData["Error"] = ExceptionMessages.AccessNotFound;
                 return RedirectToAction("DeletedAccesses");
             }
 

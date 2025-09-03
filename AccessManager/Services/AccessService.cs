@@ -147,6 +147,7 @@ namespace AccessManager.Services
             };
         }
 
+
         internal PagedResult<AccessViewModel> GetAccessesNotGrantedToUserPaged(User user, Directive? filterDirective, int page)
         {
             var revoked = _context.UserAccesses

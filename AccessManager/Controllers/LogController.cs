@@ -1,4 +1,5 @@
 ﻿using AccessManager.Services;
+using AccessManager.Utills;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccessManager.Controllers
@@ -19,8 +20,11 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.SuperAdmin;
+            if(loggedUser.ReadingAccess < Data.Enums.AuthorityType.SuperAdmin)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("Index", "Home");
+            }
 
             var result = _logService.GetLogsPaged(page);
 
@@ -32,10 +36,9 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            if (loggedUser.WritingAccess != Data.Enums.AuthorityType.SuperAdmin)
+            if (loggedUser.WritingAccess < Data.Enums.AuthorityType.SuperAdmin)
             {
-                TempData["Error"] = "Нямате достъп";
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
             }
             else
             {

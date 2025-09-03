@@ -52,6 +52,7 @@
 
                         const userId = input.dataset.userid;
                         const accessId = input.dataset.accessid;
+                        const redirectTo = 'MapUserAccess';
 
                         await fetch(`/Access/UpdateUserDirective`, {
                             method: "POST",
@@ -59,7 +60,7 @@
                                 "Content-Type": "application/json",
                                 "RequestVerificationToken": document.querySelector("input[name='__RequestVerificationToken']").value
                             },
-                            body: JSON.stringify({ userId, accessId, directiveId: item.id })
+                            body: JSON.stringify({ userId, accessId, directiveId: item.id, redirectTo })
                         });
                     });
 

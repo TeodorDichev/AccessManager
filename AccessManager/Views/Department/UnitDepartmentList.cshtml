@@ -1,8 +1,15 @@
-﻿@model AccessManager.ViewModels.Department.UnitDepartmentListViewModel
+﻿@using AccessManager.Data.Enums
+@model AccessManager.ViewModels.Department.UnitDepartmentListViewModel
 
 @{
     ViewData["Title"] = "Дирекции";
 }
+
+<form style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<h2>Дирекции и отдели</h2>
 
 @if (TempData["Error"] != null)
 {
@@ -12,12 +19,6 @@
 {
     <div class="text-success">@TempData["Success"]</div>
 }
-
-<form style="display:none;">
-    @Html.AntiForgeryToken()
-</form>
-
-<h2>Дирекции и отдели</h2>
 
 <form method="get" id="FilterForm" class="mb-3 d-flex align-items-end gap-3">
     <filter form-id="DepartmentFilterForm"
@@ -41,28 +42,22 @@
     </filter>
 
     <div class="d-flex justify-content-start gap-2 mb-3 align-items-end">
-        @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Full)
-        {
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createDepartmentModal">
-                Добави новa дирекция
-            </button>
-            <a asp-controller="Unit" asp-action="CreateUnit" class="btn btn-success">
-                Добави нов отдел
-            </a>
-            <a asp-controller="File" asp-action="UnitsCsv" class="btn btn-primary">
-                Експортирай CSV
-            </a>
-        }
-        @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.SuperAdmin)
-        {
-            <a asp-controller="Department" asp-action="DeletedUnitDepartments" class="btn btn-danger">
-                Виж изтритите отдели
-            </a>
-        }
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createDepartmentModal" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">
+            Добави новa дирекция
+        </button>
+        <a asp-controller="Unit" asp-action="CreateUnit" class="btn btn-success" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">
+            Добави нов отдел
+        </a>
+        <a asp-controller="File" asp-action="UnitsCsv" class="btn btn-primary" auth="@Model.LoggedUserReadAuthority >= AuthorityType.Restricted">
+            Експортирай CSV
+        </a>
+        <a asp-controller="Department" asp-action="DeletedUnitDepartments" class="btn btn-danger" auth="@Model.LoggedUserReadAuthority >= AuthorityType.SuperAdmin">
+            Виж изтритите отдели
+        </a>
     </div>
 </form>
 
-<table class="table table-bordered table-striped wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<table class="table table-bordered table-striped">
     <thead class="table-light">
         <tr>
             <th>Дирекция</th>
@@ -79,14 +74,14 @@
                 <td>@ud.UnitName</td>
                 @if (ud.UnitId == null)
                 {
-                    <td
-                        ><a asp-controller="Department" asp-action="EditDepartment" asp-route-id="@ud.DepartmentId" class="btn btn-sm btn-info">
-                        Редактирай
+                    <td>
+                        <a asp-controller="Department" asp-action="EditDepartment" asp-route-id="@ud.DepartmentId" class="btn btn-sm btn-info" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">
+                            Редактирай
                         </a>
                     </td>
                     <td>
                         <form asp-controller="Department" asp-action="SoftDeleteDepartment" method="post" asp-route-departmentid="@ud.DepartmentId">
-                            <button type="submit" class="btn btn-danger btn-sm"
+                            <button type="submit" class="btn btn-danger btn-sm" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full"
                                     onclick="return confirm('Изтриваенето на дирекция изтрива: всички нейни отдели, всички служители от тези отдели, всички достъпи на служители до тези отдели'">
                                 Изтрий
                             </button>
@@ -96,20 +91,19 @@
                 else
                 {
                     <td>
-                        <a asp-controller="Unit" asp-action="EditUnit" asp-route-id="@ud.UnitId" class="btn btn-sm btn-info">
+                        <a asp-controller="Unit" asp-action="EditUnit" asp-route-id="@ud.UnitId" class="btn btn-sm btn-info" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">
                             Редактирай
                         </a>
                     </td>
                     <td>
                         <form asp-controller="Unit" asp-action="SoftDeleteUnit" method="post" asp-route-unitid="@ud.UnitId">
-                            <button type="submit" class="btn btn-danger btn-sm"
+                            <button type="submit" class="btn btn-danger btn-sm" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full"
                                     onclick="return confirm('Изтриваенето на отдел изтрива: всички служители от този отдели, всички достъпи на служители до този отдели'">
                                 Изтрий
                             </button>
                         </form>
                     </td>
                 }
-
             </tr>
         }
     </tbody>
@@ -129,12 +123,12 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="DepartmentName" class="form-label">Име на дирекция</label>
-                        <input type="text" name="DepartmentName" id="DepartmentName" class="form-control" required />
+                        <input type="text" name="DepartmentName" id="DepartmentName" class="form-control" required auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Откажи</button>
-                    <button type="submit" class="btn btn-success">Запази</button>
+                    <button type="submit" class="btn btn-success" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">Запази</button>
                 </div>
             </form>
         </div>
@@ -143,6 +137,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
     <script src="~/js/filter.js" asp-append-version="true"></script>
 }
