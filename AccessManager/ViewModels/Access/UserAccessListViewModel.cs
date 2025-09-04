@@ -12,5 +12,11 @@
         public Guid? FilterDirectiveId { get; set; }
 
         public string? FilterDirectiveDescription { get; set; }
+        public Guid? FilterPositionId { get; set; }
+        public string FilterPositionDescription { get; set; } = string.Empty;
+        public Guid? FilterUnitId { get; set; }
+        public string FilterUnitDescription { get; set; } = string.Empty;
+        public Guid? FilterDepartmentId { get; set; }
+        public string FilterDepartmentDescription { get; set; } = string.Empty;
     }
 }

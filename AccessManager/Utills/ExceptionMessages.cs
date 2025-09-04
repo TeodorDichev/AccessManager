@@ -26,5 +26,7 @@
         public const string UnitNotFound = "Отделът не е намерен.";
         public const string UnitUserNotFound = "Достъпът на потребителя до отдела не е намерен.";
         public static string PositionNotFound = "Службата не е намерена.";
+
+        public static object? PositionWithNameExists { get; internal set; }
     }
 }

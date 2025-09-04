@@ -54,6 +54,36 @@
             filter-description="@Model.FilterDirectiveDescription">
         </filter>
 
+        <filter form-id="PositionFilterForm"
+            label="Филтър по служба"
+            controller="Position"
+            action="SearchPositions"
+            hidden-input-id="filterPosition"
+            hidden-name="filterPositionId"
+            filter-id="@Model.FilterPositionId"
+            filter-description="@Model.FilterPositionDescription">
+        </filter>
+
+        <filter form-id="DepartmentFilterForm"
+            label="Филтър по дирекция"
+            controller="Department"
+            action="SearchDepartments"
+            hidden-input-id="filterDepartment"
+            hidden-name="filterDepartmentId"
+            filter-id="@Model.FilterDepartmentId"
+            filter-description="@Model.FilterDepartmentDescription">
+        </filter>
+
+        <filter form-id="UnitFilterForm"
+            label="Филтър по отдел"
+            controller="Unit"
+            action="SearchUnits"
+            hidden-input-id="filterUnit"
+            hidden-name="filterUnitId"
+            filter-id="@Model.FilterUnitId"
+            filter-description="@Model.FilterUnitDescription">
+        </filter>
+
         <div>
             <a asp-controller="File" asp-action="UserAccessCsv" class="btn btn-primary" auth="@Model.LoggedUserReadAuthority >= AuthorityType.Restricted">
                 Експортирай CSV
@@ -65,34 +95,34 @@
         <table class="table table-bordered table-striped">
             <thead class="table-light">
                 <tr>
-                    <th>Потребителско име</th>
-                    <th>Собствено име</th>
+                    <th title="Потребителско име">Потребителско име</th>
+                    <th title="Собствено име">Собствено име</th>
                     <th>Фамилия</th>
                     <th>Служба</th>
                     <th>Дирекция</th>
                     <th>Отдел</th>
-                    <th>Достъп за писане</th>
-                    <th>Достъп за четене</th>
-                    <th>Описание на достъп</th>
-                    <th>Заповед за даване на достъпа</th>
-                    <th>Заповед за премахване на достъпа</th>
+                    <th title="Достъп за писане">Достъп за писане</th>
+                    <th title="Достъп за четене">Достъп за четене</th>
+                    <th title="Описание на достъп">Описание на достъп</th>
+                    <th title="Заповед за даване на достъпа">Заповед за даване на достъпа</th>
+                    <th title="Заповед за премахване на достъпа">Заповед за премахване на достъпа</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var ua in Model.UserAccessList.Items)
                 {
                     <tr>
-                        <td>@ua.UserName</td>
-                        <td>@ua.FirstName</td>
-                        <td>@ua.LastName</td>
-                        <td>@ua.Position</td>
-                        <td>@ua.Department</td>
-                        <td>@ua.Unit</td>
-                        <td>@BulgarianLocalization.GetBulgarianAuthorityType(ua.WriteAccess)</td>
-                        <td>@BulgarianLocalization.GetBulgarianAuthorityType(ua.ReadAccess)</td>
-                        <td>@ua.AccessDescription</td>
-                        <td>@ua.GrantDirectiveDescription</td>
-                        <td>@ua.RevokeDirectiveDescription</td>
+                        <td title="@ua.UserName">@ua.UserName</td>
+                        <td title="@ua.FirstName">@ua.FirstName</td>
+                        <td title="@ua.LastName">@ua.LastName</td>
+                        <td title="@ua.Position">@ua.Position</td>
+                        <td title="@ua.Department">@ua.Department</td>
+                        <td title="@ua.Department">@ua.Department</td>
+                        <td title="@BulgarianLocalization.GetBulgarianAuthorityType(ua.WriteAccess)">@BulgarianLocalization.GetBulgarianAuthorityType(ua.WriteAccess)</td>
+                        <td title="@BulgarianLocalization.GetBulgarianAuthorityType(ua.ReadAccess)">@BulgarianLocalization.GetBulgarianAuthorityType(ua.ReadAccess)</td>
+                        <td title="@ua.AccessDescription">@ua.AccessDescription</td>
+                        <td title="@ua.GrantDirectiveDescription">@ua.GrantDirectiveDescription</td>
+                        <td title="@ua.RevokeDirectiveDescription">@ua.RevokeDirectiveDescription</td>
                     </tr>
                 }
             </tbody>

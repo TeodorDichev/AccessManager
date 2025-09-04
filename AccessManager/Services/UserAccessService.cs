@@ -27,7 +27,8 @@ namespace AccessManager.Services
         }
 
         internal PagedResult<UserAccessListItemViewModel> GetUserAccessesPaged(
-            User loggedUser, User? userFilter, Access? accessFilter, Directive? directiveFilter, int page)
+            User loggedUser, User? userFilter, Access? accessFilter, Directive? directiveFilter, 
+                Department? departmentFilter, Unit? unitFilter, Position? positionFilter, int page)
         {
             var query = _context.UserAccesses
                 .Include(ua => ua.User)                   
@@ -52,6 +53,12 @@ namespace AccessManager.Services
             if (accessFilter != null)
                 query = query.Where(ua => ua.AccessId == accessFilter.Id);
 
+            if (positionFilter != null)
+                query = query.Where(ua => ua.User.PositionId == positionFilter.Id);
+            if (departmentFilter != null)
+                query = query.Where(ua => ua.User.Unit.DepartmentId == departmentFilter.Id);
+            if (unitFilter != null)
+                query = query.Where(ua => ua.User.Unit.Id == unitFilter.Id);
             if (directiveFilter != null)
                 query = query.Where(ua =>
                     ua.GrantedByDirectiveId == directiveFilter.Id ||
@@ -66,7 +73,7 @@ namespace AccessManager.Services
                 .Select(ua => new UserAccessListItemViewModel
                 {
                     Id = ua.User.Id,
-                    Position = ua.User.Position?.Description ?? "",
+                    Position = ua.User.Position != null ? ua.User.Position!.Description : "",
                     UserName = ua.User.UserName,
                     FirstName = ua.User.FirstName,
                     LastName = ua.User.LastName,
@@ -116,7 +123,7 @@ namespace AccessManager.Services
                     UserId = ua.UserId,
                     UserName = ua.User.UserName,
                     FirstName = ua.User.FirstName,
-                    Position = ua.User.Position?.Description ?? "",
+                    Position = ua.User.Position != null ? ua.User.Position!.Description : "",
                     LastName = ua.User.LastName,
                     Department = ua.User.Unit.Department.Description,
                     Unit = ua.User.Unit.Description,

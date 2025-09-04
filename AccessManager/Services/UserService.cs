@@ -45,7 +45,8 @@ namespace AccessManager.Services
             };
         }
 
-        internal PagedResult<UserListItemViewModel> GetAccessibleUsersPaged(User loggedUser, Unit? filterUnit, Department? filterDepartment, int page, UserSortOptions sortOption)
+        internal PagedResult<UserListItemViewModel> GetAccessibleUsersPaged(User loggedUser, Unit? filterUnit, Department? filterDepartment, 
+            Position? filterPosition, int page, UserSortOptions sortOption)
         {
             var accessibleUnitIds = _context.UnitUsers
                 .Where(uu => uu.UserId == loggedUser.Id)
@@ -57,6 +58,8 @@ namespace AccessManager.Services
                 query = query.Where(u => u.Unit.Description == filterUnit.Description);
             if (filterDepartment != null)
                 query = query.Where(u => u.Unit.DepartmentId == filterDepartment.Id);
+            if (filterPosition != null)
+                query = query.Where(u => u.PositionId == filterPosition.Id);
 
             query = ApplySorting(query, sortOption);
 
@@ -147,19 +150,19 @@ namespace AccessManager.Services
         internal void UpdateUser(MyProfileViewModel model, User loggedUser)
         {
             UpdateUserFromModel(loggedUser, model.FirstName, model.MiddleName, model.LastName, model.EGN, model.Phone,
-                model.SelectedUnitId, model.WritingAccess, model.ReadingAccess);
+                model.SelectedUnitId, model.SelectedPositionId, model.WritingAccess, model.ReadingAccess);
             _context.SaveChanges();
         }
 
         internal void UpdateUser(EditUserViewModel model, User user)
         {
             UpdateUserFromModel(user, model.FirstName, model.MiddleName, model.LastName, model.EGN, model.Phone
-                , model.SelectedUnitId, model.WritingAccess, model.ReadingAccess);
+                , model.SelectedUnitId, model.SelectedPositionId, model.WritingAccess, model.ReadingAccess);
             _context.SaveChanges();
         }
 
         private void UpdateUserFromModel(User user, string firstName, string middleName,
-            string lastName, string? egn, string? phone, Guid? unitId, AuthorityType write, AuthorityType read)
+            string lastName, string? egn, string? phone, Guid? unitId, Guid? positionId, AuthorityType write, AuthorityType read)
         {
             if (user == null) return;
 
@@ -175,7 +178,12 @@ namespace AccessManager.Services
             {
                 var unit = _context.Units.FirstOrDefault(u => u.Id == unitId);
                 if(unit != null) user.UnitId = unit.Id;
-                   
+            }
+
+            if (positionId != user.PositionId)
+            {
+                var pos = _context.Positions.FirstOrDefault(u => u.Id == positionId);
+                if(pos != null) user.PositionId = pos.Id;
             }
         }
 
@@ -265,16 +273,6 @@ namespace AccessManager.Services
                 Page = page,
                 TotalCount = deletedUsers.Count()
             };
-        }
-
-        internal IEnumerable<Position> GetPositions()
-        {
-           return _context.Positions.OrderBy(p => p.Description).ToList();
-        }
-
-        internal Position GetPosition(Guid? selectedUnitId)
-        {
-            throw new NotImplementedException();
         }
     }
 }

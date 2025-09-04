@@ -53,6 +53,16 @@
             filter-id="@Model.FilterUnitId"
             filter-description="@Model.FilterUnitDescription">
     </filter>
+
+    <filter form-id="PositionFilterForm"
+            label="Филтър по служба"
+            controller="Position"
+            action="SearchPositions"
+            hidden-input-id="filterPosition"
+            hidden-name="filterPositionId"
+            filter-id="@Model.FilterPositionId"
+            filter-description="@Model.FilterPositionDescription">
+    </filter>
 </form>
 
 <table class="table table-bordered table-striped">
@@ -61,6 +71,7 @@
             <th>Потребителско име</th>
             <th>Собствено име</th>
             <th>Фамилия</th>
+            <th>Служба</th>
             <th>Дирекция</th>
             <th>Отдел</th>
             <th>Достъп за писане</th>
@@ -76,6 +87,7 @@
                 <td>@user.UserName</td>
                 <td>@user.FirstName</td>
                 <td>@user.LastName</td>
+                <td>@user.Position</td>
                 <td>@user.Department</td>
                 <td>@user.Unit</td>
                 <td>@BulgarianLocalization.GetBulgarianAuthorityType(user.WriteAccess)</td>
@@ -87,7 +99,7 @@
                     </td>
                     <td>
                         <form asp-controller="User" asp-action="SoftDeleteUser" method="post" asp-route-userid="@user.Id" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
-                            <button type="submit" class="btn btn-danger me-2">
+                            <button type="submit" class="btn btn-sm btn-danger">
                                 Изтрий
                             </button>
                         </form>

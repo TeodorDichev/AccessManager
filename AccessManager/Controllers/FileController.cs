@@ -1,6 +1,4 @@
-﻿using AccessManager.Data.Entities;
-using AccessManager.Services;
-using AccessManager.Utills;
+﻿using AccessManager.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 

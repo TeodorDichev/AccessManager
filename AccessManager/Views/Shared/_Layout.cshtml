@@ -13,35 +13,25 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu" aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
                 <div class="collapse navbar-collapse" id="navbarMenu">
-                    <div class="d-flex align-items-center">
-                        <a class="navbar-brand me-4" asp-controller="Home" asp-action="Index" title="Начало">
-                            <img src="~/images/home.png" alt="Home" class="img-fluid" style="max-height: 30px;"  />
-                        </a>
-                        <a class="navbar-brand me-4" asp-controller="User" asp-action="UserList" title="Потребители">
-                            <img src="~/images/users.png" alt="Users" class="img-fluid" style="max-height: 30px;"  />
-                        </a>
-                        <a class="navbar-brand me-4" asp-controller="Access" asp-action="AccessList" title="Достъпи">
-                            <img src="~/images/systems.png" alt="Systems" class="img-fluid" style="max-height: 30px;"/>
-                        </a>
-                        <a class="navbar-brand me-4" asp-controller="Access" asp-action="UserAccessList" title="Потребители и достъпи">
-                            <img src="~/images/user_access.png" alt="AccessUsers" class="img-fluid" style="max-height: 30px;" />
-                        </a>
-                        <a class="navbar-brand me-4" asp-controller="Directive" asp-action="DirectiveList" title="Заповеди">
-                            <img src="~/images/directive.png" alt="Log" class="img-fluid" style="max-height: 30px;"  />
-                        </a>
-                        <a class="navbar-brand me-4" asp-controller="Department" asp-action="UnitDepartmentList" title="Дирекции">
-                            <img src="~/images/unit.png" alt="Log" class="img-fluid" style="max-height: 30px;"/>
-                        </a>
-                        <a class="navbar-brand me-4" asp-controller="Log" asp-action="LogList" title="Справка">
-                            <img src="~/images/log.png" alt="Log" class="img-fluid" style="max-height: 30px;"/>
-                        </a>
-                    </div>
+                    <ul class="navbar-nav">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" id="mainMenu"
+                               role="button" data-bs-toggle="dropdown" aria-expanded="true">
+                                Меню
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="mainMenu">
+                                <li><a class="dropdown-item" asp-controller="Home" asp-action="Index">Начало</a></li>
+                                <li><a class="dropdown-item" asp-controller="User" asp-action="UserList">Потребители</a></li>
+                                <li><a class="dropdown-item" asp-controller="Access" asp-action="AccessList">Достъпи</a></li>
+                                <li><a class="dropdown-item" asp-controller="Access" asp-action="UserAccessList">Потребители и достъпи</a></li>
+                                <li><a class="dropdown-item" asp-controller="Directive" asp-action="DirectiveList">Заповеди</a></li>
+                                <li><a class="dropdown-item" asp-controller="Department" asp-action="UnitDepartmentList">Дирекции</a></li>
+                                <li><a class="dropdown-item" asp-controller="Position" asp-action="PositionList">Служби</a></li>
+                                <li><a class="dropdown-item" asp-controller="Log" asp-action="LogList">Справка</a></li>
+                            </ul>
+                        </li>
+                    </ul>
                 </div>
 
                 <div class="d-flex align-items-center">

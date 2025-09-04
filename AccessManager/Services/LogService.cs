@@ -50,6 +50,11 @@ namespace AccessManager.Services
             AddLog(new Log() { Description = $"{author.UserName} {BulgarianLocalization.GetBulgarianLogAction(logType)} заповед {directive.Name}", ActionType = logType });
         }
 
+        public void AddLog(User author, LogAction logType, Position position)
+        {
+            AddLog(new Log() { Description = $"{author.UserName} {BulgarianLocalization.GetBulgarianLogAction(logType)} служба {position.Description}", ActionType = logType });
+        }
+
         public void AddLog(User author, LogAction logType, UnitUser uu)
         {
             AddLog(new Log() { Description = $"{author.UserName} {BulgarianLocalization.GetBulgarianLogAction(logType)} достъп на {uu.User.UserName} до отдел {uu.Unit.Description}", ActionType = logType });

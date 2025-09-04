@@ -1,9 +1,9 @@
 ﻿@using AccessManager.Data.Entities;
 @using AccessManager.Data.Enums
-@using AccessManager.ViewModels.Directive;
-@model DirectiveListViewModel
+@using AccessManager.ViewModels.Position;
+@model PositionListViewModel
 
-<h2>Заповеди</h2>
+<h2>Служби</h2>
 
 @if (TempData["Error"] != null)
 {
@@ -26,11 +26,11 @@
         </tr>
     </thead>
     <tbody>
-        <form asp-controller="Directive" asp-action="CreateDirective" method="post">
+        <form asp-controller="Position" asp-action="CreatePosition" method="post">
         <tr>
             @Html.AntiForgeryToken()
             <td>
-                <input type="text" name="Name" class="form-control" placeholder="Въведи нова заповед" required auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
+                <input type="text" name="Name" class="form-control" placeholder="Въведи нова служба" required auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
             </td>
             <td colspan="2">
                 <button type="submit" class="btn btn-success" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">Добави</button>
@@ -38,11 +38,11 @@
         </tr>
         </form>
 
-        @foreach (var dir in Model.Directives.Items)
+        @foreach (var dir in Model.Positions.Items)
         {
             <tr data-id="@dir.Id">
                 <td>
-                    <input type="text" class="form-control directive-name" value="@dir.Name" />
+                    <input type="text" class="form-control directive-name" value="@dir.Description" />
                 </td>
                 <td>
                     <form asp-controller="Directive" asp-action="SoftDeleteDirective" method="post" asp-route-id="@dir.Id">
@@ -56,9 +56,9 @@
     </tbody>
 </table>
 
-@await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.Directives)
+@await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.Positions)
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/update-directive-name.js" asp-append-version="true"></script>
+    <script src="~/js/update-position-name.js" asp-append-version="true"></script>
 }

@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const positionInput = document.getElementById('positionInput');
     const positionHidden = document.getElementById('SelectedPositionId');
-    const positionResults = document.getElementById('departmentPositions');
+    const positionResults = document.getElementById('positionResults');
 
     function updateUnitInputState() {
         if (!departmentInput.value.trim()) {
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
         input.addEventListener('input', debounce(handleInput, 300));
 
         document.addEventListener('click', e => {
-            if (!resultsDiv.contains(e.target) && e.target !== input) {
+                if (!resultsDiv.contains(e.target) && e.target !== input) {
                 resultsDiv.innerHTML = "";
             }
         });
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     setupAutocomplete(departmentInput, departmentHidden, departmentResults, '/Department/SearchDepartments', () => ({}));
 
-    setupAutocomplete(positionInput, positionHidden, positionResults, '/User/SearchPositions', () => ({}));
+    setupAutocomplete(positionInput, positionHidden, positionResults, '/Position/SearchPositions', () => ({}));
 
     setupAutocomplete(unitInput, unitHidden, unitResults, '/Unit/SearchDepartmentUnits', () => ({
         departmentId: departmentHidden.value

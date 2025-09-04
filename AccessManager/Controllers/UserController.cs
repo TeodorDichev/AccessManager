@@ -11,38 +11,22 @@ namespace AccessManager.Controllers
     {
         private readonly UserService _userService;
         private readonly AccessService _accessService;
-        private readonly UserAccessService _userAccessService;
-        private readonly DirectiveService _directiveService;
         private readonly PasswordService _passwordService;
         private readonly DepartmentService _departmentService;
         private readonly UnitService _unitService;
         private readonly LogService _logService;
+        private readonly PositionService _positionService;
 
         public UserController(PasswordService passwordService, UserService userService, LogService logService,
-            AccessService accessService, DepartmentService departmentService, DirectiveService directiveService, UnitService unitService, UserAccessService userAccessService)
+            AccessService accessService, DepartmentService departmentService, UnitService unitService, PositionService positionService)
         {
             _logService = logService;
             _passwordService = passwordService;
             _userService = userService;
             _accessService = accessService;
             _departmentService = departmentService;
-            _directiveService = directiveService;
             _unitService = unitService;
-            _userAccessService = userAccessService;
-        }
-
-        [HttpGet]
-        public IActionResult SearchPositions(string term)
-        {
-            var termLower = (term ?? "").Trim().ToLowerInvariant();
-
-            var results = _userService.GetPositions()
-                .Where(u => string.IsNullOrEmpty(term) || u.Description.ToLowerInvariant().Contains(termLower))
-                .Select(u => new { id = u.Id, text = u.Description })
-                .Take(10)
-                .ToList();
-
-            return Json(results);
+            _positionService = positionService;
         }
 
         [HttpGet]
@@ -147,10 +131,11 @@ namespace AccessManager.Controllers
 
             var unit = _unitService.GetUnit(model.FilterUnitId);
             var department = _departmentService.GetDepartment(model.FilterDepartmentId);
+            var position = _positionService.GetPosition(model.FilterPositionId);
 
             var result = new UserListViewModel
             {
-                Users = _userService.GetAccessibleUsersPaged(loggedUser, unit, department, page, model.SelectedSortOption),
+                Users = _userService.GetAccessibleUsersPaged(loggedUser, unit, department, position, page, model.SelectedSortOption),
                 SelectedSortOption = model.SelectedSortOption,
                 FilterUnitId = model.FilterUnitId,
                 FilterDepartmentId = model.FilterDepartmentId,
@@ -208,7 +193,7 @@ namespace AccessManager.Controllers
                 return View(model);
             }
 
-            var position = _userService.GetPosition(model.SelectedPositionId);
+            var position = _positionService.GetPosition(model.SelectedPositionId);
             if (position == null)
             {
                 ModelState.AddModelError("SelectedPositionId", ExceptionMessages.PositionNotFound);
@@ -280,7 +265,7 @@ namespace AccessManager.Controllers
                 SelectedUnitId = user.Unit.Id,
                 SelectedUnitDescription = user.Unit.Description ?? "",
                 SelectedPositionId = user.Position?.Id ?? null,
-                SelectedPositionDescription = user.Position?.Description ?? ""
+                SelectedPositionDescription = user.Position?.Description ?? "-"
             };
 
             return View(model);
@@ -317,7 +302,7 @@ namespace AccessManager.Controllers
             _userService.UpdateUser(model, user);
             _logService.AddLog(loggedUser, LogAction.Edit, user);
 
-            return RedirectToAction("EditUser", new { user.Id });
+            return RedirectToAction("EditUser", new { userId = model.UserId });
         }
 
         [HttpPost]

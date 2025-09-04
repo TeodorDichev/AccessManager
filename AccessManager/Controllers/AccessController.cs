@@ -6,7 +6,6 @@ using AccessManager.Utills;
 using AccessManager.ViewModels;
 using AccessManager.ViewModels.Access;
 using AccessManager.ViewModels.Directive;
-using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 
@@ -18,16 +17,23 @@ namespace AccessManager.Controllers
         private readonly UserService _userService;
         private readonly AccessService _accessService;
         private readonly DirectiveService _directiveService;
+        private readonly UnitService _unitService;
+        private readonly DepartmentService _departmentService;
+        private readonly PositionService _positionService;
         private readonly UserAccessService _userAccessService;
 
         public AccessController(Context context, UserService userService, LogService logService,
-            AccessService accessService, DirectiveService directiveService, UserAccessService userAccessService)
+            AccessService accessService, DirectiveService directiveService, UserAccessService userAccessService,
+            UnitService unitService, DepartmentService departmentService, PositionService positionService)
         {
             _logService = logService;
             _userService = userService;
             _accessService = accessService;
             _directiveService = directiveService;
             _userAccessService = userAccessService;
+            _unitService = unitService;
+            _departmentService = departmentService;
+            _positionService = positionService;
         }
 
         [HttpGet]
@@ -53,7 +59,7 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-            if(loggedUser.WritingAccess < AuthorityType.Restricted)
+            if (loggedUser.WritingAccess < AuthorityType.Restricted)
             {
                 TempData["Error"] = ExceptionMessages.InsufficientAuthority;
                 return RedirectToAction("AccessList");
@@ -408,7 +414,7 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-            if(loggedUser.WritingAccess <= AuthorityType.Restricted)
+            if (loggedUser.WritingAccess <= AuthorityType.Restricted)
             {
                 TempData["Error"] = ExceptionMessages.InsufficientAuthority;
                 return RedirectToAction("EditAccess", new { accessId = model.AccessId });
@@ -439,14 +445,20 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(model.FilterUserId);
             var access = _accessService.GetAccess(model.FilterAccessId);
             var directive = _directiveService.GetDirective(model.FilterDirectiveId);
+            var unit = _unitService.GetUnit(model.FilterDirectiveId);
+            var department = _departmentService.GetDepartment(model.FilterDirectiveId);
+            var position = _positionService.GetPosition(model.FilterDirectiveId);
 
             model.LoggedUserWriteAuthority = loggedUser.WritingAccess;
             model.LoggedUserReadAuthority = loggedUser.ReadingAccess;
             model.FilterUserName = user == null ? "" : user.UserName;
             model.FilterAccessDescription = access == null ? "" : _accessService.GetAccessDescription(access);
             model.FilterDirectiveDescription = directive == null ? "" : directive.Name;
+            model.FilterUnitDescription = unit == null ? "" : unit.Description;
+            model.FilterDepartmentDescription = department == null ? "" : department.Description;
+            model.FilterPositionDescription = position == null ? "" : position.Description;
 
-            model.UserAccessList = _userAccessService.GetUserAccessesPaged(loggedUser, user, access, directive, page);
+            model.UserAccessList = _userAccessService.GetUserAccessesPaged(loggedUser, user, access, directive, department, unit, position, page);
 
             return View(model);
         }
@@ -485,7 +497,7 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-            if(loggedUser.ReadingAccess < AuthorityType.SuperAdmin)
+            if (loggedUser.ReadingAccess < AuthorityType.SuperAdmin)
             {
                 TempData["Error"] = ExceptionMessages.InsufficientAuthority;
                 return RedirectToAction("AccessList");
@@ -512,7 +524,7 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-            if(loggedUser.WritingAccess < AuthorityType.SuperAdmin)
+            if (loggedUser.WritingAccess < AuthorityType.SuperAdmin)
             {
                 TempData["Error"] = ExceptionMessages.InsufficientAuthority;
                 return RedirectToAction("AccessList");

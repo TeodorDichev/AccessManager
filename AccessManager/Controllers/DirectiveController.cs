@@ -1,5 +1,4 @@
-﻿using AccessManager.Data;
-using AccessManager.Data.Entities;
+﻿using AccessManager.Data.Entities;
 using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
@@ -12,20 +11,13 @@ namespace AccessManager.Controllers
     {
         private readonly LogService _logService;
         private readonly UserService _userService;
-        private readonly AccessService _accessService;
-        private readonly UserAccessService _userAccessService;
         private readonly DirectiveService _directiveService;
-        private readonly DepartmentService _departmentUnitService;
 
-        public DirectiveController(Context context, UserService userService, LogService logService,
-            AccessService accessService, DepartmentService departmentUnitService, DirectiveService directiveService, UserAccessService userAccessService)
+        public DirectiveController(UserService userService, LogService logService, DirectiveService directiveService)
         {
             _logService = logService;
             _userService = userService;
-            _accessService = accessService;
-            _departmentUnitService = departmentUnitService;
             _directiveService = directiveService;
-            _userAccessService = userAccessService;
         }
 
         [HttpGet]

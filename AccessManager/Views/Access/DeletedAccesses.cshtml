@@ -44,14 +44,14 @@
                 <td>@acc.Description</td>
                 <td>
                     <form asp-controller="Access" asp-action="HardDeleteAccess" method="post" asp-route-accessId="@acc.AccessId">
-                        <button type="submit" class="btn btn-danger me-2">
+                        <button type="submit" class="btn btn-sm btn-danger">
                             Изтрий
                         </button>
                     </form>
                 </td>
                 <td>
                     <form asp-controller="Access" asp-action="RestoreAccess" method="post" asp-route-accessId="@acc.AccessId">
-                        <button type="submit" class="btn btn-success me-2">
+                        <button type="submit" class="btn btn-sm btn-success">
                             Възстанови
                         </button>
                     </form>

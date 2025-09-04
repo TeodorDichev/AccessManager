@@ -18,6 +18,7 @@ namespace AccessManager
             builder.Services.AddScoped<FileService>();
             builder.Services.AddScoped<UserService>();
             builder.Services.AddScoped<AccessService>();
+            builder.Services.AddScoped<PositionService>();
             builder.Services.AddScoped<PasswordService>();
             builder.Services.AddScoped<DirectiveService>();
             builder.Services.AddScoped<UserAccessService>();
