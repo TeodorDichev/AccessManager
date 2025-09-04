@@ -8,93 +8,70 @@
 
 <h2 class="text-center fw-bold">@ViewData["Title"]</h2>
 
-@if (ViewBag.Success != null && (bool)ViewBag.Success)
+@if (TempData["Error"] != null)
 {
-    <div class="alert alert-success">Профилът е обновен успешно.</div>
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="text-success">@TempData["Success"]</div>
 }
 
-<form asp-action="EditUser" method="post" class="wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<form asp-action="EditUser" method="post">
     <input type="hidden" asp-for="UserId" />
-    <input type="hidden" asp-for="LoggedUserReadingAccess" />
-    <input type="hidden" asp-for="LoggedUserWritingAccess" />
+    <input type="hidden" asp-for="LoggedUserReadAuthority" />
+    <input type="hidden" asp-for="LoggedUserWriteAuthority" />
 
     <div class="row" >
         <div class="col-md-6">
             <div class="mb-3">
                 <label asp-for="FirstName" class="form-label">Първо име</label>
-                @if (Model.LoggedUserWritingAccess >= AuthorityType.SuperAdmin)
-                {
-                    <input asp-for="FirstName" class="form-control" />
-                }
-                else
-                {
-                    <input type="hidden" asp-for="FirstName" />
-                    <input class="form-control" value="@Model.FirstName" disabled />
-                }
+                <input asp-for="FirstName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
                 <span asp-validation-for="FirstName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="MiddleName" class="form-label">Второ име</label>
-                @if (Model.LoggedUserWritingAccess >= AuthorityType.SuperAdmin)
-                {
-                    <input asp-for="MiddleName" class="form-control" />
-                }
-                else
-                {
-                    <input type="hidden" asp-for="MiddleName" />
-                    <input class="form-control" value="@Model.MiddleName" disabled />
-                }
+                <input asp-for="MiddleName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
                 <span asp-validation-for="MiddleName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="LastName" class="form-label">Фамилия</label>
-                @if (Model.LoggedUserWritingAccess >= AuthorityType.SuperAdmin)
-                {
-                    <input asp-for="LastName" class="form-control" />
-                }
-                else
-                {
-                    <input type="hidden" asp-for="LastName" />
-                    <input class="form-control" value="@Model.LastName" disabled />
-                }
+                <input asp-for="LastName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
                 <span asp-validation-for="LastName" class="text-danger"></span>
             </div>
             
             <div class="mb-3">
-                    <label asp-for="Phone" class="form-label">Телефонен номер</label>
-                    <input asp-for="Phone" class="form-control" />
-                    <span asp-validation-for="Phone" class="text-danger"></span>
+                <label asp-for="Phone" class="form-label">Телефонен номер</label>
+                <input asp-for="Phone" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
+                <span asp-validation-for="Phone" class="text-danger"></span>
             </div>
 
-            <div class="mb-3">
+            @*Only visible EGN in this case*@
+            @if(Model.LoggedUserReadAuthority >= AuthorityType.Full)
+            {
+                <div class="mb-3">
                     <label asp-for="EGN" class="form-label">ЕГН</label>
-                <input asp-for="EGN" class="form-control" />
-                <span asp-validation-for="EGN" class="text-danger"></span>
-            </div>
+                    <input asp-for="EGN" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
+                    <span asp-validation-for="EGN" class="text-danger"></span>
+                </div>
+            }
+
         </div>
         <div class="col-md-6">
             <div class="mb-3">
                 <label asp-for="UserName" class="form-label">Потребителско име</label>
-                @if (Model.LoggedUserWritingAccess >= AuthorityType.SuperAdmin)
-                {
-                    <input asp-for="UserName" class="form-control" />
-                }
-                else
-                {
-                    <input type="hidden" asp-for="UserName" />
-                    <input class="form-control" value="@Model.UserName" disabled />
-                }
+                <input asp-for="UserName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
                 <span asp-validation-for="UserName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="ReadingAccess" class="form-label">Достъп за четене</label>
-                <select asp-for="ReadingAccess" class="form-select" id="SelectedReadingAccess">
+                <select asp-for="ReadingAccess" class="form-select" id="SelectedReadingAccess" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
                     @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
                     {
-                        @if (level <= Model.LoggedUserReadingAccess)
+                        @if (level <= Model.LoggedUserReadAuthority)
                         {
                             <option value="@((int)level)">@BulgarianLocalization.GetBulgarianAuthorityType(level)</option>
                         }
@@ -105,10 +82,10 @@
 
             <div class="mb-3">
                 <label asp-for="WritingAccess" class="form-label">Достъп за писане</label>
-                <select asp-for="WritingAccess" class="form-select" id="SelectedWritingAccess">
+                <select asp-for="WritingAccess" class="form-select" id="SelectedWritingAccess" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
                     @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
                     {
-                        @if(level <= Model.LoggedUserWritingAccess)
+                        @if(level <= Model.LoggedUserWriteAuthority)
                         {
                             <option value="@((int)level)">@BulgarianLocalization.GetBulgarianAuthorityType(level)</option>
                         }
@@ -116,9 +93,19 @@
                 </select>
                 <span asp-validation-for="WritingAccess" class="text-danger"></span>
             </div>
+
+            <div class="mb-3">
+                <label asp-for="SelectedPositionId" class="form-label">Служба</label>
+                <input type="text" class="form-control" id="positionInput" value="@Model.SelectedPositionDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
+                <input type="hidden" asp-for="SelectedPositionId" id="SelectedPositionId">
+                <input type="hidden" asp-for="SelectedPositionDescription">
+                <div id="positionResults" class="list-group position-absolute" style="z-index:1000;"></div>
+                <span asp-validation-for="SelectedPositionId" class="text-danger"></span>
+            </div>
+
             <div class="mb-3">
                 <label asp-for="SelectedDepartmentId" class="form-label">Дирекция</label>
-                <input type="text" class="form-control" id="departmentInput" value="@Model.SelectedDepartmentDescription" autocomplete="off">
+                <input type="text" class="form-control" id="departmentInput" value="@Model.SelectedDepartmentDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full"/>
                 <input type="hidden" asp-for="SelectedDepartmentId" id="SelectedDepartmentId">
                 <input type="hidden" asp-for="SelectedDepartmentDescription">
                 <div id="departmentResults" class="list-group position-absolute" style="z-index:1000;"></div>
@@ -127,7 +114,7 @@
 
             <div class="mb-3">
                 <label asp-for="SelectedUnitId" class="form-label">Отдел</label>
-                <input type="text" class="form-control" id="unitInput" value="@Model.SelectedUnitDescription" autocomplete="off">
+                <input type="text" class="form-control" id="unitInput" value="@Model.SelectedUnitDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full"/>
                 <input type="hidden" asp-for="SelectedUnitId" id="SelectedUnitId">
                 <input type="hidden" asp-for="SelectedUnitDescription">
                 <div id="unitResults" class="list-group position-absolute" style="z-index:1000;"></div>
@@ -137,11 +124,8 @@
     </div>
 
     <div class="mb-3">
-            <label class="form-label">Нова парола</label>
-            @if (Model.LoggedUserWritingAccess >= AuthorityType.Full)
-            {
-                <input type="password" name="NewPassword" class="form-control" />
-            }
+        <label class="form-label">Нова парола</label>
+        <input type="password" name="NewPassword" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
     </div>
 
     <div class="row">
@@ -169,7 +153,6 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/password-visibility-toggle.js" asp-append-version="true"></script>
     <script src="~/js/edit-user.js" asp-append-version="true"></script>
-    <script src="~/js/wrapper-is-readonly.js" asp-append-version="true"></script>
     <script src="~/js/unit-dropdown-load.js" asp-append-version="true"></script>
     <script src="~/js/access-visibility.js" asp-append-version="true"></script>
     <script src="~/js/sync-authority-type-access.js" asp-append-version="true"></script>

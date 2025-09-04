@@ -16,7 +16,7 @@
 }
 
 <div class="d-flex align-items-bottom">
-    <form asp-action="EditDepartment" method="post" class="wrapper m-3">
+    <form asp-action="EditDepartment" method="post" class="m-3">
         <div class="p-0">
             <label asp-for="DepartmentName" class="form-label">Име</label>
             <input asp-for="DepartmentName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />

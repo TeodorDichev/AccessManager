@@ -25,5 +25,6 @@
         public const string DirectiveWithNameExists = "Вече съществува заповед с това име.";
         public const string UnitNotFound = "Отделът не е намерен.";
         public const string UnitUserNotFound = "Достъпът на потребителя до отдела не е намерен.";
+        public static string PositionNotFound = "Службата не е намерена.";
     }
 }

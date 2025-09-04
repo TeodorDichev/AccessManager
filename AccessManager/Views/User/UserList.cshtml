@@ -23,7 +23,7 @@
     <div class="text-success">@TempData["Success"]</div>
 }
 
-<form id="usersFilterForm" action="/User/UserList" method="get" class="mb-3 d-flex align-items-end gap-3 wrapper" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
+<form id="usersFilterForm" action="/User/UserList" method="get" class="mb-3 d-flex align-items-end gap-3" >
     <div>
         <label asp-for="SelectedSortOption" class="form-label">Сортиране</label>
         <select asp-for="SelectedSortOption" class="form-select" id="selectedSortOption">
@@ -80,40 +80,38 @@
                 <td>@user.Unit</td>
                 <td>@BulgarianLocalization.GetBulgarianAuthorityType(user.WriteAccess)</td>
                 <td>@BulgarianLocalization.GetBulgarianAuthorityType(user.ReadAccess)</td>
-                @if (Model.WriteAuthority >= AccessManager.Data.Enums.AuthorityType.Restricted)
-                {
                     <td>
-                        <a asp-controller="User" asp-action="EditUser" asp-route-userid="@user.Id" class="btn btn-sm btn-info">
+                        <a asp-controller="User" asp-action="EditUser" asp-route-userid="@user.Id" class="btn btn-sm btn-info" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">
                             Редактирай
                         </a>
                     </td>
                     <td>
-                        <form asp-controller="User" asp-action="SoftDeleteUser" method="post" asp-route-userid="@user.Id">
+                        <form asp-controller="User" asp-action="SoftDeleteUser" method="post" asp-route-userid="@user.Id" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
                             <button type="submit" class="btn btn-danger me-2">
                                 Изтрий
                             </button>
                         </form>
                     </td>
-                }
             </tr>
         }
     </tbody>
 </table>
 
 @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.Users)
-<div class="gap-5 wrapper row" data-readonly="@(ViewBag.IsReadOnly != null && (bool)ViewBag.IsReadOnly ? "true" : "false")">
-        <a asp-controller="User" asp-action="CreateUser" class="btn btn-success col-md-2">
-            Добави потребител
-        </a>
-        <a asp-controller="User" asp-action="DeletedUsers" class="btn btn-danger col-md-2">
-            Виж изтритите потребители
-        </a>
-        <a asp-controller="File" asp-action="UsersCsv" class="btn btn-primary col-md-3">
-            Експортирай CSV с потребители
-        </a>
-        <a asp-controller="File" asp-action="UsersUnitsCsv" class="btn btn-primary col-md-3">
-            Експортирай CSV с достъпните отдели за потребители
-        </a>
+
+<div class="gap-5 row">
+    <a asp-controller="User" asp-action="CreateUser" class="btn btn-success col-md-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">
+        Добави потребител
+    </a>
+    <a asp-controller="User" asp-action="DeletedUsers" class="btn btn-danger col-md-2" auth="@Model.LoggedUserReadAuthority >= AuthorityType.SuperAdmin">
+        Виж изтритите потребители
+    </a>
+    <a asp-controller="File" asp-action="UsersCsv" class="btn btn-primary col-md-3" auth="@Model.LoggedUserReadAuthority >= AuthorityType.Restricted">
+        Експортирай CSV с потребители
+    </a>
+    <a asp-controller="File" asp-action="UsersUnitsCsv" class="btn btn-primary col-md-3" auth="@Model.LoggedUserReadAuthority >= AuthorityType.Restricted">
+        Експортирай CSV с достъпните отдели за потребители
+    </a>
 </div>
 
 @section Scripts {

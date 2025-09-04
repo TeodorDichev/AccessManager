@@ -6,7 +6,17 @@
 }
 
 <h2 class="mb-4">Добави потребител</h2>
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="text-success">@TempData["Success"]</div>
+}
 
+@* Back end authentication protection *@
+@* Anyone with minimal write access can add users *@
 <form asp-action="CreateUser" method="post">
     <input type="hidden" asp-for="SelectedUnitDescription" />
     <input type="hidden" asp-for="SelectedDepartmentDescription" />
@@ -47,6 +57,15 @@
     </div>
 
     <div class="row mb-3">
+        <div class="mb-3">
+            <label asp-for="SelectedPositionId" class="form-label">Служба</label>
+            <input type="text" class="form-control" id="positionInput" value="@Model.SelectedPositionDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
+            <input type="hidden" asp-for="SelectedPositionId" id="SelectedPositionId">
+            <input type="hidden" asp-for="SelectedPositionDescription">
+            <div id="positionResults" class="list-group position-absolute" style="z-index:1000;"></div>
+            <span asp-validation-for="SelectedPositionId" class="text-danger"></span>
+        </div>
+
         <div class="col-md-6">
             <label asp-for="SelectedDepartmentId" class="form-label">Дирекция</label>
             <input type="text" class="form-control" id="departmentInput" value="@Model.SelectedDepartmentDescription" autocomplete="off">
@@ -72,7 +91,10 @@
             <select asp-for="SelectedReadingAccess" class="form-select" id="SelectedReadingAccess">
                 @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
                 {
-                    <option value="@((int)level)">@BulgarianLocalization.GetBulgarianAuthorityType(level)</option>
+                    @if (level <= Model.LoggedUserReadAuthority)
+                    {
+                        <option value="@((int)level)">@BulgarianLocalization.GetBulgarianAuthorityType(level)</option>
+                    }
                 }
             </select>
             <span asp-validation-for="SelectedReadingAccess" class="text-danger"></span>
@@ -82,7 +104,10 @@
             <select asp-for="SelectedWritingAccess" class="form-select" id="SelectedWritingAccess">
                 @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
                 {
-                    <option value="@((int)level)">@BulgarianLocalization.GetBulgarianAuthorityType(level)</option>
+                    @if (level <= Model.LoggedUserWriteAuthority)
+                    {
+                        <option value="@((int)level)">@BulgarianLocalization.GetBulgarianAuthorityType(level)</option>
+                    }
                 }
             </select>
             <span asp-validation-for="SelectedWritingAccess" class="text-danger"></span>

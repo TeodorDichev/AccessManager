@@ -68,6 +68,15 @@
             </div>
 
             <div class="mb-3">
+                <label asp-for="SelectedPositionId" class="form-label">Служба</label>
+                <input type="text" class="form-control" id="positionInput" value="@Model.SelectedPositionDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.SuperAdmin" />
+                <input type="hidden" asp-for="SelectedPositionId" id="SelectedPositionId">
+                <input type="hidden" asp-for="SelectedPositionDescription">
+                <div id="positionResults" class="list-group position-absolute" style="z-index:1000;"></div>
+                <span asp-validation-for="SelectedPositionId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
                 <label asp-for="SelectedDepartmentId" class="form-label">Дирекция</label>
                 <input type="text" class="form-control" id="departmentInput" value="@Model.SelectedDepartmentDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.SuperAdmin"/>
                 <input type="hidden" asp-for="SelectedDepartmentId" id="SelectedDepartmentId">

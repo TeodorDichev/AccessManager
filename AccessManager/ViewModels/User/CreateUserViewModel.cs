@@ -28,6 +28,8 @@ namespace AccessManager.ViewModels.User
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public Guid? SelectedUnitId { get; set; }
         public string SelectedUnitDescription { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public Guid? SelectedPositionId { get; set; }
         public string SelectedPositionDescription { get; set; } = string.Empty;
 

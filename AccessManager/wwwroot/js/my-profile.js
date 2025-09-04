@@ -1,5 +1,5 @@
 ﻿function loadUnits(page) {
-    $.get("/User/GetAccessibleUnits", { page: page }, function (data) {
+    $.get("/Unit/GetAccessibleUnits", { page: page }, function (data) {
         $("#accessibleUnitsContainer").html(data);
     });
 }
@@ -43,6 +43,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const unitInput = document.getElementById('unitInput');
     const unitHidden = document.getElementById('SelectedUnitId');
     const unitResults = document.getElementById('unitResults');
+
+    const positionInput = document.getElementById('positionInput');
+    const positionHidden = document.getElementById('SelectedPositionId');
+    const positionResults = document.getElementById('departmentPositions');
 
     function updateUnitInputState() {
         if (!departmentInput.value.trim()) {
@@ -101,6 +105,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     setupAutocomplete(departmentInput, departmentHidden, departmentResults, '/Department/SearchDepartments', () => ({}));
+
+    setupAutocomplete(positionInput, positionHidden, positionResults, '/User/SearchPositions', () => ({}));
 
     setupAutocomplete(unitInput, unitHidden, unitResults, '/Unit/SearchDepartmentUnits', () => ({
         departmentId: departmentHidden.value

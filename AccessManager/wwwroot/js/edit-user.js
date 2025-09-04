@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const departmentHidden = document.getElementById('SelectedDepartmentId');
     const departmentResults = document.getElementById('departmentResults');
 
+    const positionInput = document.getElementById('positionInput');
+    const positionHidden = document.getElementById('SelectedPositionId');
+    const positionResults = document.getElementById('departmentPositions');
+
     const unitInput = document.getElementById('unitInput');
     const unitHidden = document.getElementById('SelectedUnitId');
     const unitResults = document.getElementById('unitResults');
@@ -73,6 +77,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     setupAutocomplete(departmentInput, departmentHidden, departmentResults, '/Department/SearchDepartments', () => ({}));
+
+    setupAutocomplete(positionInput, positionHidden, positionResults, '/User/SearchPositions', () => ({}));
 
     setupAutocomplete(unitInput, unitHidden, unitResults, '/Unit/SearchDepartmentUnits', () => ({
         departmentId: departmentHidden.value

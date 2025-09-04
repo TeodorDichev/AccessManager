@@ -2,8 +2,6 @@
 using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
-using AccessManager.ViewModels;
-using AccessManager.ViewModels.Department;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
 
@@ -70,8 +68,6 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.SuperAdmin;
-
             MyProfileViewModel model = new()
             {
                 Id = loggedUser.Id,
@@ -87,7 +83,8 @@ namespace AccessManager.Controllers
                 SelectedDepartmentId = loggedUser.Unit.Department.Id,
                 SelectedUnitDescription = loggedUser.Unit.Description,
                 SelectedUnitId = loggedUser.Unit.Id,
-
+                SelectedPositionId = loggedUser.PositionId,
+                SelectedPositionDescription = loggedUser.Position?.Description ?? "",
                 // For safety if changed inside the view
                 LoggedUserWriteAuthority = loggedUser.WritingAccess,
                 LoggedUserReadAuthority = loggedUser.ReadingAccess,
@@ -102,11 +99,15 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            if (model.UserName != loggedUser.UserName && _userService.UserWithUsernameExists(model.UserName)) 
+            if (model.UserName != loggedUser.UserName && _userService.UserWithUsernameExists(model.UserName))
                 ModelState.AddModelError("UserName", ExceptionMessages.InvalidUsername);
 
             if (model.SelectedDepartmentId == null) model.SelectedDepartmentDescription = "";
             if (model.SelectedUnitId == null) model.SelectedUnitDescription = "";
+            if (model.SelectedPositionId == null) model.SelectedPositionDescription = "";
+
+            model.LoggedUserReadAuthority = loggedUser.ReadingAccess;
+            model.LoggedUserWriteAuthority = loggedUser.WritingAccess;
 
             if (!ModelState.IsValid) return View(model);
 
@@ -128,39 +129,10 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAccessibleUnits(int page = 1)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var accessibleUnits = loggedUser.AccessibleUnits.Select(au => new UnitDepartmentViewModel
-            {
-                UnitName = au.Unit.Description,
-                DepartmentName = au.Unit.Department.Description
-            }).ToList();
-
-            var totalCount = accessibleUnits.Count();
-
-            var paged = accessibleUnits
-                .Skip((page - 1) * Constants.ItemsPerPage)
-                .Take(Constants.ItemsPerPage)
-                .ToList();
-
-            var result = new PagedResult<UnitDepartmentViewModel>
-            {
-                Items = paged,
-                Page = page,
-                TotalCount = totalCount
-            };
-            return PartialView("_AccessibleUnitsTable", result);
-        }
-
-        [HttpGet]
         public IActionResult GetUserAccesses(int page = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-
 
             var result = _accessService.GetAccessesGrantedToUserPaged(loggedUser, null, page);
 
@@ -172,8 +144,6 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < Data.Enums.AuthorityType.Full;
 
             var unit = _unitService.GetUnit(model.FilterUnitId);
             var department = _departmentService.GetDepartment(model.FilterDepartmentId);
@@ -187,6 +157,7 @@ namespace AccessManager.Controllers
                 FilterUnitDescription = unit?.Description ?? "",
                 FilterDepartmentDescription = department?.Description ?? "",
                 LoggedUserWriteAuthority = loggedUser.WritingAccess,
+                LoggedUserReadAuthority = loggedUser.ReadingAccess
             };
 
             return View(result);
@@ -197,8 +168,19 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (loggedUser.WritingAccess < AuthorityType.Restricted)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("UserList");
+            }
 
-            return View(new CreateUserViewModel());
+            var model = new CreateUserViewModel()
+            {
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
+                LoggedUserWriteAuthority = loggedUser.WritingAccess
+            };
+
+            return View(model);
         }
 
         [HttpPost]
@@ -208,29 +190,40 @@ namespace AccessManager.Controllers
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
             if (_userService.UserWithUsernameExists(model.UserName))
-                ModelState.AddModelError("UserName", "Потребител с това потребителско име вече съществува.");
+                ModelState.AddModelError("UserName", ExceptionMessages.InvalidUsername);
 
             if (loggedUser.WritingAccess < model.SelectedWritingAccess || loggedUser.ReadingAccess < model.SelectedReadingAccess)
-                ModelState.AddModelError("SelectedReadingAccess", "Не може да добавяш потребител с по-висок достъп.");
+                ModelState.AddModelError("SelectedReadingAccess", ExceptionMessages.InsufficientAuthority);
 
             if (model.SelectedDepartmentId == null) model.SelectedDepartmentDescription = "";
+            if (model.SelectedPositionId == null) model.SelectedPositionDescription = "";
             if (model.SelectedUnitDescription == null) model.SelectedDepartmentDescription = "";
 
             if (!ModelState.IsValid) return View(model);
 
             var unit = _unitService.GetUnit(model.SelectedUnitId);
-            if (unit == null) 
+            if (unit == null)
             {
-                ModelState.AddModelError("SelectedUnitId", "Отделът не съществува");
+                ModelState.AddModelError("SelectedUnitId", ExceptionMessages.UnitNotFound);
+                return View(model);
+            }
+
+            var position = _userService.GetPosition(model.SelectedPositionId);
+            if (position == null)
+            {
+                ModelState.AddModelError("SelectedPositionId", ExceptionMessages.PositionNotFound);
                 return View(model);
             }
 
             var user = new User
             {
+                Id = Guid.NewGuid(),
                 UserName = model.UserName,
                 FirstName = model.FirstName,
                 MiddleName = model.MiddleName,
                 LastName = model.LastName,
+                PositionId = position.Id,
+                Position = position,
                 EGN = model.EGN,
                 Phone = model.Phone,
                 UnitId = unit.Id,
@@ -248,15 +241,15 @@ namespace AccessManager.Controllers
             _logService.AddLog(loggedUser, LogAction.Add, user);
 
             if (redirectTo == "MapUserAccess")
-                return RedirectToAction(redirectTo, new { username = model.UserName });
+                return RedirectToAction(redirectTo, new { userId = user.Id });
             else if (redirectTo == "MapUserUnitAccess")
-                return RedirectToAction("MapUserUnitAccess", new { username = model.UserName });
+                return RedirectToAction("MapUserUnitAccess", new { userId = user.Id });
 
             return RedirectToAction(redirectTo);
         }
 
         [HttpGet]
-        public IActionResult EditUser(Guid userId)
+        public IActionResult EditUser(Guid? userId)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
@@ -265,11 +258,9 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(userId);
             if (user == null)
             {
-                TempData["Error"] = "Потребителят не е намерен";
+                TempData["Error"] = ExceptionMessages.UserNotFound;
                 return RedirectToAction("UserList");
             }
-
-            ViewBag.IsReadOnly = loggedUser.WritingAccess < user.WritingAccess;
 
             var model = new EditUserViewModel
             {
@@ -287,7 +278,9 @@ namespace AccessManager.Controllers
                 SelectedDepartmentId = user.Unit.Department.Id,
                 SelectedDepartmentDescription = user.Unit.Department.Description ?? "",
                 SelectedUnitId = user.Unit.Id,
-                SelectedUnitDescription = user.Unit.Description ?? "" 
+                SelectedUnitDescription = user.Unit.Description ?? "",
+                SelectedPositionId = user.Position?.Id ?? null,
+                SelectedPositionDescription = user.Position?.Description ?? ""
             };
 
             return View(model);
@@ -310,10 +303,11 @@ namespace AccessManager.Controllers
                 ModelState.AddModelError("UserName", ExceptionMessages.InvalidUsername);
 
             if (loggedUser.WritingAccess < model.WritingAccess || loggedUser.ReadingAccess < model.ReadingAccess)
-                ModelState.AddModelError("SelectedReadingAccess", "Не може да добавяш потребител с по-висок достъп.");
+                ModelState.AddModelError("SelectedReadingAccess", ExceptionMessages.InsufficientAuthority);
 
             if (model.SelectedDepartmentId == null) model.SelectedDepartmentDescription = "";
             if (model.SelectedUnitId == null) model.SelectedUnitDescription = "";
+            if (model.SelectedPositionId == null) model.SelectedPositionDescription = "";
 
             if (!ModelState.IsValid) return View(model);
 
@@ -327,28 +321,27 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        public IActionResult SoftDeleteUser(string username)
+        public IActionResult SoftDeleteUser(Guid? userId)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-            if (string.IsNullOrWhiteSpace(username)) return BadRequest();
 
-            var userToDelete = _userService.GetUser(username);
+            var userToDelete = _userService.GetUser(userId);
             if (userToDelete == null)
             {
-                TempData["Error"] = "Потребителят не е намерен";
+                TempData["Error"] = ExceptionMessages.UserNotFound;
                 return RedirectToAction("UserList");
             }
             else if (loggedUser.WritingAccess < AuthorityType.Full
                 || userToDelete.WritingAccess >= loggedUser.WritingAccess
                 || userToDelete.ReadingAccess >= loggedUser.WritingAccess)
             {
-                TempData["Error"] = "Недостатъчен достъп!";
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
                 return RedirectToAction("UserList");
             }
             else if (!_userService.CanDeleteUser(userToDelete))
             {
-                TempData["Error"] = "Не може да изтриете този потребител, защото той участва в други записи!";
+                TempData["Error"] = ExceptionMessages.EntityCannotBeDeletedDueToDependencies;
                 return RedirectToAction("UserList");
             }
 
@@ -359,23 +352,20 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        public IActionResult HardDeleteUser(string username)
+        public IActionResult HardDeleteUser(Guid? userId)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var userToDelete = _userService.GetDeletedUser(username);
-            if (userToDelete == null)
+            if (loggedUser.WritingAccess < AuthorityType.SuperAdmin)
             {
-                TempData["Error"] = "Потребителят не е намерен";
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
                 return RedirectToAction("UserList");
             }
 
-            if (loggedUser.WritingAccess < AuthorityType.Full
-                || userToDelete.WritingAccess >= loggedUser.WritingAccess
-                || userToDelete.ReadingAccess >= loggedUser.WritingAccess)
+            var userToDelete = _userService.GetDeletedUser(userId);
+            if (userToDelete == null)
             {
-                TempData["Error"] = "Недостатъчен достъп!";
+                TempData["Error"] = ExceptionMessages.UserNotFound;
                 return RedirectToAction("UserList");
             }
 
@@ -389,21 +379,31 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (loggedUser.WritingAccess < AuthorityType.SuperAdmin)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("UserList");
+            }
 
-            if (loggedUser.WritingAccess == AuthorityType.SuperAdmin) _userService.HardDeleteUsers();
+            _userService.HardDeleteUsers();
             return RedirectToAction("DeletedUsers");
         }
 
         [HttpPost]
-        public IActionResult RestoreUser(string username)
+        public IActionResult RestoreUser(Guid? userId)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (loggedUser.WritingAccess < AuthorityType.SuperAdmin)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("UserList");
+            }
 
-            var userToRestore = _userService.GetDeletedUser(username);
+            var userToRestore = _userService.GetDeletedUser(userId);
             if (userToRestore == null)
             {
-                TempData["Error"] = "Потребителят не е намерен";
+                TempData["Error"] = ExceptionMessages.UserNotFound;
                 return RedirectToAction("UserList");
             }
 
@@ -418,8 +418,11 @@ namespace AccessManager.Controllers
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-            if (loggedUser.WritingAccess < AuthorityType.SuperAdmin) return RedirectToAction("UserList");
-
+            if (loggedUser.WritingAccess < AuthorityType.SuperAdmin)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("UserList");
+            }
 
             var result = _userService.GetDeletedUsersPaged(page);
             return View(result);

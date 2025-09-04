@@ -9,9 +9,21 @@
 
 <h2>Деактивирани потребители</h2>
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="text-success">@TempData["Success"]</div>
+}
+
 <form style="display:none;">
     @Html.AntiForgeryToken()
 </form>
+
+@* Back end authentication protection *@
+@* Only superadmin is allowed *@
 
 <div class="d-flex mb-3">
     <form asp-controller="User" asp-action="HardDeleteUsers" method="post" onsubmit="return confirm('Наистина ли искате да изтриете всички деактивирани потребители?');">
@@ -47,14 +59,14 @@
                 <td>@user.WriteAccess</td>
                 <td>@user.ReadAccess</td>
                 <td>
-                    <form asp-controller="User" asp-action="HardDeleteUser" method="post" asp-route-username="@user.UserName">
+                    <form asp-controller="User" asp-action="HardDeleteUser" method="post" asp-route-userId="@user.Id">
                         <button type="submit" class="btn btn-danger me-2">
                             Изтрий
                         </button>
                     </form>
                 </td>
                 <td>
-                    <form asp-controller="User" asp-action="RestoreUser" method="post" asp-route-username="@user.UserName">
+                    <form asp-controller="User" asp-action="RestoreUser" method="post" asp-route-userId="@user.Id">
                         <button type="submit" class="btn btn-success me-2">
                             Възстанови
                         </button>

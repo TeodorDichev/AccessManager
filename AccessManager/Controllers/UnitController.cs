@@ -3,6 +3,7 @@ using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
 using AccessManager.ViewModels;
+using AccessManager.ViewModels.Department;
 using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
@@ -62,6 +63,34 @@ namespace AccessManager.Controllers
                 .ToList();
 
             return Json(results);
+        }
+
+        [HttpGet]
+        public IActionResult GetAccessibleUnits(int page = 1)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var accessibleUnits = loggedUser.AccessibleUnits.Select(au => new UnitDepartmentViewModel
+            {
+                UnitName = au.Unit.Description,
+                DepartmentName = au.Unit.Department.Description
+            }).ToList();
+
+            var totalCount = accessibleUnits.Count();
+
+            var paged = accessibleUnits
+                .Skip((page - 1) * Constants.ItemsPerPage)
+                .Take(Constants.ItemsPerPage)
+                .ToList();
+
+            var result = new PagedResult<UnitDepartmentViewModel>
+            {
+                Items = paged,
+                Page = page,
+                TotalCount = totalCount
+            };
+            return PartialView("_AccessibleUnitsTable", result);
         }
 
         [HttpGet]

@@ -71,6 +71,7 @@ namespace AccessManager.Services
                         UserName = u.UserName,
                         FirstName = u.FirstName,
                         LastName = u.LastName,
+                        Position = u.Position != null ? u.Position!.Description : "",
                         Unit = u.Unit.Description,
                         Department = u.Unit.Department.Description,
                         WriteAccess = u.WritingAccess,
@@ -225,9 +226,9 @@ namespace AccessManager.Services
                 .ToList();
         }
 
-        internal User? GetDeletedUser(string username)
+        internal User? GetDeletedUser(Guid? userId)
         {
-            return _context.Users.IgnoreQueryFilters().FirstOrDefault(u => u.UserName == username && u.DeletedOn != null);
+            return _context.Users.IgnoreQueryFilters().FirstOrDefault(u => u.Id == userId && u.DeletedOn != null);
         }
 
         internal User? GetDeletedUser(Guid id)
@@ -250,6 +251,7 @@ namespace AccessManager.Services
                     UserName = u.UserName,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
+                    Position = u.Position?.Description ?? "",
                     Unit = u.Unit.Description,
                     Department = u.Unit.Department.Description,
                     WriteAccess = u.WritingAccess,
@@ -268,6 +270,11 @@ namespace AccessManager.Services
         internal IEnumerable<Position> GetPositions()
         {
            return _context.Positions.OrderBy(p => p.Description).ToList();
+        }
+
+        internal Position GetPosition(Guid? selectedUnitId)
+        {
+            throw new NotImplementedException();
         }
     }
 }
