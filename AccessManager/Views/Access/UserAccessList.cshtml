@@ -3,11 +3,7 @@
 @using AccessManager.ViewModels.Access
 @model UserAccessListViewModel
 
-@{
-    ViewData["Title"] = "Потребители и достъпи";
-}
-
-<h2>Потребители</h2>
+<h2>Потребители и достъпи</h2>
 
 @if (TempData["Error"] != null)
 {
@@ -22,8 +18,18 @@
     @Html.AntiForgeryToken()
 </form>
 
-<form method="get">
+<form method="get" id="filterForm">
     <div class="mb-3 d-flex align-items-end gap-3">
+        <div>
+            <label asp-for="SelectedSortOption" class="form-label">Сортиране</label>
+            <select asp-for="SelectedSortOption" class="form-select" id="selectedSortOption" onchange="document.getElementById('filterForm').submit()">
+                @foreach (UserSortOptions sort in Enum.GetValues(typeof(UserSortOptions)))
+                {
+                    <option value="@((int)sort)">@BulgarianLocalization.GetBulgarianSort(sort)</option>
+                }
+            </select>
+        </div>
+
         <filter form-id="AccessFilterForm"
                 label="Филтър по достъп"
                 controller="Access"
@@ -117,7 +123,7 @@
                         <td title="@ua.LastName">@ua.LastName</td>
                         <td title="@ua.Position">@ua.Position</td>
                         <td title="@ua.Department">@ua.Department</td>
-                        <td title="@ua.Department">@ua.Department</td>
+                        <td title="@ua.Unit">@ua.Unit</td>
                         <td title="@BulgarianLocalization.GetBulgarianAuthorityType(ua.WriteAccess)">@BulgarianLocalization.GetBulgarianAuthorityType(ua.WriteAccess)</td>
                         <td title="@BulgarianLocalization.GetBulgarianAuthorityType(ua.ReadAccess)">@BulgarianLocalization.GetBulgarianAuthorityType(ua.ReadAccess)</td>
                         <td title="@ua.AccessDescription">@ua.AccessDescription</td>

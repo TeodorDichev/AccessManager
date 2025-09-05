@@ -4,6 +4,7 @@ using AccessManager.Services;
 using AccessManager.Utills;
 using AccessManager.ViewModels.User;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace AccessManager.Controllers
 {
@@ -139,8 +140,10 @@ namespace AccessManager.Controllers
                 SelectedSortOption = model.SelectedSortOption,
                 FilterUnitId = model.FilterUnitId,
                 FilterDepartmentId = model.FilterDepartmentId,
+                FilterPositionId = model.FilterPositionId,
                 FilterUnitDescription = unit?.Description ?? "",
                 FilterDepartmentDescription = department?.Description ?? "",
+                FilterPositionDescription = position?.Description ?? "",
                 LoggedUserWriteAuthority = loggedUser.WritingAccess,
                 LoggedUserReadAuthority = loggedUser.ReadingAccess
             };
@@ -184,21 +187,23 @@ namespace AccessManager.Controllers
             if (model.SelectedPositionId == null) model.SelectedPositionDescription = "";
             if (model.SelectedUnitDescription == null) model.SelectedDepartmentDescription = "";
 
-            if (!ModelState.IsValid) return View(model);
-
             var unit = _unitService.GetUnit(model.SelectedUnitId);
-            if (unit == null)
+            if (unit == null) ModelState.AddModelError("SelectedUnitId", ExceptionMessages.UnitNotFound);
+            else
             {
-                ModelState.AddModelError("SelectedUnitId", ExceptionMessages.UnitNotFound);
-                return View(model);
+                ModelState["SelectedUnitDescription"]!.ValidationState = ModelValidationState.Valid;
+                ModelState["SelectedDepartmentDescription"]!.ValidationState = ModelValidationState.Valid;
             }
 
             var position = _positionService.GetPosition(model.SelectedPositionId);
-            if (position == null)
-            {
-                ModelState.AddModelError("SelectedPositionId", ExceptionMessages.PositionNotFound);
-                return View(model);
-            }
+            if (position == null) ModelState.AddModelError("SelectedPositionId", ExceptionMessages.PositionNotFound);
+            else ModelState["SelectedPositionDescription"]!.ValidationState = ModelValidationState.Valid;
+               
+            if(string.IsNullOrEmpty(model.Password) 
+                && (model.SelectedReadingAccess > AuthorityType.None || model.SelectedWritingAccess > AuthorityType.None))
+                ModelState.AddModelError("Password", ExceptionMessages.RequiredField);
+
+            if (!ModelState.IsValid) return View(model);
 
             var user = new User
             {
@@ -207,11 +212,11 @@ namespace AccessManager.Controllers
                 FirstName = model.FirstName,
                 MiddleName = model.MiddleName,
                 LastName = model.LastName,
-                PositionId = position.Id,
+                PositionId = position!.Id,
                 Position = position,
                 EGN = model.EGN,
                 Phone = model.Phone,
-                UnitId = unit.Id,
+                UnitId = unit!.Id,
                 Unit = unit,
                 ReadingAccess = model.SelectedReadingAccess,
                 WritingAccess = model.SelectedWritingAccess,
@@ -229,8 +234,8 @@ namespace AccessManager.Controllers
                 return RedirectToAction(redirectTo, new { userId = user.Id });
             else if (redirectTo == "MapUserUnitAccess")
                 return RedirectToAction("MapUserUnitAccess", new { userId = user.Id });
-
-            return RedirectToAction(redirectTo);
+            else 
+                return RedirectToAction("UserList");
         }
 
         [HttpGet]

@@ -1,35 +1,43 @@
-﻿@model (int currentPage, int totalPages, string pageParam, object routeValues)
+﻿@model AccessManager.ViewModels.IPagedResult
 
-<nav>
-    <ul class="pagination">
-        @if (Model.currentPage > 1)
-        {
-            <li class="page-item">
-                <a class="page-link"
-                   href="@Url.Action(null, new RouteValueDictionary(Model.routeValues) { [Model.pageParam] = Model.currentPage - 1 })">
-                    Previous
-                </a>
-            </li>
-        }
+@{
+    // Capture all current query parameters
+    var query = new Dictionary<string, object>(
+        ViewContext.HttpContext.Request.Query
+            .ToDictionary(k => k.Key, v => (object)v.Value.ToString())
+    );
 
-        @for (int i = 1; i <= Model.totalPages; i++)
-        {
-            <li class="page-item @(i == Model.currentPage ? "active" : "")">
-                <a class="page-link"
-                   href="@Url.Action(null, new RouteValueDictionary(Model.routeValues) { [Model.pageParam] = i })">
-                    @i
-                </a>
-            </li>
-        }
+    int currentPage = Model.Page;
+    int totalPages = Model.TotalPages;
+    string pageParam = "page";
+}
 
-        @if (Model.currentPage < Model.totalPages)
-        {
-            <li class="page-item">
-                <a class="page-link"
-                   href="@Url.Action(null, new RouteValueDictionary(Model.routeValues) { [Model.pageParam] = Model.currentPage + 1 })">
-                    Next
-                </a>
+@if (totalPages > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center mt-4">
+
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                @{
+                    query[pageParam] = currentPage - 1;
+                }
+                <a class="page-link" href="@Url.Action(null, query)">Предишна</a>
             </li>
-        }
-    </ul>
-</nav>
+
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                query[pageParam] = i;
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link" href="@Url.Action(null, query)">@i</a>
+                </li>
+            }
+
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                @{
+                    query[pageParam] = currentPage + 1;
+                }
+                <a class="page-link" href="@Url.Action(null, query)">Следваща</a>
+            </li>
+        </ul>
+    </nav>
+}

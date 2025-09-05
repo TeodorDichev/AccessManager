@@ -21,11 +21,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const unitResults = document.getElementById('unitResults');
 
     function updateUnitInputState() {
-        if (!departmentInput.value.trim()) {
+        if (departmentInput.disabled === true) {
+            unitInput.disabled = true;
+        }
+        else if (!departmentInput.value.trim()) {
             unitInput.value = '';
             unitHidden.value = '';
             unitInput.disabled = true;
-        } else {
+        }
+        else {
             unitInput.disabled = false;
         }
     }

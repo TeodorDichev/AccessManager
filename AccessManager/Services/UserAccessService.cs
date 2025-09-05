@@ -1,5 +1,6 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
+using AccessManager.Data.Enums;
 using AccessManager.Utills;
 using AccessManager.ViewModels;
 using AccessManager.ViewModels.Access;
@@ -28,7 +29,7 @@ namespace AccessManager.Services
 
         internal PagedResult<UserAccessListItemViewModel> GetUserAccessesPaged(
             User loggedUser, User? userFilter, Access? accessFilter, Directive? directiveFilter, 
-                Department? departmentFilter, Unit? unitFilter, Position? positionFilter, int page)
+                Department? departmentFilter, Unit? unitFilter, Position? positionFilter, UserSortOptions sort, int page)
         {
             var query = _context.UserAccesses
                 .Include(ua => ua.User)                   
@@ -66,8 +67,9 @@ namespace AccessManager.Services
 
             var totalCount = query.Count();
 
+            query = ApplySorting(query, sort);
+
             var items = query
-                .OrderBy(ua => ua.User.UserName)
                 .Skip((page - 1) * Constants.ItemsPerPage)
                 .Take(Constants.ItemsPerPage)
                 .Select(ua => new UserAccessListItemViewModel
@@ -86,12 +88,23 @@ namespace AccessManager.Services
                     RevokeDirectiveDescription = ua.RevokedByDirective != null ? ua.RevokedByDirective.Name : "-"
                 })
                 .ToList();
-
             return new PagedResult<UserAccessListItemViewModel>
             {
                 Items = items,
                 TotalCount = totalCount,
                 Page = page,
+            };
+        }
+        private IQueryable<UserAccess> ApplySorting(IQueryable<UserAccess> query, UserSortOptions sortOption)
+        {
+            return sortOption switch
+            {
+                UserSortOptions.Username => query.OrderBy(u => u.User.UserName),
+                UserSortOptions.FirstName => query.OrderBy(u => u.User.FirstName),
+                UserSortOptions.LastName => query.OrderBy(u => u.User.LastName),
+                UserSortOptions.ReadingAccess => query.OrderByDescending(u => u.User.ReadingAccess),
+                UserSortOptions.WritingAccess => query.OrderByDescending(u => u.User.WritingAccess),
+                _ => query.OrderBy(u => u.User.UserName),
             };
         }
 

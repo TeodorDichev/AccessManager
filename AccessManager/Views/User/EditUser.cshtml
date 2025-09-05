@@ -26,25 +26,34 @@
         <div class="col-md-6">
             <div class="mb-3">
                 <label asp-for="FirstName" class="form-label">Първо име</label>
-                <input asp-for="FirstName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
+                <input asp-for="FirstName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess" />
                 <span asp-validation-for="FirstName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="MiddleName" class="form-label">Второ име</label>
-                <input asp-for="MiddleName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
+                <input asp-for="MiddleName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess" />
                 <span asp-validation-for="MiddleName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="LastName" class="form-label">Фамилия</label>
-                <input asp-for="LastName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
+                <input asp-for="LastName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess" />
                 <span asp-validation-for="LastName" class="text-danger"></span>
             </div>
-            
+
+            <div class="mb-3">
+                <label asp-for="SelectedPositionId" class="form-label">Служба</label>
+                <input type="text" class="form-control" id="positionInput" value="@Model.SelectedPositionDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess" />
+                <input type="hidden" asp-for="SelectedPositionId" id="SelectedPositionId">
+                <input type="hidden" asp-for="SelectedPositionDescription">
+                <div id="positionResults" class="list-group position-absolute" style="z-index:1000;"></div>
+                <span asp-validation-for="SelectedPositionId" class="text-danger"></span>
+            </div>
+
             <div class="mb-3">
                 <label asp-for="Phone" class="form-label">Телефонен номер</label>
-                <input asp-for="Phone" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
+                <input asp-for="Phone" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess" />
                 <span asp-validation-for="Phone" class="text-danger"></span>
             </div>
 
@@ -53,7 +62,7 @@
             {
                 <div class="mb-3">
                     <label asp-for="EGN" class="form-label">ЕГН</label>
-                    <input asp-for="EGN" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
+                    <input asp-for="EGN" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess" />
                     <span asp-validation-for="EGN" class="text-danger"></span>
                 </div>
             }
@@ -62,13 +71,13 @@
         <div class="col-md-6">
             <div class="mb-3">
                 <label asp-for="UserName" class="form-label">Потребителско име</label>
-                <input asp-for="UserName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
+                <input asp-for="UserName" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.SuperAdmin && Model.LoggedUserWriteAuthority > Model.WritingAccess" />
                 <span asp-validation-for="UserName" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="ReadingAccess" class="form-label">Достъп за четене</label>
-                <select asp-for="ReadingAccess" class="form-select" id="SelectedReadingAccess" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
+                <select asp-for="ReadingAccess" class="form-select" id="SelectedReadingAccess" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess">
                     @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
                     {
                         @if (level <= Model.LoggedUserReadAuthority)
@@ -82,7 +91,7 @@
 
             <div class="mb-3">
                 <label asp-for="WritingAccess" class="form-label">Достъп за писане</label>
-                <select asp-for="WritingAccess" class="form-select" id="SelectedWritingAccess" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
+                <select asp-for="WritingAccess" class="form-select" id="SelectedWritingAccess" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess">
                     @foreach (AuthorityType level in Enum.GetValues(typeof(AuthorityType)))
                     {
                         @if(level <= Model.LoggedUserWriteAuthority)
@@ -95,17 +104,8 @@
             </div>
 
             <div class="mb-3">
-                <label asp-for="SelectedPositionId" class="form-label">Служба</label>
-                <input type="text" class="form-control" id="positionInput" value="@Model.SelectedPositionDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
-                <input type="hidden" asp-for="SelectedPositionId" id="SelectedPositionId">
-                <input type="hidden" asp-for="SelectedPositionDescription">
-                <div id="positionResults" class="list-group position-absolute" style="z-index:1000;"></div>
-                <span asp-validation-for="SelectedPositionId" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
                 <label asp-for="SelectedDepartmentId" class="form-label">Дирекция</label>
-                <input type="text" class="form-control" id="departmentInput" value="@Model.SelectedDepartmentDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full"/>
+                <input type="text" class="form-control" id="departmentInput" value="@Model.SelectedDepartmentDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess" />
                 <input type="hidden" asp-for="SelectedDepartmentId" id="SelectedDepartmentId">
                 <input type="hidden" asp-for="SelectedDepartmentDescription">
                 <div id="departmentResults" class="list-group position-absolute" style="z-index:1000;"></div>
@@ -114,23 +114,25 @@
 
             <div class="mb-3">
                 <label asp-for="SelectedUnitId" class="form-label">Отдел</label>
-                <input type="text" class="form-control" id="unitInput" value="@Model.SelectedUnitDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full"/>
+                <input type="text" class="form-control" id="unitInput" value="@Model.SelectedUnitDescription" autocomplete="off" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess" />
                 <input type="hidden" asp-for="SelectedUnitId" id="SelectedUnitId">
                 <input type="hidden" asp-for="SelectedUnitDescription">
                 <div id="unitResults" class="list-group position-absolute" style="z-index:1000;"></div>
                 <span asp-validation-for="SelectedUnitId" class="text-danger"></span>
             </div>
+
+            <div class="mb-3">
+                <label class="form-label">Нова парола</label>
+                <input type="password" name="NewPassword" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess" />
+            </div>
+
         </div>
     </div>
 
-    <div class="mb-3">
-        <label class="form-label">Нова парола</label>
-        <input type="password" name="NewPassword" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
-    </div>
 
     <div class="row">
         <div class="d-grid col-md-3">
-            <button type="submit" class="btn btn-success btn-lg">Запази</button>
+            <button type="submit" class="btn btn-success btn-lg" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess">Запази</button>
         </div>
         <div class="d-grid col-md-3">
             <a asp-controller="Access" asp-action="MapUserAccess" asp-route-userId="@Model.UserId" class="btn btn-primary btn-lg">
@@ -143,7 +145,7 @@
             </a>
         </div>
         <div class="d-grid col-md-3">
-             <button type="submit" formaction="/User/Deactivate" formmethod="post" class="btn btn-danger btn-lg">Деактивирай акаунта</button>
+            <button type="submit" formaction="/User/Deactivate" formmethod="post" class="btn btn-danger btn-lg" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess">Деактивирай акаунта</button>
         </div>
     </div>
 
@@ -153,7 +155,6 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/password-visibility-toggle.js" asp-append-version="true"></script>
     <script src="~/js/edit-user.js" asp-append-version="true"></script>
-    <script src="~/js/unit-dropdown-load.js" asp-append-version="true"></script>
     <script src="~/js/access-visibility.js" asp-append-version="true"></script>
     <script src="~/js/sync-authority-type-access.js" asp-append-version="true"></script>
 }

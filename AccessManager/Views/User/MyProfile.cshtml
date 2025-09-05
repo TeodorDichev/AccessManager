@@ -17,15 +17,6 @@
     <div class="text-success">@TempData["Success"]</div>
 }
 
-<style>
-    input[readonly] {
-        background-color: #e9ecef;
-        color: #6c757d;
-        border-color: #ced4da;
-        cursor: not-allowed;
-    }
-</style>
-
 <form asp-action="MyProfile" method="post">
     <div class="row">
         <div class="col-md-6">
@@ -159,7 +150,6 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/unit-dropdown-load.js" asp-append-version="true"></script>
     <script src="~/js/my-profile.js" asp-append-version="true"></script>
     <script src="~/js/password-visibility-toggle.js" asp-append-version="true"></script>
 }

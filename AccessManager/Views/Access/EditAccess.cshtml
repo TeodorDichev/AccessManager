@@ -37,7 +37,7 @@
         </form>
 
         <form asp-action="RevokeUserAccess" method="post">
-            <div class="mb-2">
+            <div class="mb-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
                 <filter form-id="DirectiveToRevokeAccessForm"
                         label="Заповед за спиране на достъп"
                         controller="Directive"
@@ -110,8 +110,9 @@
 
         <form asp-controller="Access" asp-action="GrantUserAccess" method="post">
             <input type="hidden" name="accessId" value="@Model.AccessId" />
-            <div class="mb-2">
-                <filter form-id="DirectiveToGrantAccessForm"
+            <div class="mb-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
+                <filter 
+                    form-id="DirectiveToGrantAccessForm"
                         label="Заповед за даване на достъп"
                         controller="Directive"
                         action="SearchDirectives"
@@ -138,9 +139,9 @@
                     {
                         <tr>
                             <td> <input type="checkbox" name="SelectedUsersWithoutAccessIds" value="@user.UserId" /> </td>
-                            <td>@user.FirstName @user.LastName (@user.UserName)</td>
-                            <td>@user.Position</td>
-                            <td>@user.Department - @user.Unit</td>
+                            <td title="@user.FirstName @user.LastName (@user.UserName)">@user.FirstName @user.LastName (@user.UserName)</td>
+                            <td title="@user.Position">@user.Position</td>
+                            <td title="@user.Department - @user.Unit">@user.Department - @user.Unit</td>
                             <td>
                                 <div class="position-relative">
                                     <input type="text" class="form-control directive-search"

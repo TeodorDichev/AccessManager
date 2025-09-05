@@ -1,20 +1,46 @@
 ﻿@model AccessManager.ViewModels.IPagedResult
 
-<nav>
-    <ul class="pagination justify-content-center mt-4">
-        <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
-            <a class="page-link" href="?page=@(Model.Page - 1)">Предишна</a>
-        </li>
-
-        @for (int i = 1; i <= Model.TotalPages; i++)
-        {
-            <li class="page-item @(i == Model.Page ? "active" : "")">
-                <a class="page-link" href="?page=@i">@i</a>
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center mt-4">
+            <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action(null, new { page = Model.Page - 1 })" data-page="@(Model.Page - 1)">Предишна</a>
             </li>
-        }
 
-        <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
-            <a class="page-link" href="?page=@(Model.Page + 1)">Следваща</a>
-        </li>
-    </ul>
-</nav>
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.Page ? "active" : "")">
+                    <a class="page-link" href="@Url.Action(null, new { page = i })" data-page="@i">@i</a>
+                </li>
+            }
+
+            <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action(null, new { page = Model.Page + 1 })" data-page="@(Model.Page + 1)">Следваща</a>
+            </li>
+        </ul>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('filterForm');
+            if (!form) return;
+
+            document.querySelectorAll('.pagination a.page-link').forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    // Copy current form values
+                    const formData = new FormData(form);
+                    const url = new URL(link.href, window.location.origin);
+
+                    for (const [key, value] of formData.entries()) {
+                        url.searchParams.set(key, value);
+                    }
+
+                    window.location.href = url.toString();
+                });
+            });
+        });
+    </script>
+}

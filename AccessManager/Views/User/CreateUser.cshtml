@@ -20,6 +20,8 @@
 <form asp-action="CreateUser" method="post">
     <input type="hidden" asp-for="SelectedUnitDescription" />
     <input type="hidden" asp-for="SelectedDepartmentDescription" />
+    <input type="hidden" asp-for="LoggedUserReadAuthority" />
+    <input type="hidden" asp-for="LoggedUserWriteAuthority" />
 
     <div class="row mb-3">
         <div class="col-md-4">
@@ -35,6 +37,7 @@
         <div class="col-md-4">
             <label asp-for="MiddleName" class="form-label">Презиме</label>
             <input asp-for="MiddleName" class="form-control" />
+            <span asp-validation-for="MiddleName" class="text-danger"></span>
         </div>
     </div>
 
@@ -59,7 +62,7 @@
     <div class="row mb-3">
         <div class="mb-3">
             <label asp-for="SelectedPositionId" class="form-label">Служба</label>
-            <input type="text" class="form-control" id="positionInput" value="@Model.SelectedPositionDescription" autocomplete="off" />
+            <input type="text" class="form-control" id="positionInput" value="@Model.SelectedPositionDescription" autocomplete="off" /> 
             <input type="hidden" asp-for="SelectedPositionId" id="SelectedPositionId">
             <input type="hidden" asp-for="SelectedPositionDescription">
             <div id="positionResults" class="list-group position-absolute" style="z-index:1000;"></div>

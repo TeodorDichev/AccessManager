@@ -445,9 +445,9 @@ namespace AccessManager.Controllers
             var user = _userService.GetUser(model.FilterUserId);
             var access = _accessService.GetAccess(model.FilterAccessId);
             var directive = _directiveService.GetDirective(model.FilterDirectiveId);
-            var unit = _unitService.GetUnit(model.FilterDirectiveId);
-            var department = _departmentService.GetDepartment(model.FilterDirectiveId);
-            var position = _positionService.GetPosition(model.FilterDirectiveId);
+            var unit = _unitService.GetUnit(model.FilterUnitId);
+            var department = _departmentService.GetDepartment(model.FilterDepartmentId);
+            var position = _positionService.GetPosition(model.FilterPositionId);
 
             model.LoggedUserWriteAuthority = loggedUser.WritingAccess;
             model.LoggedUserReadAuthority = loggedUser.ReadingAccess;
@@ -458,7 +458,7 @@ namespace AccessManager.Controllers
             model.FilterDepartmentDescription = department == null ? "" : department.Description;
             model.FilterPositionDescription = position == null ? "" : position.Description;
 
-            model.UserAccessList = _userAccessService.GetUserAccessesPaged(loggedUser, user, access, directive, department, unit, position, page);
+            model.UserAccessList = _userAccessService.GetUserAccessesPaged(loggedUser, user, access, directive, department, unit, position,model.SelectedSortOption, page);
 
             return View(model);
         }

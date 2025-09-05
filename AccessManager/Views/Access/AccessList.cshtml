@@ -57,13 +57,13 @@
             <tr>
                 <td>@access.Description</td>
                 <td>
-                    <a asp-controller="Access" asp-action="EditAccess" asp-route-accessid="@access.AccessId" class="btn btn-sm btn-info" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">
+                    <a asp-controller="Access" asp-action="EditAccess" asp-route-accessid="@access.AccessId" class="btn btn-sm btn-info" auth="@Model.LoggedUserReadAuthority >= AuthorityType.Restricted">
                         Редактирай
                     </a>
                 </td>
                 <td>
-                    <form asp-controller="Access" asp-action="SoftDeleteAccess" method="post" asp-route-id="@access.AccessId" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
-                        <button type="submit" class="btn btn-sm btn-danger">
+                    <form asp-controller="Access" asp-action="SoftDeleteAccess" method="post" asp-route-id="@access.AccessId">
+                        <button type="submit" class="btn btn-sm btn-danger" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
                             Изтрий
                         </button>
                     </form>

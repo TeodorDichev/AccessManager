@@ -1,8 +1,12 @@
-﻿namespace AccessManager.ViewModels.Access
+﻿using AccessManager.Data.Enums;
+
+namespace AccessManager.ViewModels.Access
 {
     public class UserAccessListViewModel : IAuthAwareViewModel
     {
         public PagedResult<UserAccessListItemViewModel> UserAccessList { get; set; } = new();
+        public UserSortOptions SelectedSortOption { get; set; }
+
         public Guid? FilterAccessId { get; set; }
 
         public string? FilterAccessDescription { get; set; }

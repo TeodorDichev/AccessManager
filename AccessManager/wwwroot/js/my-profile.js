@@ -49,11 +49,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const positionResults = document.getElementById('positionResults');
 
     function updateUnitInputState() {
-        if (!departmentInput.value.trim()) {
+        if (departmentInput.disabled === true) {
+            unitInput.disabled = true;
+        }
+        else if (!departmentInput.value.trim()) {
             unitInput.value = '';
             unitHidden.value = '';
             unitInput.disabled = true;
-        } else {
+        }
+        else {
             unitInput.disabled = false;
         }
     }

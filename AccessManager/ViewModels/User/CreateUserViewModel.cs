@@ -8,10 +8,13 @@ namespace AccessManager.ViewModels.User
     {
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public string UserName { get; set; } = null!;
+
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public string FirstName { get; set; } = null!;
+
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public string MiddleName { get; set; } = null!;
+
         [Required(ErrorMessage = ExceptionMessages.RequiredField)]
         public string LastName { get; set; } = null!;
 
