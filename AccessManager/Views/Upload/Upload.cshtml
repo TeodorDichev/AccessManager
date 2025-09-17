@@ -1,0 +1,58 @@
+﻿@{
+    ViewData["Title"] = "Качване на CSV файлове";
+}
+
+@Html.AntiForgeryToken()
+<h2>Качване на данни от файлове</h2>
+
+<p>
+    <a class="btn btn-link p-0" data-bs-toggle="collapse" href="#helpSection" role="button" aria-expanded="false" aria-controls="helpSection">
+        Помощ: Как да запазя CSV файл в UTF-8 от Excel?
+    </a>
+</p>
+<div class="collapse mb-3" id="helpSection">
+    <div class="card card-body" style="min-height:100px">
+        <ol class="mb-0">
+            <li>Отворете файла в Excel.</li>
+            <li>Изберете <strong>File → Save As</strong>.</li>
+            <li>Изберете тип <strong>CSV UTF-8 (Comma delimited) (*.csv)</strong>.</li>
+            <li>Изберете място и натиснете <strong>Save</strong>.</li>
+        </ol>
+        <p class="mb-0">Това гарантира, че всички български символи ще се запазят правилно.</p>
+
+        <p class="mb-0">Подсигурете се, че файлът е коректен иначе качването няма да работи</p>
+        <p class="mb-0">Примерен формат за качване на цяла таблица</p>
+        <img src="~/images/example.png" alt="Example" class="mb-3 img-fluid"/>
+
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="text-success">@TempData["Success"]</div>
+}
+
+<form asp-controller="Upload" asp-action="UploadCompleteTable" enctype="multipart/form-data" method="post" class="mb-4">
+    <div class="card p-3 mb-3" style="min-height:100px">
+        <h4>Цяла таблица</h4>
+        <input type="file" name="file" class="form-control mb-2" accept=".csv" />
+        <div class="form-check mb-2">
+            <input type="checkbox" name="dropTable" class="form-check-input" id="dropUsers" />
+            <label class="form-check-label" for="dropUsers">Изтрий таблицата преди качване</label>
+        </div>
+        <input type="hidden" name="targetTable" value="Users" />
+        <button type="submit" class="btn btn-primary">Качи</button>
+    </div>
+</form>
+
+<form asp-controller="Upload" asp-action="DropDatabase" method="post">
+    <button type="submit" class="btn btn-danger">Изтрий цялата база данни</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

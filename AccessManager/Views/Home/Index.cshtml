@@ -16,6 +16,7 @@
 
 <div id="menuCarousel" class="carousel slide mt-5" data-bs-ride="false">
     <div class="carousel-inner">
+
         <div class="carousel-item active">
             <div class="d-flex justify-content-center">
                 <div class="col-8 col-md-3 m-3">
@@ -142,10 +143,53 @@
                         </div>
                     }
                 </div>
+            </div>
+        </div>
+
+    <div class="carousel-item">
+        <div class="d-flex justify-content-center">
+            <div class="col-8 col-md-3 m-3">
+                @if (isLoggedIn)
+                {
+                    <a asp-controller="Upload" asp-action="Upload" class="text-decoration-none w-100">
+                        <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100">
+                            <img src="~/images/upload.png" alt="Units" class="mb-3 img-fluid" style="filter: invert(1)" />
+                            <h3 class="mb-0">Файлове и данни</h3>
+                        </div>
+                    </a>
+                }
+                else
+                {
+                    <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100" style="cursor: not-allowed;">
+                        <img src="~/images/upload.png" alt="Units" class="mb-3 img-fluid" style="filter: invert(1)" />
+                        <h3 class="mb-0">Файлове и данни</h3>
+                        <div class="mt-2 text-danger">@errorMsg</div>
+                    </div>
+                }
+            </div>
+            <div class="col-8 col-md-3 m-3">
+                @if (isLoggedIn)
+                {
+                    <a asp-controller="Position" asp-action="PositionList" class="text-decoration-none w-100">
+                        <div class="card text-white bg-dark text-center p-5 rounded shadow-lg h-100">
+                            <img src="~/images/position.png" alt="Units" class="mb-3 img-fluid" style="filter: invert(1)"/>
+                            <h3 class="mb-0">Служба</h3>
+                        </div>
+                    </a>
+                }
+                else
+                {
+                    <div class="card bg-dark text-white text-center p-5 rounded shadow-lg h-100" style="cursor: not-allowed;">
+                        <img src="~/images/position.png" alt="Units" class="mb-3 img-fluid" style="filter: invert(1)" />
+                        <h3 class="mb-0">Служба</h3>
+                        <div class="mt-2 text-danger">@errorMsg</div>
+                    </div>
+                }
                 </div>
             </div>
         </div>
     </div>
+</div>
 
     <button class="carousel-control-prev" type="button" data-bs-target="#menuCarousel" data-bs-slide="prev">
         <span class="carousel-control-prev-icon" aria-hidden="true"></span>

@@ -28,5 +28,6 @@
         public static string PositionNotFound = "Службата не е намерена.";
 
         public static object? PositionWithNameExists { get; internal set; }
+        public static object? FileNotUploaded { get; internal set; }
     }
 }

@@ -77,12 +77,12 @@ body {
   text-align: start;
 }
 
-.carousel-control-prev-icon,
+.carousel-control-prev-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 8 8'%3e%3cpath d='M5.5 0l-4 4 4 4V0z'/%3e%3c/svg%3e");
+}
+
 .carousel-control-next-icon {
-    filter: brightness(0) saturate(100%);
-    top: 50%;
-    transform: translateY(-50%);
-    height: auto;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%23000' viewBox='0 0 8 8'%3e%3cpath d='M2.5 0l4 4-4 4V0z'/%3e%3c/svg%3e");
 }
 
 .carousel-item > .d-flex {

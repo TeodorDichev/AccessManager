@@ -1,6 +1,7 @@
 using AccessManager.Data;
 using AccessManager.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
 
 namespace AccessManager
 {
@@ -28,11 +29,21 @@ namespace AccessManager
             builder.Services.AddSession();
             builder.Services.AddControllersWithViews();
 
+            // Add before deploying
+            //builder.WebHost.ConfigureKestrel(options =>
+            //{
+            //    options.Listen(IPAddress.Any, 5000); 
+            //});
+
             var app = builder.Build();
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
                 var context = services.GetRequiredService<Context>();
+
+                // creates the database
+                context.Database.Migrate();
+
                 var config = services.GetRequiredService<IConfiguration>();
                 var passwordService = services.GetRequiredService<PasswordService>();
 
@@ -50,7 +61,7 @@ namespace AccessManager
             app.UseRouting();
             app.UseSession();
             app.UseAuthorization();
-
+            app.MapGet("/Home", () => "OK");
             app.MapStaticAssets();
             app.MapControllerRoute(
                 name: "default",
