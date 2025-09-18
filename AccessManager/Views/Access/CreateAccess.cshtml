@@ -14,7 +14,7 @@
     <div class="text-success">@TempData["Success"]</div>
 }
 
-<form asp-action="Create" method="post" id="createAccessForm">
+<form asp-action="CreateAccess" method="post" id="createAccessForm">
     @Html.AntiForgeryToken()
 
     <div class="mb-3">
@@ -26,7 +26,7 @@
     <div class="mb-3 row">
         <div class="col-md-4">
             <label class="form-label">Ниво (depth)</label>
-            <select asp-for="Level" id="LevelSelect" class="form-select">
+            <select asp-for="Level" id="LevelSelect" class="form-select" auth="@Model.ParentAccessId != null">
                 <option value="0">0</option>
                 <option value="1">1</option>
                 <option value="2">2</option>
@@ -37,7 +37,12 @@
         <div class="col-md-8 position-relative">
             <label class="form-label">Родителски достъп (ако има)</label>
 
-            <input type="text" id="ParentSearch" class="form-control" placeholder="Избор на родител" autocomplete="off" />
+            <input type="text" id="ParentSearch" class="form-control"
+                   placeholder="Избор на родител"
+                   autocomplete="off"
+                   value="@Model.ParentDescription"
+                   @(Model.ParentAccessId != null ? "disabled" : "") />
+
             <input type="hidden" asp-for="ParentAccessId" id="ParentAccessId" />
             <div id="parentCandidates" class="list-group dropdown-results"></div>
             <span asp-validation-for="ParentAccessId" class="text-danger"></span>

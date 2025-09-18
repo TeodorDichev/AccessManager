@@ -83,9 +83,8 @@ namespace AccessManager.Services
 
         internal PagedResult<AccessListItemViewModel> GetAccessesPaged(Access? filterAccess, int page)
         {
-            IQueryable<Access> query = _context.Accesses;
-
-            var projected = query
+            var allItems = _context.Accesses
+                .OrderBy(a => a.Description)
                 .AsEnumerable()
                 .Select(a => new AccessListItemViewModel
                 {
@@ -93,18 +92,22 @@ namespace AccessManager.Services
                     Description = GetAccessDescription(a)
                 });
 
-            var total = projected.Count();
+            if (filterAccess != null)
+            {
+                string filterDesc = GetAccessDescription(filterAccess);
+                allItems = allItems.Where(a => a.Description.Contains(filterDesc));
+            }
 
-            var items = projected
-                .Where(a => filterAccess == null || a.Description.Contains(GetAccessDescription(filterAccess)))
-                .OrderBy(a => a.Description)
+            var total = allItems.Count();
+
+            var pageItems = allItems
                 .Skip((page - 1) * Constants.ItemsPerPage)
                 .Take(Constants.ItemsPerPage)
                 .ToList();
 
             return new PagedResult<AccessListItemViewModel>
             {
-                Items = items,
+                Items = pageItems,
                 TotalCount = total,
                 Page = page
             };

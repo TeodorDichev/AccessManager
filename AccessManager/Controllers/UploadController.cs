@@ -33,21 +33,58 @@ namespace AccessManager.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult UploadUsers(IFormFile file, string targetTable, bool dropTable)
+        public IActionResult UploadCompleteTable(IFormFile file, bool drop)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
-
+            if (loggedUser.WritingAccess < Data.Enums.AuthorityType.SuperAdmin)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("Index", "Home");
+            }
             if (file == null || file.Length == 0)
             {
                 TempData["Error"] = ExceptionMessages.FileNotUploaded;
                 return View("Upload");
             }
 
+            try
+            {
+                _fileService.UploadCompleteTable(file, drop);
+            }
+            catch (Exception e)
+            {
+                TempData["Error"] = e.Message;
+                return View("Upload");
+            }
+
             TempData["Success"] = "Промените са успешно записани";
-            return View("Upload");
+            return drop ? RedirectToAction("Index", "Home") : View("Upload");
+        }
+
+        [HttpPost]
+        public IActionResult DeleteDb()
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+            if (loggedUser.WritingAccess < Data.Enums.AuthorityType.SuperAdmin)
+            {
+                TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                return RedirectToAction("Index", "Home");
+            }
+
+            try
+            {
+                _fileService.DeleteDb();
+            }
+            catch (Exception e)
+            {
+                TempData["Error"] = e.Message;
+                return View("Upload");
+            }
+
+            TempData["Success"] = "Промените са успешно записани";
+            return RedirectToAction("Index", "Home");
         }
     }
-
 }

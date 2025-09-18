@@ -18,12 +18,13 @@
             <li>Изберете тип <strong>CSV UTF-8 (Comma delimited) (*.csv)</strong>.</li>
             <li>Изберете място и натиснете <strong>Save</strong>.</li>
         </ol>
-        <p class="mb-0">Това гарантира, че всички български символи ще се запазят правилно.</p>
+        <p class="mb-2">Това гарантира, че всички български символи ще се запазят правилно.</p>
 
-        <p class="mb-0">Подсигурете се, че файлът е коректен иначе качването няма да работи</p>
+        <p class="mb-1">Подсигурете се, че файлът е коректен иначе качването няма да работи</p>
+        <p class="mb-0">    - Премахнете всички запетайки от файла!</p>
+        <p class="mb-1">    - Именувайте колони както са в снимката!</p>
         <p class="mb-0">Примерен формат за качване на цяла таблица</p>
         <img src="~/images/example.png" alt="Example" class="mb-3 img-fluid"/>
-
     </div>
 </div>
 
@@ -39,20 +40,44 @@
 <form asp-controller="Upload" asp-action="UploadCompleteTable" enctype="multipart/form-data" method="post" class="mb-4">
     <div class="card p-3 mb-3" style="min-height:100px">
         <h4>Цяла таблица</h4>
-        <input type="file" name="file" class="form-control mb-2" accept=".csv" />
-        <div class="form-check mb-2">
-            <input type="checkbox" name="dropTable" class="form-check-input" id="dropUsers" />
-            <label class="form-check-label" for="dropUsers">Изтрий таблицата преди качване</label>
+        <div class="input-group mb-2" id="fileGroupForm">
+            <input type="file" name="file" class="form-control" id="fileInputForm" accept=".csv" />
+            <button type="button" class="btn btn-outline-danger" id="removeFileBtnForm">Remove</button>
         </div>
-        <input type="hidden" name="targetTable" value="Users" />
+
+        <div class="form-check mb-2">
+            <input type="checkbox" name="drop" value="true" class="form-check-input" id="drop" />
+            <label class="form-check-label" for="drop">Изтрий таблицата преди качване</label>
+        </div>
+
         <button type="submit" class="btn btn-primary">Качи</button>
     </div>
 </form>
 
-<form asp-controller="Upload" asp-action="DropDatabase" method="post">
+
+<form asp-controller="Upload" asp-action="DeleteDb" method="post">
     <button type="submit" class="btn btn-danger">Изтрий цялата база данни</button>
 </form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.getElementById('removeFileBtnForm').addEventListener('click', function() {
+            const fileGroup = document.getElementById('fileGroupForm');
+            const oldInput = document.getElementById('fileInputForm');
+
+            // Create a new input element
+            const newInput = document.createElement('input');
+            newInput.type = 'file';
+            newInput.name = oldInput.name;
+            newInput.id = oldInput.id;
+            newInput.className = oldInput.className;
+            newInput.accept = oldInput.accept;
+
+            // Replace old input with new one
+            fileGroup.replaceChild(newInput, oldInput);
+        });
+    </script>
+
 }

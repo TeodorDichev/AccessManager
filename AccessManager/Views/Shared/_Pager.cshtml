@@ -1,46 +1,79 @@
 ﻿@model AccessManager.ViewModels.IPagedResult
 
-@if (Model.TotalPages > 1)
+@{
+    var query = new Dictionary<string, object>(
+        ViewContext.HttpContext.Request.Query
+            .ToDictionary(k => k.Key, v => (object)v.Value.ToString())
+    );
+
+    int currentPage = Model.Page;
+    int totalPages = Model.TotalPages;
+    string pageParam = "page";
+    int blockSize = 10;
+
+    // Current block
+    int currentBlock = (currentPage - 1) / blockSize;
+    int startPage = currentBlock * blockSize + 1;
+    int endPage = Math.Min(startPage + blockSize - 1, totalPages);
+
+    int prevBlockPage = startPage - 1;
+    int nextBlockPage = endPage + 1;
+}
+
+@if (totalPages > 1)
 {
     <nav>
         <ul class="pagination justify-content-center mt-4">
-            <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
-                <a class="page-link" href="@Url.Action(null, new { page = Model.Page - 1 })" data-page="@(Model.Page - 1)">Предишна</a>
+
+            <!-- Previous page -->
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                @{
+                    query[pageParam] = currentPage - 1;
+                }
+                <a class="page-link" href="@Url.Action(null, query)">Предишна</a>
             </li>
 
-            @for (int i = 1; i <= Model.TotalPages; i++)
+            <!-- First page + ellipsis if not in first block -->
+            @if (startPage > 1)
             {
-                <li class="page-item @(i == Model.Page ? "active" : "")">
-                    <a class="page-link" href="@Url.Action(null, new { page = i })" data-page="@i">@i</a>
+                query[pageParam] = 1;
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action(null, query)">1</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action(null, new Dictionary<string, object>(query) { [pageParam] = prevBlockPage })">...</a>
                 </li>
             }
 
-            <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
-                <a class="page-link" href="@Url.Action(null, new { page = Model.Page + 1 })" data-page="@(Model.Page + 1)">Следваща</a>
+            <!-- Current block pages -->
+            @for (int i = startPage; i <= endPage; i++)
+            {
+                query[pageParam] = i;
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link" href="@Url.Action(null, query)">@i</a>
+                </li>
+            }
+
+            <!-- Next block ellipsis + last page -->
+            @if (endPage < totalPages)
+            {
+                query[pageParam] = nextBlockPage;
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action(null, query)">...</a>
+                </li>
+                query[pageParam] = totalPages;
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action(null, query)">@totalPages</a>
+                </li>
+            }
+
+            <!-- Next page -->
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                @{
+                    query[pageParam] = currentPage + 1;
+                }
+                <a class="page-link" href="@Url.Action(null, query)">Следваща</a>
             </li>
         </ul>
     </nav>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.getElementById('filterForm');
-            if (!form) return;
-
-            document.querySelectorAll('.pagination a.page-link').forEach(link => {
-                link.addEventListener('click', function (e) {
-                    e.preventDefault();
-
-                    // Copy current form values
-                    const formData = new FormData(form);
-                    const url = new URL(link.href, window.location.origin);
-
-                    for (const [key, value] of formData.entries()) {
-                        url.searchParams.set(key, value);
-                    }
-
-                    window.location.href = url.toString();
-                });
-            });
-        });
-    </script>
 }

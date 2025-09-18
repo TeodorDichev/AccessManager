@@ -17,6 +17,7 @@ namespace AccessManager
             builder.Services.AddScoped<LogService>();
             builder.Services.AddScoped<UnitService>();
             builder.Services.AddScoped<FileService>();
+            builder.Services.AddScoped<SeedService>();
             builder.Services.AddScoped<UserService>();
             builder.Services.AddScoped<AccessService>();
             builder.Services.AddScoped<PositionService>();
@@ -32,7 +33,7 @@ namespace AccessManager
             // Add before deploying
             //builder.WebHost.ConfigureKestrel(options =>
             //{
-            //    options.Listen(IPAddress.Any, 5000); 
+            //    options.Listen(IPAddress.Any, 5000);
             //});
 
             var app = builder.Build();
@@ -44,31 +45,30 @@ namespace AccessManager
                 // creates the database
                 context.Database.Migrate();
 
-                var config = services.GetRequiredService<IConfiguration>();
-                var passwordService = services.GetRequiredService<PasswordService>();
+                var seedService = services.GetRequiredService<SeedService>();
+                seedService.SeedAdmin();
 
-                SeedData.Seed(context, config, passwordService);
+                if (!app.Environment.IsDevelopment())
+                {
+                    app.UseExceptionHandler("/Home/Error");
+                    app.UseHsts();
+                }
+
+                //app.UseHttpsRedirection();
+
+                app.UseStaticFiles();
+                app.UseRouting();
+                app.UseSession();
+                app.UseAuthorization();
+                app.MapGet("/Home", () => "OK");
+                app.MapStaticAssets();
+                app.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}")
+                    .WithStaticAssets();
+
+                app.Run();
             }
-
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
-            }
-
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
-            app.UseRouting();
-            app.UseSession();
-            app.UseAuthorization();
-            app.MapGet("/Home", () => "OK");
-            app.MapStaticAssets();
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}")
-                .WithStaticAssets();
-
-            app.Run();
         }
     }
 }

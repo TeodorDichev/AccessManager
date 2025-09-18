@@ -1,6 +1,8 @@
 ﻿using AccessManager.Data;
 using AccessManager.Data.Entities;
 using AccessManager.Utills;
+using AccessManager.ViewModels.User;
+using Microsoft.EntityFrameworkCore;
 using System.Text;
 
 namespace AccessManager.Services
@@ -9,10 +11,12 @@ namespace AccessManager.Services
     {
         private readonly Context _context;
         private readonly AccessService _accessService;
-        public FileService(Context context, AccessService accessService)
+        private readonly SeedService _seedService;
+        public FileService(Context context, AccessService accessService, SeedService seedService)
         {
             _context = context;
             _accessService = accessService;
+            _seedService = seedService;
         }
 
         internal StringBuilder GetUsersCsv(List<User> accessibleUsers)
@@ -97,6 +101,216 @@ namespace AccessManager.Services
             }
 
             return sb;
+        }
+
+        internal void DeleteDb()
+        {
+            _context.UserAccesses.ExecuteDelete();
+            _context.UnitUsers.ExecuteDelete();
+            _context.Users.ExecuteDelete();
+            _context.Accesses.ExecuteDelete();
+            _context.Units.ExecuteDelete();
+            _context.Departments.ExecuteDelete();
+            _context.SaveChanges();
+            _seedService.SeedAdmin();
+        }
+
+        internal void UploadCompleteTable(IFormFile file, bool drop)
+        {
+            List<TempUserRecord> tempUsers;
+            List<string> parentAccessColumns;
+
+            try
+            {
+                using var reader = new StreamReader(file.OpenReadStream());
+                var config = new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
+                {
+                    BadDataFound = null,
+                    MissingFieldFound = null,
+                    HeaderValidated = null,
+                    IgnoreBlankLines = true
+                };
+                using var csv = new CsvHelper.CsvReader(reader, config);
+
+                csv.Read();
+                csv.ReadHeader();
+                var headerRow = csv.HeaderRecord;
+
+                // First 7 columns are user info, rest are parent accesses
+                parentAccessColumns = headerRow.Skip(7).Select(h => h.Trim()).ToList();
+
+                tempUsers = new List<TempUserRecord>();
+
+                while (csv.Read())
+                {
+                    var user = new TempUserRecord
+                    {
+                        UserName = csv.GetField("UserName")?.Trim() ?? "",
+                        FirstName = csv.GetField("FirstName")?.Trim() ?? "",
+                        MiddleName = csv.GetField("MiddleName")?.Trim() ?? "",
+                        LastName = csv.GetField("LastName")?.Trim() ?? "",
+                        Department = csv.GetField("Department")?.Trim() ?? "",
+                        Unit = csv.GetField("Unit")?.Trim() ?? "",
+                        Position = csv.GetField("Position")?.Trim() ?? ""
+                    };
+
+                    user.Accesses = new Dictionary<string, string>();
+                    foreach (var parentAccessName in parentAccessColumns)
+                    {
+                        var val = csv.GetField(parentAccessName)?.Trim();
+                        if (string.IsNullOrEmpty(val)) continue;
+                        user.Accesses[parentAccessName] = val;
+                    }
+
+                    tempUsers.Add(user);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("CSV parsing error", ex);
+            }
+
+            using var tx = _context.Database.BeginTransaction();
+            try
+            {
+                if (drop)
+                {
+                    _context.UserAccesses.ExecuteDelete();
+                    _context.UnitUsers.ExecuteDelete();   
+                    _context.Users.ExecuteDelete();
+                    _context.Accesses.ExecuteDelete();
+                    _context.Units.ExecuteDelete();
+                    _context.Departments.ExecuteDelete();
+                    _context.SaveChanges();
+                }
+
+                // Cache existing entities, trimming keys
+                var existingDepartments = _context.Departments.ToDictionary(d => d.Description.Trim());
+                var existingUnits = _context.Units.ToDictionary(u => $"{u.Description.Trim()}||{u.DepartmentId}");
+                var existingPositions = _context.Positions.ToDictionary(p => p.Description.Trim());
+                var existingUsers = _context.Users.ToDictionary(u => u.UserName.Trim());
+                var existingAccesses = _context.Accesses.ToDictionary(a => a.Description.Trim());
+                var existingDirectives = _context.Directives.ToDictionary(d => d.Name.Trim());
+
+                // Ensure "неопределена" directive
+                if (!existingDirectives.ContainsKey("неопределен"))
+                {
+                    var undefDir = new Directive { Name = "неопределен" };
+                    _context.Directives.Add(undefDir);
+                    _context.SaveChanges();
+                    existingDirectives["неопределен"] = undefDir;
+                }
+
+                // Ensure parent accesses exist
+                foreach (var parentName in parentAccessColumns)
+                {
+                    var trimmedParent = parentName.Trim();
+                    if (!existingAccesses.ContainsKey(trimmedParent))
+                    {
+                        var parent = new Access { Description = trimmedParent };
+                        _context.Accesses.Add(parent);
+                        _context.SaveChanges();
+                        existingAccesses[trimmedParent] = parent;
+                    }
+                }
+
+                // Process each user
+                foreach (var row in tempUsers)
+                {
+                    var deptName = string.IsNullOrWhiteSpace(row.Department) ? "неопределен" : row.Department.Trim();
+                    if (!existingDepartments.ContainsKey(deptName))
+                    {
+                        var dept = new Department { Description = deptName };
+                        _context.Departments.Add(dept);
+                        _context.SaveChanges();
+                        existingDepartments[deptName] = dept;
+                    }
+
+                    var unitName = string.IsNullOrWhiteSpace(row.Unit) ? "неопределен" : row.Unit.Trim();
+                    var unitKey = $"{unitName}||{existingDepartments[deptName].Id}";
+                    if (!existingUnits.ContainsKey(unitKey))
+                    {
+                        var unit = new Unit { Description = unitName, DepartmentId = existingDepartments[deptName].Id };
+                        _context.Units.Add(unit);
+                        _context.SaveChanges();
+                        existingUnits[unitKey] = unit;
+                    }
+
+                    var posName = string.IsNullOrWhiteSpace(row.Position) ? "неопределен" : row.Position.Trim();
+                    if (!existingPositions.ContainsKey(posName))
+                    {
+                        var pos = new Position { Description = posName };
+                        _context.Positions.Add(pos);
+                        _context.SaveChanges();
+                        existingPositions[posName] = pos;
+                    }
+
+                    // Skip existing users
+                    var trimmedUserName = row.UserName?.Trim();
+                    if (existingUsers.ContainsKey(trimmedUserName))
+                        continue;
+
+                    var user = new User
+                    {
+                        UserName = row.UserName,
+                        FirstName = row.FirstName,
+                        MiddleName = row.MiddleName,
+                        LastName = row.LastName,
+                        UnitId = existingUnits[unitKey].Id,
+                        PositionId = existingPositions[posName].Id,
+                        EGN = null,
+                        Phone = null,
+                        WritingAccess = Data.Enums.AuthorityType.None,
+                        ReadingAccess = Data.Enums.AuthorityType.None,
+                    };
+                    _context.Users.Add(user);
+                    _context.SaveChanges();
+                    existingUsers[user.UserName] = user;
+
+                    // Map subaccesses
+                    foreach (var parentAccessName in parentAccessColumns)
+                    {
+                        if (!row.Accesses.TryGetValue(parentAccessName, out var subVal) || string.IsNullOrWhiteSpace(subVal))
+                            continue;
+
+                        subVal = subVal.Trim();
+                        var parentAccess = existingAccesses[parentAccessName.Trim()];
+
+                        var subKey = $"{subVal}||{parentAccess.Id}";
+                        if (!existingAccesses.ContainsKey(subKey))
+                        {
+                            var subAccess = new Access
+                            {
+                                Description = subVal,
+                                ParentAccessId = parentAccess.Id
+                            };
+                            _context.Accesses.Add(subAccess);
+                            _context.SaveChanges();
+                            existingAccesses[subKey] = subAccess;
+                        }
+
+                        // Link user to subaccess
+                        var userAccess = new UserAccess
+                        {
+                            UserId = user.Id,
+                            AccessId = existingAccesses[subKey].Id,
+                            GrantedByDirective = existingDirectives["неопределен"],
+                            GrantedOn = DateTime.UtcNow
+                        };
+                        _context.UserAccesses.Add(userAccess);
+                    }
+
+                    _context.SaveChanges();
+                    _seedService.SeedAdmin();
+                }
+
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
         }
     }
 }

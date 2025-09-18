@@ -12,12 +12,19 @@
     <div class="text-success">@TempData["Success"]</div>
 }
 
-<div class="row mb-2">
-    <form method="post" asp-action="EditAccessName" class="mb-2">
-      <input type="hidden" name="accessId" value="@Model.AccessId" /> 
-      <label asp-for="Name" class="form-label">Ново име</label>
-        <input asp-for="Name" class="form-control" onchange="this.form.submit()" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
+<div class="mb-2 d-flex align-items-end gap-2">
+    <form method="post" asp-action="EditAccessName" class="mb-0 flex-grow-1">
+        <input type="hidden" name="accessId" value="@Model.AccessId" />
+        <label asp-for="Name" class="form-label">Ново име</label>
+        <input asp-for="Name" class="form-control"
+               onchange="this.form.submit()"
+               auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
     </form>
+
+    <a asp-action="CreateAccess" asp-route-parentAccessId="@Model.AccessId"
+       class="btn btn-primary mb-0 align-self-end">
+        Създай поддостъп
+    </a>
 </div>
 
 <div class="row mt-5">

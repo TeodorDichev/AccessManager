@@ -112,7 +112,7 @@ namespace AccessManager.Data
 
                 entity.Property(e => e.Description)
                     .IsRequired()
-                    .HasMaxLength(50);
+                    .HasMaxLength(200);
 
                 entity.HasMany(e => e.Units)
                       .WithOne(a => a.Department)
@@ -131,7 +131,7 @@ namespace AccessManager.Data
 
                 entity.Property(e => e.Description)
                     .IsRequired()
-                    .HasMaxLength(50);
+                    .HasMaxLength(200);
 
                 entity.HasIndex(e => new { e.Description, e.DepartmentId })
                     .IsUnique();
@@ -164,10 +164,7 @@ namespace AccessManager.Data
 
                 entity.Property(e => e.Description)
                     .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.HasIndex(e => e.Description)
-                      .IsUnique();
+                    .HasMaxLength(200);
 
                 entity.HasMany(e => e.UserAccesses)
                       .WithOne(ea => ea.Access)
@@ -191,22 +188,22 @@ namespace AccessManager.Data
 
                 entity.Property(e => e.UserName)
                       .IsRequired()
-                      .HasMaxLength(50);
+                      .HasMaxLength(200);
 
                 entity.HasIndex(e => e.UserName)
                       .IsUnique();
 
                 entity.Property(e => e.FirstName)
                       .IsRequired()
-                      .HasMaxLength(50);
+                      .HasMaxLength(200);
 
                 entity.Property(e => e.MiddleName)
                       .IsRequired()
-                      .HasMaxLength(50);
+                      .HasMaxLength(200);
 
                 entity.Property(e => e.LastName)
                       .IsRequired()
-                      .HasMaxLength(50);
+                      .HasMaxLength(200);
 
                 entity.Property(e => e.WritingAccess)
                       .IsRequired();
@@ -214,8 +211,8 @@ namespace AccessManager.Data
                 entity.Property(e => e.ReadingAccess)
                       .IsRequired();
 
-                entity.HasIndex(e => e.EGN).IsUnique();
-                entity.HasIndex(e => e.Phone).IsUnique();
+                entity.HasIndex(e => e.EGN).IsUnique().HasFilter("[EGN] IS NOT NULL"); ;
+                entity.HasIndex(e => e.Phone).IsUnique().HasFilter("[Phone] IS NOT NULL"); ;
 
                 entity.HasMany(e => e.UserAccesses)
                       .WithOne(ea => ea.User)

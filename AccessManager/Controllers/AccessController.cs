@@ -55,7 +55,7 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult CreateAccess()
+        public IActionResult CreateAccess(Guid? parentAccessId)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
@@ -66,12 +66,27 @@ namespace AccessManager.Controllers
             }
 
             var model = new CreateAccessViewModel();
+
+            if (parentAccessId != null)
+            {
+                Access? parent = _accessService.GetAccess(parentAccessId);
+                if(parent != null)
+                {
+                    model = new CreateAccessViewModel()
+                    {
+                        ParentAccessId = parentAccessId,
+                        ParentDescription = _accessService.GetAccessDescription(parent),
+                        Level = _accessService.GetAccessDescription(parent).Split("->").Length
+                    };
+
+                }
+            }
             return View("CreateAccess", model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(CreateAccessViewModel model)
+        public IActionResult CreateAccess(CreateAccessViewModel model)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
