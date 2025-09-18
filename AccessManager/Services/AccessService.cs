@@ -31,13 +31,14 @@ namespace AccessManager.Services
         internal void UpdateAccessName(string name, Access access)
         {
             access.Description = name;
+            access.FullDescription = GenerateAccessFullDescription(name, access.ParentAccessId);
             _context.SaveChanges();
         }
 
-        internal string GetAccessDescription(Access? access)
+        internal string GenerateAccessFullDescription(string description, Guid? parentId)
         {
-            if (access == null)
-                return string.Empty;
+            if (parentId == null)
+                return description;
 
             var accessMap = _context.Accesses
                 .IgnoreQueryFilters()
@@ -45,20 +46,20 @@ namespace AccessManager.Services
                 .ToDictionary(a => a.Id, a => new { a.ParentAccessId, a.Description });
 
             var descriptions = new List<string>();
-            var currentParentId = access.ParentAccessId;
 
-            while (currentParentId != null && accessMap.ContainsKey(currentParentId.Value))
+            while (parentId != null && accessMap.ContainsKey(parentId.Value))
             {
-                var parent = accessMap[currentParentId.Value];
+                var parent = accessMap[parentId.Value];
                 descriptions.Add(parent.Description);
-                currentParentId = parent.ParentAccessId;
+                parentId = parent.ParentAccessId;
             }
 
             descriptions.Reverse();
-            descriptions.Add(access.Description);
+            descriptions.Add(description);
 
             return string.Join(" -> ", descriptions);
         }
+
         internal List<Access> GetAccesses()
         {
             return _context.Accesses.ToList();
@@ -89,13 +90,12 @@ namespace AccessManager.Services
                 .Select(a => new AccessListItemViewModel
                 {
                     AccessId = a.Id,
-                    Description = GetAccessDescription(a)
+                    Description = a.FullDescription,
                 });
 
             if (filterAccess != null)
             {
-                string filterDesc = GetAccessDescription(filterAccess);
-                allItems = allItems.Where(a => a.Description.Contains(filterDesc));
+                allItems = allItems.Where(a => a.Description.Contains(filterAccess.Description));
             }
 
             var total = allItems.Count();
@@ -133,11 +133,11 @@ namespace AccessManager.Services
                 .OrderBy(ua => ua.User.UserName)
                 .Skip((page - 1) * itemsPerPage)
                 .Take(itemsPerPage)
-                .AsEnumerable() // ← materialize first
+                .AsEnumerable()
                 .Select(ua => new AccessViewModel
                 {
                     AccessId = ua.Access.Id,
-                    Description = GetAccessDescription(ua.Access), // now safe
+                    Description = ua.Access.FullDescription,
                     DirectiveId = ua.GrantedByDirectiveId,
                     DirectiveDescription = ua.GrantedByDirective.Name
                 })
@@ -159,8 +159,8 @@ namespace AccessManager.Services
             .Select(ua => new AccessViewModel
             {
                 AccessId = ua.AccessId,
-                Description = GetAccessDescription(ua.Access),
-                DirectiveId = ua.RevokedByDirectiveId.Value,
+                Description = ua.Access.FullDescription,
+                DirectiveId = ua.RevokedByDirectiveId.HasValue ? ua.RevokedByDirectiveId.Value : Guid.Empty,
                 DirectiveDescription = ua.RevokedByDirective != null ? ua.RevokedByDirective.Name : ""
             }).ToList();
 
@@ -170,7 +170,7 @@ namespace AccessManager.Services
                 .Select(a => new AccessViewModel
                 {
                     AccessId = a.Id,
-                    Description = GetAccessDescription(a),
+                    Description = a.FullDescription,
                     DirectiveId = Guid.Empty,
                     DirectiveDescription = ""
                 }).ToList();

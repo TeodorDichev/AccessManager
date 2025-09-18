@@ -83,7 +83,7 @@ namespace AccessManager.Services
                     Unit = ua.User.Unit.Description,
                     WriteAccess = ua.User.WritingAccess,
                     ReadAccess = ua.User.ReadingAccess,
-                    AccessDescription = _accessService.GetAccessDescription(ua.Access),
+                    AccessDescription = ua.Access.FullDescription,
                     GrantDirectiveDescription = ua.GrantedByDirective.Name,
                     RevokeDirectiveDescription = ua.RevokedByDirective != null ? ua.RevokedByDirective.Name : "-"
                 })

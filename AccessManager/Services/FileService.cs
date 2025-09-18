@@ -43,7 +43,7 @@ namespace AccessManager.Services
 
             foreach (var u in _context.UserAccesses.Where(ua => accessibleUsers.Select(u => u.Id).Contains(ua.UserId)).OrderBy(ua => ua.User.UserName))
             {
-                sb.AppendLine($"\"{u.User.UserName}\",\"{u.User.FirstName}\",\"{u.User.LastName}\",\"{_accessService.GetAccessDescription(u.Access)}\"," +
+                sb.AppendLine($"\"{u.User.UserName}\",\"{u.User.FirstName}\",\"{u.User.LastName}\",\"{u.Access.FullDescription}\"," +
                     $"\"{u.GrantedByDirective.Name}\",\"{(u.RevokedByDirective == null ? "не" : "да")}\",\"{(u.RevokedByDirective == null ? "" : u.RevokedByDirective.Name)}\"");
             }
 
@@ -75,7 +75,7 @@ namespace AccessManager.Services
 
             void PrintAccess(Access access)
             {
-                sb.AppendLine($"\"{_accessService.GetAccessDescription(access)}\"");
+                sb.AppendLine($"\"{access.FullDescription}\"");
 
                 if (childrenLookup.TryGetValue(access.Id, out var children))
                     foreach (var child in children)
@@ -207,7 +207,7 @@ namespace AccessManager.Services
                     var trimmedParent = parentName.Trim();
                     if (!existingAccesses.ContainsKey(trimmedParent))
                     {
-                        var parent = new Access { Description = trimmedParent };
+                        var parent = new Access { Description = trimmedParent, FullDescription = trimmedParent, Level = 0 };
                         _context.Accesses.Add(parent);
                         _context.SaveChanges();
                         existingAccesses[trimmedParent] = parent;
@@ -282,7 +282,9 @@ namespace AccessManager.Services
                             var subAccess = new Access
                             {
                                 Description = subVal,
-                                ParentAccessId = parentAccess.Id
+                                ParentAccessId = parentAccess.Id,
+                                FullDescription = _accessService.GenerateAccessFullDescription(subVal, parentAccess.Id),
+                                Level = parentAccess.Level + 1
                             };
                             _context.Accesses.Add(subAccess);
                             _context.SaveChanges();
@@ -301,9 +303,9 @@ namespace AccessManager.Services
                     }
 
                     _context.SaveChanges();
-                    _seedService.SeedAdmin();
                 }
 
+                _seedService.SeedAdmin();
                 tx.Commit();
             }
             catch

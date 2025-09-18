@@ -166,6 +166,10 @@ namespace AccessManager.Data
                     .IsRequired()
                     .HasMaxLength(200);
 
+                entity.Property(e => e.FullDescription)
+                    .IsRequired()
+                    .HasMaxLength(1000);
+
                 entity.HasMany(e => e.UserAccesses)
                       .WithOne(ea => ea.Access)
                       .HasForeignKey(ea => ea.AccessId);

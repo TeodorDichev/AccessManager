@@ -48,7 +48,7 @@ namespace AccessManager.Controllers
                 LoggedUserWriteAuthority = loggedUser.WritingAccess,
                 LoggedUserReadAuthority = loggedUser.ReadingAccess,
                 FilterAccessId = model.FilterAccessId,
-                FilterAccessDescription = _accessService.GetAccessDescription(_accessService.GetAccess(model.FilterAccessId))
+                FilterAccessDescription = _accessService.GetAccess(model.FilterAccessId)?.FullDescription ?? "-"
             };
 
             return View(result);
@@ -75,8 +75,8 @@ namespace AccessManager.Controllers
                     model = new CreateAccessViewModel()
                     {
                         ParentAccessId = parentAccessId,
-                        ParentDescription = _accessService.GetAccessDescription(parent),
-                        Level = _accessService.GetAccessDescription(parent).Split("->").Length
+                        ParentDescription = parent.FullDescription,
+                        Level = parent.Level
                     };
 
                 }
@@ -134,6 +134,8 @@ namespace AccessManager.Controllers
                 Id = Guid.NewGuid(),
                 Description = model.Description.Trim(),
                 ParentAccessId = model.Level == 0 ? null : model.ParentAccessId,
+                Level = model.Level,
+                FullDescription = _accessService.GenerateAccessFullDescription(model.Description.Trim(), model.ParentAccessId),
                 DeletedOn = null
             };
 
@@ -178,7 +180,7 @@ namespace AccessManager.Controllers
                 .Where(a => string.IsNullOrEmpty(qLower) || a.Description.ToLowerInvariant().Contains(qLower))
                 .OrderBy(a => a.Description)
                 .Take(30)
-                .Select(a => new { id = a.Id, text = _accessService.GetAccessDescription(_accessService.GetAccess(a.Id)) })
+                .Select(a => new { id = a.Id, text = _accessService.GetAccess(a.Id)?.FullDescription ?? "-"})
                 .ToList();
 
             return Json(candidates);
@@ -194,7 +196,7 @@ namespace AccessManager.Controllers
                 .Where(a => string.IsNullOrEmpty(termLower) || a.Description.ToLowerInvariant().Contains(termLower))
                 .OrderBy(a => a.Description)
                 .Take(10)
-                .Select(a => new { id = a.Id, text = _accessService.GetAccessDescription(_accessService.GetAccess(a.Id)) })
+                .Select(a => new { id = a.Id, text = _accessService.GetAccess(a.Id)?.FullDescription ?? "-" })
                 .ToList();
 
             return Json(candidates);
@@ -257,7 +259,7 @@ namespace AccessManager.Controllers
             {
                 AccessId = access.Id,
                 Name = access.Description,
-                Description = _accessService.GetAccessDescription(access),
+                Description = access.FullDescription,
                 FilterDirectiveDescription1 = filterDirective1?.Name ?? "",
                 FilterDirectiveDescription2 = filterDirective2?.Name ?? "",
                 FilterDirectiveId1 = model.FilterDirectiveId1,
@@ -467,7 +469,7 @@ namespace AccessManager.Controllers
             model.LoggedUserWriteAuthority = loggedUser.WritingAccess;
             model.LoggedUserReadAuthority = loggedUser.ReadingAccess;
             model.FilterUserName = user == null ? "" : user.UserName;
-            model.FilterAccessDescription = access == null ? "" : _accessService.GetAccessDescription(access);
+            model.FilterAccessDescription = access == null ? "" : access.FullDescription;
             model.FilterDirectiveDescription = directive == null ? "" : directive.Name;
             model.FilterUnitDescription = unit == null ? "" : unit.Description;
             model.FilterDepartmentDescription = department == null ? "" : department.Description;
@@ -523,7 +525,7 @@ namespace AccessManager.Controllers
                 Items = _accessService.GetDeletedAccesses(page).Select(o => new AccessListItemViewModel
                 {
                     AccessId = o.Id,
-                    Description = _accessService.GetAccessDescription(o)
+                    Description = o.FullDescription
                 })
                 .ToList(),
 

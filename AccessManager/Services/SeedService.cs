@@ -63,9 +63,6 @@ namespace AccessManager.Services
                 Unit = unit,
                 PositionId = position.Id,
                 Position = position,
-                AccessibleUnits = _context.Units
-                    .Select(u => new UnitUser { UserId = Guid.NewGuid(), UnitId = u.Id }) // will fix below
-                    .ToList()
             };
 
             // Correct AccessibleUnits mapping
