@@ -14,24 +14,28 @@
     <div class="text-success">@TempData["Success"]</div>
 }
 
-<div class="row mt-5">
-    <div class="col-md-6">
-        <h4>Достъпни отдели</h4>
-        <form id="FilterForm1" method="get" asp-action="MapUserUnitAccess" class="mb-2">
-             <input type="hidden" name="userId" value="@Model.UserId" />
+<form id="MapUserUnitForm" method="post" asp-action="MapUserUnitAccess">
+    <input type="hidden" name="UserId" value="@Model.UserId" />
 
-            <filter form-id="DepartmentFilterForm1"
-                    label="Филтър по дирекция"
-                    controller="Department"
-                    action="SearchDepartments"
-                    hidden-input-id="filterDepartment1"
-                    hidden-name="filterDepartmentId1"
-                    filter-id="@Model.FilterDepartmentId1"
-                    filter-description="@Model.FilterDepartmentDescription1">
-            </filter>
-        </form>
+    <div class="row mt-5">
+        <!-- Accessible Units -->
+        <div class="col-md-6">
+            <h4>Достъпни отдели</h4>
 
-        <form asp-action="RevokeUnitAccess" method="post">
+            <div class="d-flex align-items-end mb-2 gap-2">
+                <filter form-id="DepartmentFilterForm1"
+                        label="Филтър по дирекция"
+                        controller="Department"
+                        action="SearchDepartments"
+                        hidden-input-id="filterDepartment1"
+                        hidden-name="FilterDepartmentId1"
+                        filter-id="@Model.FilterDepartmentId1"
+                        filter-description="@Model.FilterDepartmentDescription1"
+                        submit-on-select="false">
+                </filter>
+                <button type="submit" name="action1" value="Filter1" class="btn btn-secondary">Приложи</button>
+            </div>
+
             <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
@@ -41,10 +45,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach(var unit in Model.AccessibleUnits.Items)
+                    @foreach (var unit in Model.AccessibleUnits.Items)
                     {
                         <tr>
-                            <td><input type="checkbox" name="SelectedAccessibleUnitIds" value="@unit.UnitId" /></td>
+                            <td>
+                                <input type="checkbox" name="SelectedAccessibleUnitIds" value="@unit.UnitId"
+                                       @(Model.SelectedAccessibleUnitIds.Contains(unit.UnitId ?? Guid.Empty) ? "checked" : "") />
+                            </td>
                             <td>@unit.UnitName</td>
                             <td>@unit.DepartmentName</td>
                         </tr>
@@ -53,30 +60,31 @@
             </table>
 
             @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.AccessibleUnits)
-
-            <input type="hidden" name="userId" value="@Model.UserId" />
-            <button type="submit" class="btn btn-danger mt-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">Премахни избраните</button>
+            <button type="submit" name="action1" value="Revoke" class="btn btn-danger mt-2"
+                    auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">
+                Премахни избраните
+            </button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllAccessibleBtn">Избери всички</button>
-        </form>
-    </div>
+        </div>
 
-    <div class="col-md-6">
-        <h4>Недостъпни отдели</h4>
-        <form method="get" id="FilterForm2" asp-action="MapUserUnitAccess" class="mb-2">
-            <input type="hidden" name="userId" value="@Model.UserId" />
+        <!-- Inaccessible Units -->
+        <div class="col-md-6">
+            <h4>Недостъпни отдели</h4>
 
-            <filter form-id="DepartmentFilterForm2"
-                    label="Филтър по дирекция"
-                    controller="Department"
-                    action="SearchDepartments"
-                    hidden-input-id="filterDepartment2"
-                    hidden-name="filterDepartmentId2"
-                    filter-id="@Model.FilterDepartmentId2"
-                    filter-description="@Model.FilterDepartmentDescription2">
-            </filter>
-        </form>
+            <div class="d-flex align-items-end mb-2 gap-2">
+                <filter form-id="DepartmentFilterForm2"
+                        label="Филтър по дирекция"
+                        controller="Department"
+                        action="SearchDepartments"
+                        hidden-input-id="filterDepartment2"
+                        hidden-name="FilterDepartmentId2"
+                        filter-id="@Model.FilterDepartmentId2"
+                        filter-description="@Model.FilterDepartmentDescription2"
+                        submit-on-select="false">
+                </filter>
+                <button type="submit" name="action1" value="Filter2" class="btn btn-secondary">Приложи</button>
+            </div>
 
-        <form asp-action="GrantUnitAccess" method="post">
             <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
@@ -86,10 +94,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach(var unit in Model.InaccessibleUnits.Items)
+                    @foreach (var unit in Model.InaccessibleUnits.Items)
                     {
                         <tr>
-                            <td><input type="checkbox" name="SelectedInaccessibleUnitIds" value="@unit.UnitId" /></td>
+                            <td>
+                                <input type="checkbox" name="SelectedInaccessibleUnitIds" value="@unit.UnitId"
+                                       @(Model.SelectedInaccessibleUnitIds.Contains(unit.UnitId ?? Guid.Empty) ? "checked" : "") />
+                            </td>
                             <td>@unit.UnitName</td>
                             <td>@unit.DepartmentName</td>
                         </tr>
@@ -98,19 +109,26 @@
             </table>
 
             @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.InaccessibleUnits)
-
-            <input type="hidden" name="userId" value="@Model.UserId" />
-            <button type="submit" class="btn btn-success mt-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">Добави избраните</button>
+            <button type="submit" name="action1" value="Grant" class="btn btn-success mt-2"
+                    auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">
+                Добави избраните
+            </button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllInaccessibleBtn">Избери всички</button>
-        </form>
+        </div>
     </div>
+</form>
 
+<div class="row">
     <a asp-controller="Access" asp-action="MapUserAccess" asp-route-userId="@Model.UserId" class="btn btn-primary m-2">
-         АИС достъпи
+        АИС достъпи
     </a>
 </div>
 
 @section Scripts {
-        <script src="~/js/map-unit-access.js" asp-append-version="true"></script>
-        <script src="~/js/filter.js" asp-append-version="true"></script>
+    <script src="~/js/map-unit-access.js" asp-append-version="true"></script>
+    <script src="~/js/filter.js" asp-append-version="true"></script>
+    <script>
+        window.SelectedAccessibleUnitIds = @Html.Raw(Json.Serialize(Model.SelectedAccessibleUnitIds))
+        window.SelectedInaccessibleUnitIds = @Html.Raw(Json.Serialize(Model.SelectedInaccessibleUnitIds))
+    </script>
 }

@@ -34,7 +34,6 @@ namespace AccessManager.TagHelpers
             output.Attributes.SetAttribute("data-url", $"/{Controller}/{Action}");
             output.Attributes.SetAttribute("data-submit-on-select", SubmitOnSelect.ToString().ToLower());
 
-
             output.Content.SetHtmlContent($@"
                 <div class='position-relative'>
                     {(string.IsNullOrEmpty(Label) ? "" : $"<label for='{inputId}' class='form-label'>{Label}</label>")}

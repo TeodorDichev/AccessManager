@@ -13,38 +13,43 @@
     <div class="text-success">@TempData["Success"]</div>
 }
 
-<div class="row mt-5">
-    <div class="col-md-6">
-        <h4>Достъпни системи</h4>
-        <form method="get" asp-action="MapUserAccess">
-            <input type="hidden" name="userId" value="@Model.UserId" />
+<form method="post" asp-action="MapUserAccess">
+    <input type="hidden" name="UserId" value="@Model.UserId" />
 
-            <filter form-id="DirectiveFilterForm1"
-                label="Филтър по заповед"
-                controller="Directive"
-                action="SearchDirectives"
-                hidden-input-id="filterDirective1"
-                hidden-name="filterDirectiveId1"
-                filter-id="@Model.FilterDirectiveId1"
-                filter-description="@Model.FilterDirectiveDescription1">
-            </filter>
-        </form>
+    <div class="row mt-5">
+        <!-- Accessible Systems Column -->
+        <div class="col-md-6">
+            <h4>Достъпни системи</h4>
 
-        <form asp-action="RevokeAccessFromUsers" method="post">
-            <div class="mb-2">
-                <filter form-id="DirectiveToRevokeAccessForm"
+            <!-- Filter directive for table 1 -->
+            <div class="d-flex align-items-end mb-2 gap-2">
+                <filter form-id="DirectiveFilterForm1"
+                        label="Филтър по заповед"
+                        controller="Directive"
+                        action="SearchDirectives"
+                        hidden-input-id="filterDirective1"
+                        hidden-name="FilterDirectiveId1"
+                        filter-id="@Model.FilterDirectiveId1"
+                        filter-description="@Model.FilterDirectiveDescription1"
+                        submit-on-select="false">
+                </filter>
+
+                <button type="submit" name="action1" value="Filter1" class="btn btn-secondary mt-2">
+                    Приложи
+                </button>
+            </div>            <!-- Directive to revoke access -->
+            <filter form-id="DirectiveToRevokeAccessForm"
                     label="Заповед за спиране на достъп"
                     controller="Directive"
                     action="SearchDirectives"
                     hidden-input-id="DirectiveToRevokeAccess"
-                    hidden-name="directiveToRevokeAccessId"
+                    hidden-name="DirectiveToRevokeAccessId"
                     filter-id="@Model.DirectiveToRevokeAccessId"
-                    filter-description="@Model.DirectiveToRevokeAccessDescription" 
+                    filter-description="@Model.DirectiveToRevokeAccessDescription"
                     submit-on-select="false">
-                </filter>
-            </div>
+            </filter>
 
-            <table class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover mt-3">
                 <thead>
                     <tr>
                         <th><input type="checkbox" id="selectAllAccessible" /></th>
@@ -53,10 +58,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach(var acc in Model.AccessibleSystems.Items)
+                    @foreach (var acc in Model.AccessibleSystems.Items)
                     {
                         <tr>
-                            <td><input type="checkbox" name="SelectedAccessibleSystemIds" value="@acc.AccessId" /></td>
+                            <td>
+                                <input type="checkbox" name="SelectedAccessibleSystemIds" value="@acc.AccessId"
+                                       @(Model.SelectedAccessibleSystemIds.Contains(acc.AccessId) ? "checked" : "") />
+                            </td>
                             <td>@acc.Description</td>
                             <td>
                                 <div class="position-relative">
@@ -66,7 +74,7 @@
                                            autocomplete="off"
                                            value="@acc.DirectiveDescription"
                                            auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
-                                    <input type="hidden" class="directive-hidden" />
+                                    <input type="hidden" class="directive-hidden" name="DirectiveHidden_@acc.AccessId" value="@acc.DirectiveId" />
                                     <div class="list-group position-absolute directive-results" style="z-index:1000;"></div>
                                 </div>
                             </td>
@@ -74,46 +82,47 @@
                     }
                 </tbody>
             </table>
-
             @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.AccessibleSystems)
-
-            <input type="hidden" name="userId" value="@Model.UserId" />
-            <button type="submit" class="btn btn-danger mt-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">Премахни избраните</button>
+            <button type="submit" name="action1" value="Revoke" class="btn btn-danger mt-2">
+                Премахни избраните
+            </button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllAccessibleBtn">Избери всички</button>
-        </form>
-    </div>
+        </div>
 
-    <div class="col-md-6">
-        <h4>Недостъпни системи</h4>
-        <form method="get" asp-action="MapUserAccess">
-            <input type="hidden" name="userId" value="@Model.UserId" />
+        <!-- Inaccessible Systems Column -->
+        <div class="col-md-6">
+            <h4>Недостъпни системи</h4>
 
-            <filter form-id="DirectiveFilterForm2"
-                 label="Филтър по заповед"
-                 controller="Directive"
-                 action="SearchDirectives"
-                 hidden-input-id="filterDirective2"
-                 hidden-name="filterDirectiveId2"
-                 filter-id="@Model.FilterDirectiveId2"
-                 filter-description="@Model.FilterDirectiveDescription2">
-            </filter>
-        </form>
+            <div class="d-flex align-items-end mb-2 gap-2">
+                <!-- Filter directive for table 2 -->
+                <filter form-id="DirectiveFilterForm2"
+                        label="Филтър по заповед"
+                        controller="Directive"
+                        action="SearchDirectives"
+                        hidden-input-id="filterDirective2"
+                        hidden-name="FilterDirectiveId2"
+                        filter-id="@Model.FilterDirectiveId2"
+                        filter-description="@Model.FilterDirectiveDescription2"
+                    submit-on-select="false">
+                </filter>
+                <button type="submit" name="action1" value="Filter2" class="btn btn-secondary mt-2">
+                    Приложи
+                </button>
+            </div>
 
-        <form asp-action="GrantAccessToUsers" method="post">
-            <div class="mb-2">
-                <filter form-id="DirectiveToGrantAccessForm"
+            <!-- Directive to grant access -->
+            <filter form-id="DirectiveToGrantAccessForm"
                     label="Заповед за даване на достъп"
                     controller="Directive"
                     action="SearchDirectives"
                     hidden-input-id="DirectiveToGrantAccess"
-                    hidden-name="directiveToGrantAccessId"
+                    hidden-name="DirectiveToGrantAccessId"
                     filter-id="@Model.DirectiveToGrantAccessId"
                     filter-description="@Model.DirectiveToGrantAccessDescription"
                     submit-on-select="false">
-                </filter>
-            </div>
+            </filter>
 
-            <table class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover mt-3">
                 <thead>
                     <tr>
                         <th><input type="checkbox" id="selectAllInaccessible" /></th>
@@ -122,10 +131,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach(var acc in Model.InaccessibleSystems.Items)
+                    @foreach (var acc in Model.InaccessibleSystems.Items)
                     {
                         <tr>
-                            <td><input type="checkbox" name="SelectedInaccessibleSystemIds" value="@acc.AccessId" /></td>
+                            <td>
+                                <input type="checkbox" name="SelectedInaccessibleSystemIds" value="@acc.AccessId"
+                                       @(Model.SelectedInaccessibleSystemIds.Contains(acc.AccessId) ? "checked" : "") />
+                            </td>
                             <td>@acc.Description</td>
                             <td>
                                 <div class="position-relative">
@@ -135,27 +147,35 @@
                                            autocomplete="off"
                                            value="@acc.DirectiveDescription"
                                            auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
-                                    <input type="hidden" class="directive-hidden" />
+                                    <input type="hidden" class="directive-hidden" name="DirectiveHidden_@acc.AccessId" value="@acc.DirectiveId" />
                                     <div class="list-group position-absolute directive-results" style="z-index:1000;"></div>
                                 </div>
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
-
             @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.InaccessibleSystems)
-
-            <input type="hidden" name="userId" value="@Model.UserId" /> 
-            <button type="submit" class="btn btn-success mt-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">Добави избраните</button>
+            <button type="submit" name="action1" value="Grant" class="btn btn-success mt-2">
+                Добави избраните
+            </button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllInaccessibleBtn">Избери всички</button>
-        </form>
+        </div>
     </div>
-    <a asp-controller="Unit" asp-action="MapUserUnitAccess" asp-route-userId="@Model.UserId" class="btn btn-primary m-2">
-         Достъпи до отдели
+
+</form>
+
+<div class="row">
+    <a asp-controller="Unit" asp-action="MapUserUnitAccess" asp-route-userId="@Model.UserId" class="btn btn-primary m-2 ">
+        Достъпи до отдели
     </a>
 </div>
 
 @section Scripts {
     <script src="~/js/map-system-access.js" asp-append-version="true"></script>
     <script src="~/js/filter.js" asp-append-version="true"></script>
+    <script>
+        window.SelectedAccessibleSystemIds = @Html.Raw(Json.Serialize(Model.SelectedAccessibleSystemIds))
+        window.SelectedInaccessibleSystemIds = @Html.Raw(Json.Serialize(Model.SelectedInaccessibleSystemIds))
+    </script>
 }

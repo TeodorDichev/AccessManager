@@ -1,17 +1,11 @@
 ﻿@model AccessManager.ViewModels.IPagedResult
 
 @{
-    var query = new Dictionary<string, object>(
-        ViewContext.HttpContext.Request.Query
-            .ToDictionary(k => k.Key, v => (object)v.Value.ToString())
-    );
-
     int currentPage = Model.Page;
     int totalPages = Model.TotalPages;
-    string pageParam = "page";
+    string pageParam = Model.PageParam ?? "page"; // fallback
     int blockSize = 10;
 
-    // Current block
     int currentBlock = (currentPage - 1) / blockSize;
     int startPage = currentBlock * blockSize + 1;
     int endPage = Math.Min(startPage + blockSize - 1, totalPages);
@@ -24,56 +18,65 @@
 {
     <nav>
         <ul class="pagination justify-content-center mt-4">
-
             <!-- Previous page -->
             <li class="page-item @(currentPage == 1 ? "disabled" : "")">
-                @{
-                    query[pageParam] = currentPage - 1;
-                }
-                <a class="page-link" href="@Url.Action(null, query)">Предишна</a>
+                <button type="button" class="page-link" data-page="@(currentPage - 1)">Предишна</button>
             </li>
 
-            <!-- First page + ellipsis if not in first block -->
+            <!-- First page + ellipsis -->
             @if (startPage > 1)
             {
-                query[pageParam] = 1;
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action(null, query)">1</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action(null, new Dictionary<string, object>(query) { [pageParam] = prevBlockPage })">...</a>
-                </li>
+                <li class="page-item"><button type="button" class="page-link" data-page="1">1</button></li>
+                <li class="page-item"><button type="button" class="page-link" data-page="@prevBlockPage">...</button></li>
             }
 
             <!-- Current block pages -->
             @for (int i = startPage; i <= endPage; i++)
             {
-                query[pageParam] = i;
                 <li class="page-item @(i == currentPage ? "active" : "")">
-                    <a class="page-link" href="@Url.Action(null, query)">@i</a>
+                    <button type="button" class="page-link" data-page="@i">@i</button>
                 </li>
             }
 
-            <!-- Next block ellipsis + last page -->
+            <!-- Next block + last page -->
             @if (endPage < totalPages)
             {
-                query[pageParam] = nextBlockPage;
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action(null, query)">...</a>
-                </li>
-                query[pageParam] = totalPages;
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action(null, query)">@totalPages</a>
-                </li>
+                <li class="page-item"><button type="button" class="page-link" data-page="@nextBlockPage">...</button></li>
+                <li class="page-item"><button type="button" class="page-link" data-page="@totalPages">@totalPages</button></li>
             }
 
             <!-- Next page -->
             <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
-                @{
-                    query[pageParam] = currentPage + 1;
-                }
-                <a class="page-link" href="@Url.Action(null, query)">Следваща</a>
+                <button type="button" class="page-link" data-page="@(currentPage + 1)">Следваща</button>
             </li>
         </ul>
     </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form'); // your big form
+            if (!form) return;
+
+            document.querySelectorAll('.pagination button[data-page]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const pageValue = btn.dataset.page;
+                    const pageParam = '@pageParam';
+
+                    // remove old page input if exists
+                    const oldInput = form.querySelector(`input[name="${pageParam}"]`);
+                    if (oldInput) oldInput.remove();
+
+                    // add new hidden input
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = pageParam;
+                    input.value = pageValue;
+                    form.appendChild(input);
+
+                    // submit form preserving all other inputs
+                    form.requestSubmit();
+                });
+            });
+        });
+    </script>
 }

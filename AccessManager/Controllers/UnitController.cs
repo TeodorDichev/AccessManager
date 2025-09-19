@@ -3,6 +3,7 @@ using AccessManager.Data.Enums;
 using AccessManager.Services;
 using AccessManager.Utills;
 using AccessManager.ViewModels;
+using AccessManager.ViewModels.Access;
 using AccessManager.ViewModels.Department;
 using AccessManager.ViewModels.Unit;
 using AccessManager.ViewModels.User;
@@ -228,8 +229,8 @@ namespace AccessManager.Controllers
             return View(model);
         }
 
-        [HttpGet]
-        public IActionResult MapUserUnitAccess(MapUserUnitAccessViewModel model, int page1 = 1, int page2 = 1)
+        [HttpPost]
+        public IActionResult MapUserUnitAccess(MapUserUnitAccessViewModel model, string action1, int page1 = 1, int page2 = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
@@ -241,8 +242,90 @@ namespace AccessManager.Controllers
                 return RedirectToAction("EditUser", new { model.UserId });
             }
 
+            switch (action1)
+            {
+                case "Grant":
+                    if(user.ReadingAccess == AuthorityType.None)
+                    {
+                        TempData["Error"] = ExceptionMessages.InsufficientAuthority;
+                        break;
+                    }
+
+                    foreach (var unitId in model.SelectedInaccessibleUnitIds)
+                    {
+                        var unit = _unitService.GetUnit(unitId);
+                        if (unit == null)
+                        {
+                            TempData["Error"] = ExceptionMessages.UnitNotFound;
+                            continue;
+                        }
+
+                        var uu = _unitService.AddUnitUser(user, unit);
+                        _logService.AddLog(loggedUser, LogAction.Add, uu);
+                    }
+                    model.SelectedAccessibleUnitIds = new();
+                    break;
+
+                case "Revoke":
+                    if (model.SelectedAccessibleUnitIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
+                    {
+                        user.WritingAccess = AuthorityType.Restricted;
+                        user.ReadingAccess = AuthorityType.Restricted;
+                    }
+
+                    foreach (var unitId in model.SelectedAccessibleUnitIds)
+                    {
+                        var uu = _unitService.GetUnitUser(user.Id, unitId);
+                        if (uu != null)
+                        {
+                            _logService.AddLog(loggedUser, LogAction.Add, uu);
+                            _unitService.HardDeleteUnitUser(uu);
+                        }
+                    }
+                    model.SelectedAccessibleUnitIds = new();
+
+                    break;
+            }
+
             var filterDepartment1 = _departmentService.GetDepartment(model.FilterDepartmentId1);
             var filterDepartment2 = _departmentService.GetDepartment(model.FilterDepartmentId2);
+
+            var vm = new MapUserUnitAccessViewModel
+            {
+                UserId = user.Id,
+                UserName = user.UserName,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Department = user.Unit.Department.Description,
+                Unit = user.Unit.Description,
+                FilterDepartmentDescription1 = filterDepartment1?.Description ?? "",
+                FilterDepartmentDescription2 = filterDepartment1?.Description ?? "",
+                FilterDepartmentId1 = model.FilterDepartmentId1,
+                FilterDepartmentId2 = model.FilterDepartmentId2,
+                AccessibleUnits = _unitService.GetAccessibleUnitsPaged(loggedUser, user, filterDepartment1, page1),
+                InaccessibleUnits = _unitService.GetInaccessibleUnitsPaged(loggedUser, user, filterDepartment2, page2),
+                SelectedAccessibleUnitIds = model.SelectedAccessibleUnitIds,
+                SelectedInaccessibleUnitIds = model.SelectedInaccessibleUnitIds,
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
+                LoggedUserWriteAuthority = loggedUser.WritingAccess
+            };
+
+            return View(vm);
+
+        }
+
+        [HttpGet]
+        public IActionResult MapUserUnitAccess(Guid? userId)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var user = _userService.GetUser(userId);
+            if (user == null)
+            {
+                TempData["Error"] = ExceptionMessages.UserNotFound;
+                return RedirectToAction("EditUser", new { userId });
+            }
 
             var vm = new MapUserUnitAccessViewModel
             {
@@ -253,12 +336,10 @@ namespace AccessManager.Controllers
                 LastName = user.LastName,
                 Department = user.Unit.Department.Description,
                 Unit = user.Unit.Description,
-                FilterDepartmentId1 = model.FilterDepartmentId1,
-                FilterDepartmentId2 = model.FilterDepartmentId2,
-                FilterDepartmentDescription1 = filterDepartment1?.Description ?? "",
-                FilterDepartmentDescription2 = filterDepartment2?.Description ?? "",
-                AccessibleUnits = _unitService.GetAccessibleUnitsPaged(loggedUser, user, filterDepartment1, page1),
-                InaccessibleUnits = _unitService.GetInaccessibleUnitsPaged(loggedUser, user, filterDepartment2, page2),
+                FilterDepartmentDescription1 = "",
+                FilterDepartmentDescription2 = "",
+                AccessibleUnits = _unitService.GetAccessibleUnitsPaged(loggedUser, user, null, 1),
+                InaccessibleUnits = _unitService.GetInaccessibleUnitsPaged(loggedUser, user, null, 1),
                 LoggedUserReadAuthority = loggedUser.ReadingAccess,
                 LoggedUserWriteAuthority = loggedUser.WritingAccess,
             };
@@ -266,66 +347,6 @@ namespace AccessManager.Controllers
             return View(vm);
         }
 
-        [HttpPost]
-        public IActionResult GrantUnitAccess(MapUserUnitAccessViewModel model)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var user = _userService.GetUser(model.UserName);
-            if (user == null)
-            {
-                TempData["Error"] = ExceptionMessages.UserNotFound;
-                return RedirectToAction("MapUserUnitAccess", new { model.UserName });
-            }
-
-            foreach (var unitId in model.SelectedInaccessibleUnitIds)
-            {
-                var unit = _unitService.GetUnit(unitId);
-                if (unit == null)
-                {
-                    TempData["Error"] = ExceptionMessages.UnitNotFound;
-                    continue;
-                }
-
-                var uu = _unitService.AddUnitUser(user, unit);
-                _logService.AddLog(loggedUser, LogAction.Add, uu);
-            }
-
-            return RedirectToAction("MapUserUnitAccess", new { model.UserId });
-        }
-
-        [HttpPost]
-        public IActionResult RevokeUnitAccess(MapUserUnitAccessViewModel model)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var user = _userService.GetUser(model.UserName);
-            if (user == null)
-            {
-                TempData["Error"] = ExceptionMessages.UserNotFound;
-                return RedirectToAction("MapUserUnitAccess", new { model.UserName });
-            }
-
-            if (model.SelectedAccessibleUnitIds.Count > 0 && (user.WritingAccess == AuthorityType.Full || user.ReadingAccess == AuthorityType.Full))
-            {
-                user.WritingAccess = AuthorityType.Restricted;
-                user.ReadingAccess = AuthorityType.Restricted;
-            }
-
-            foreach (var unitId in model.SelectedAccessibleUnitIds)
-            {
-                var uu = _unitService.GetUnitUser(user.Id, unitId);
-                if (uu != null)
-                {
-                    _logService.AddLog(loggedUser, LogAction.Add, uu);
-                    _unitService.HardDeleteUnitUser(uu);
-                }
-            }
-
-            return RedirectToAction("MapUserUnitAccess", new { model.UserId });
-        }
 
         [HttpPost]
         public IActionResult SoftDeleteUnit(Guid? unitId)

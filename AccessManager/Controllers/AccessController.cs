@@ -7,6 +7,7 @@ using AccessManager.ViewModels;
 using AccessManager.ViewModels.Access;
 using AccessManager.ViewModels.Directive;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Text;
 
 namespace AccessManager.Controllers
@@ -203,7 +204,39 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult MapUserAccess(MapUserAccessViewModel model, int page1 = 1, int page2 = 1)
+        public IActionResult MapUserAccess(Guid? userId)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var user = _userService.GetUser(userId);
+            if (user == null)
+            {
+                TempData["Error"] = "Потребителят не е намерен.";
+                return RedirectToAction("UserList", "User");
+            }
+
+            var vm = new MapUserAccessViewModel
+            {
+                UserId = user.Id,
+                UserName = user.UserName,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Department = user.Unit.Department.Description,
+                Unit = user.Unit.Description,
+                FilterDirectiveDescription1 = "",
+                FilterDirectiveDescription2 = "",
+                AccessibleSystems = _accessService.GetAccessesGrantedToUserPaged(user, null, 1),
+                InaccessibleSystems = _accessService.GetAccessesNotGrantedToUserPaged(user, null, 1),
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
+                LoggedUserWriteAuthority = loggedUser.WritingAccess
+            };
+
+            return View(vm);
+
+        }
+        [HttpPost]
+        public IActionResult MapUserAccess(MapUserAccessViewModel model, [FromQuery(Name = "action1")] string action1, int page1 = 1, int page2 = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
@@ -212,7 +245,60 @@ namespace AccessManager.Controllers
             if (user == null)
             {
                 TempData["Error"] = ExceptionMessages.UserNotFound;
-                return RedirectToAction("EditUser", "User", new { model.UserId });
+                return RedirectToAction("MapUserAccess", new { userId = model.UserId });
+            }
+
+            switch (action1)
+            {
+                case "Grant":
+                    if (!model.DirectiveToGrantAccessId.HasValue)
+                    {
+                        TempData["Error"] = ExceptionMessages.MissingDirective;
+                        model.DirectiveToGrantAccessDescription = "";
+                        break;
+                    }
+
+                    foreach (var accId in model.SelectedInaccessibleSystemIds)
+                    {
+                        var directive = _directiveService.GetDirective(model.DirectiveToGrantAccessId.Value);
+                        var access = _accessService.GetAccess(accId);
+
+                        if (access == null || directive == null)
+                        {
+                            TempData["Error"] = ExceptionMessages.GrantingAccessFailed;
+                            continue;
+                        }
+
+                        var ua = _userAccessService.AddUserAccess(user, access, directive);
+                        _logService.AddLog(loggedUser, LogAction.Add, ua);
+                    }
+                    model.SelectedInaccessibleSystemIds = new();
+                    break;
+
+                case "Revoke":
+                    if (!model.DirectiveToRevokeAccessId.HasValue)
+                    {
+                        TempData["Error"] = ExceptionMessages.MissingDirective;
+                        model.DirectiveToRevokeAccessDescription = "";
+                        break;
+                    }
+
+                    foreach (var accId in model.SelectedAccessibleSystemIds)
+                    {
+                        var directive = _directiveService.GetDirective(model.DirectiveToRevokeAccessId.Value);
+                        var userAccess = _userAccessService.GetUserAccess(user.Id, accId);
+
+                        if (userAccess == null || directive == null)
+                        {
+                            TempData["Error"] = ExceptionMessages.RevokingAccessFailed;
+                            continue;
+                        }
+
+                        _userAccessService.RevokeUserAccess(userAccess, directive);
+                        _logService.AddLog(loggedUser, LogAction.Edit, userAccess);
+                    }
+                    model.SelectedAccessibleSystemIds = new();
+                    break;
             }
 
             var filterDirective1 = _directiveService.GetDirective(model.FilterDirectiveId1);
@@ -232,6 +318,8 @@ namespace AccessManager.Controllers
                 FilterDirectiveId2 = model.FilterDirectiveId2,
                 AccessibleSystems = _accessService.GetAccessesGrantedToUserPaged(user, filterDirective1, page1),
                 InaccessibleSystems = _accessService.GetAccessesNotGrantedToUserPaged(user, filterDirective2, page2),
+                SelectedAccessibleSystemIds = model.SelectedAccessibleSystemIds,
+                SelectedInaccessibleSystemIds = model.SelectedInaccessibleSystemIds,
                 LoggedUserReadAuthority = loggedUser.ReadingAccess,
                 LoggedUserWriteAuthority = loggedUser.WritingAccess
             };
@@ -271,65 +359,6 @@ namespace AccessManager.Controllers
             };
 
             return View(vm);
-        }
-
-        [HttpPost]
-        public IActionResult GrantAccessToUsers(MapUserAccessViewModel model)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var user = _userService.GetUser(model.UserId);
-            if (user == null || !model.DirectiveToGrantAccessId.HasValue)
-            {
-                TempData["Error"] = ExceptionMessages.MissingDirective;
-                return RedirectToAction("MapUserAccess", new { userId = model.UserId });
-            }
-
-            foreach (var accId in model.SelectedInaccessibleSystemIds)
-            {
-                var directive = _directiveService.GetDirective(model.DirectiveToGrantAccessId.Value);
-                var access = _accessService.GetAccess(accId);
-                if (access == null || directive == null)
-                {
-                    TempData["Error"] = ExceptionMessages.GrantingAccessFailed;
-                    continue;
-                }
-
-                UserAccess ua = _userAccessService.AddUserAccess(user, access, directive);
-                _logService.AddLog(loggedUser, LogAction.Add, ua);
-            }
-
-            return RedirectToAction("MapUserAccess", new { userId = model.UserId });
-        }
-
-        [HttpPost]
-        public IActionResult RevokeAccessFromUsers(MapUserAccessViewModel model)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var user = _userService.GetUser(model.UserId);
-            if (user == null || !model.DirectiveToRevokeAccessId.HasValue)
-            {
-                TempData["Error"] = ExceptionMessages.MissingDirective;
-                return RedirectToAction("MapUserAccess", new { username = model.UserName });
-            }
-
-            foreach (var accId in model.SelectedAccessibleSystemIds)
-            {
-                var directive = _directiveService.GetDirective(model.DirectiveToRevokeAccessId.Value);
-                UserAccess? userAccess = _userAccessService.GetUserAccess(user.Id, accId);
-                if (userAccess == null || directive == null)
-                {
-                    TempData["Error"] = ExceptionMessages.RevokingAccessFailed;
-                    continue;
-                }
-                _userAccessService.RevokeUserAccess(userAccess, directive);
-                _logService.AddLog(loggedUser, LogAction.Edit, userAccess);
-            }
-
-            return RedirectToAction("MapUserAccess", new { userId = model.UserId });
         }
 
         [HttpPost]

@@ -146,11 +146,10 @@ namespace AccessManager.Services
             {
                 Items = items,
                 TotalCount = totalCount,
-                Page = page
+                Page = page,
+                PageParam = "page1",
             };
         }
-
-
         internal PagedResult<AccessViewModel> GetAccessesNotGrantedToUserPaged(User user, Directive? filterDirective, int page)
         {
             var revoked = _context.UserAccesses
@@ -188,7 +187,8 @@ namespace AccessManager.Services
             {
                 Items = items,
                 TotalCount = totalCount,
-                Page = page
+                Page = page,
+                PageParam = "page2",
             };
         }
 
@@ -247,13 +247,21 @@ namespace AccessManager.Services
         internal bool CanDeleteAccess(Access access)
         {
             var accessIds = GetAccessSubTree(access);
-            return !_context.UserAccesses.Any(ua => accessIds.Contains(ua.AccessId));
+            // return !_context.UserAccesses.Any(ua => accessIds.Contains(ua.AccessId));
+            // optional
+            // currently by deleting access you delete all subaccesses and user connections
+            return true;
         }
 
         internal void SoftDeleteAccess(Access access)
         {
             var timestamp = DateTime.Now;
             var accessIds = GetAccessSubTree(access);
+
+            // could be removed
+            _context.UserAccesses
+                .Where(ua => accessIds.Contains(ua.AccessId))
+                .ExecuteDelete();
 
             _context.Accesses
                 .Where(a => accessIds.Contains(a.Id))

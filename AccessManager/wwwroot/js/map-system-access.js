@@ -1,19 +1,88 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
 
-    const selectAllAccessibleBtn = document.getElementById('selectAllWithAccessBtn');
+    // ============================
+    // Initialize selected IDs from server model
+    // ============================
+    const selectedAccessibleIds = new Set(window.SelectedAccessibleSystemIds || []);
+    const selectedInaccessibleIds = new Set(window.SelectedInaccessibleSystemIds || []);
+
+    // Track checkboxes changes
+    const trackCheckboxes = (selector, selectedSet) => {
+        document.querySelectorAll(selector).forEach(cb => {
+            cb.addEventListener('change', () => {
+                cb.checked ? selectedSet.add(cb.value) : selectedSet.delete(cb.value);
+            });
+        });
+    };
+
+    trackCheckboxes('input[name="SelectedAccessibleSystemIds"]', selectedAccessibleIds);
+    trackCheckboxes('input[name="SelectedInaccessibleSystemIds"]', selectedInaccessibleIds);
+
+    // ============================
+    // Select All buttons
+    // ============================
+    const toggleCheckboxes = (selector, selectedSet) => {
+        const checkboxes = document.querySelectorAll(selector);
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => {
+            cb.checked = !allChecked;
+            !allChecked ? selectedSet.add(cb.value) : selectedSet.delete(cb.value);
+        });
+    };
+
+    const selectAllAccessibleBtn = document.getElementById('selectAllAccessibleBtn');
     if (selectAllAccessibleBtn) {
-        selectAllAccessibleBtn.addEventListener('change', function () {
-            document.querySelectorAll('input[name="SelectedUsersWithAccessIds"]').forEach(cb => cb.checked = this.checked);
-        });
+        selectAllAccessibleBtn.addEventListener('click', () =>
+            toggleCheckboxes('input[name="SelectedAccessibleSystemIds"]', selectedAccessibleIds)
+        );
     }
 
-    const selectAllInaccessibleBtn = document.getElementById('selectAllWithoutAccessBtn');
+    const selectAllInaccessibleBtn = document.getElementById('selectAllInaccessibleBtn');
     if (selectAllInaccessibleBtn) {
-        selectAllInaccessibleBtn.addEventListener('change', function () {
-            document.querySelectorAll('input[name="SelectedUsersWithoutAccessIds"]').forEach(cb => cb.checked = this.checked);
-        });
+        selectAllInaccessibleBtn.addEventListener('click', () =>
+            toggleCheckboxes('input[name="SelectedInaccessibleSystemIds"]', selectedInaccessibleIds)
+        );
     }
 
+    // ============================
+    // Sync hidden inputs before submit
+    // ============================
+    const syncHiddenInputs = form => {
+        ['SelectedAccessibleSystemIds', 'SelectedInaccessibleSystemIds'].forEach(name => {
+            form.querySelectorAll(`input[name="${name}"]`).forEach(i => i.remove());
+        });
+
+        selectedAccessibleIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'SelectedAccessibleSystemIds';
+            input.value = id;
+            form.appendChild(input);
+        });
+
+        selectedInaccessibleIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'SelectedInaccessibleSystemIds';
+            input.value = id;
+            form.appendChild(input);
+        });
+
+        // Sync directive hidden inputs
+        document.querySelectorAll('.directive-hidden').forEach(hidden => {
+            if (!form.contains(hidden)) {
+                form.appendChild(hidden.cloneNode(true));
+            }
+        });
+    };
+
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', () => syncHiddenInputs(form));
+    });
+
+    // ============================
+    // Directive search autocomplete
+    // ============================
     function debounce(func, delay = 300) {
         let timer;
         return function (...args) {
@@ -31,28 +100,28 @@
             const term = input.value.trim();
             hidden.value = '';
             resultsDiv.innerHTML = '';
-
             if (!term) return;
 
             try {
-                const query = new URLSearchParams({ term }).toString();
-                const response = await fetch(`/Directive/SearchDirectives?${query}`);
+                const url = `/Directive/SearchDirectives?term=${encodeURIComponent(term)}`;
+                const response = await fetch(url);
+                if (!response.ok) return;
                 const items = await response.json();
 
-                resultsDiv.innerHTML = '';
-                items.forEach(item => {
-                    const div = document.createElement('div');
-                    div.textContent = item.text;
-                    div.classList.add('list-group-item', 'list-group-item-action');
+                resultsDiv.innerHTML = items.map(item =>
+                    `<button type="button" class="list-group-item list-group-item-action" 
+                             data-id="${item.id}" data-name="${item.text}">
+                        ${item.text}
+                    </button>`).join('');
 
-                    div.addEventListener('click', async () => {
-                        input.value = item.text;
-                        hidden.value = item.id;
+                resultsDiv.querySelectorAll('button').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        input.value = btn.dataset.name;
+                        hidden.value = btn.dataset.id;
                         resultsDiv.innerHTML = '';
 
                         const userId = input.dataset.userid;
                         const accessId = input.dataset.accessid;
-                        const redirectTo = 'MapUserAccess';
 
                         await fetch(`/Access/UpdateUserDirective`, {
                             method: "POST",
@@ -60,11 +129,9 @@
                                 "Content-Type": "application/json",
                                 "RequestVerificationToken": document.querySelector("input[name='__RequestVerificationToken']").value
                             },
-                            body: JSON.stringify({ userId, accessId, directiveId: item.id, redirectTo })
+                            body: JSON.stringify({ userId, accessId, directiveId: btn.dataset.id, redirectTo: "MapUserAccess" })
                         });
                     });
-
-                    resultsDiv.appendChild(div);
                 });
 
             } catch (err) {
@@ -75,9 +142,8 @@
         input.addEventListener('input', handleInput);
 
         document.addEventListener('click', e => {
-            if (!container.contains(e.target)) {
-                resultsDiv.innerHTML = '';
-            }
+            if (!container.contains(e.target)) resultsDiv.innerHTML = '';
         });
     });
+
 });

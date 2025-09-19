@@ -39,39 +39,49 @@ namespace AccessManager.Services
 
         internal List<Unit> GetMutualUserUnits(User user, User loggedUser)
         {
-            if (user.WritingAccess == AuthorityType.None || loggedUser.WritingAccess == AuthorityType.None)
-                return [];
+            if (user.ReadingAccess == AuthorityType.None || loggedUser.WritingAccess == AuthorityType.None)
+                return new List<Unit>();
 
-            var query = _context.Units.AsQueryable();
+            List<Unit> userUnits = user.WritingAccess <= AuthorityType.Restricted
+                ? _context.UnitUsers
+                    .Where(uu => uu.UserId == user.Id)
+                    .Select(uu => uu.Unit)
+                    .ToList()
+                : _context.Units.ToList();
 
-            if (user.WritingAccess == AuthorityType.Restricted)
-                query = query.Where(u => _context.UnitUsers.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id));
+            List<Unit> loggedUserUnits = loggedUser.WritingAccess <= AuthorityType.Restricted
+                ? _context.UnitUsers
+                    .Where(uu => uu.UserId == loggedUser.Id)
+                    .Select(uu => uu.Unit)
+                    .ToList()
+                : _context.Units.ToList();
 
-            if (loggedUser.WritingAccess == AuthorityType.Restricted)
-                query = query.Where(u => _context.UnitUsers.Any(uu => uu.UserId == loggedUser.Id && uu.UnitId == u.Id));
-
-            return query.ToList();
+            return userUnits.Intersect(loggedUserUnits).ToList();
         }
 
         internal List<Unit> GetMutualInaccessibleUserUnits(User user, User loggedUser)
         {
-            if (loggedUser.WritingAccess == AuthorityType.None)
-                return [];
+            if (user.ReadingAccess == AuthorityType.None || loggedUser.WritingAccess == AuthorityType.None)
+                return new List<Unit>();
 
-            var query = _context.Units.AsQueryable();
+            // Units the loggedUser can access
+            List<Unit> loggedUserUnits = loggedUser.WritingAccess <= AuthorityType.Restricted
+                ? _context.UnitUsers
+                    .Where(uu => uu.UserId == loggedUser.Id)
+                    .Select(uu => uu.Unit)
+                    .ToList()
+                : _context.Units.ToList(); // Full = all units
 
-            if (loggedUser.WritingAccess == AuthorityType.Restricted)
-                query = query.Where(u => _context.UnitUsers.Any(uu => uu.UserId == loggedUser.Id && uu.UnitId == u.Id));
+            // Units the user can access
+            List<Unit> userUnits = user.WritingAccess <= AuthorityType.Restricted
+                ? _context.UnitUsers
+                    .Where(uu => uu.UserId == user.Id)
+                    .Select(uu => uu.Unit)
+                    .ToList()
+                : _context.Units.ToList(); // Full = all units
 
-            if (user.WritingAccess != AuthorityType.None)
-            {
-                if (user.WritingAccess == AuthorityType.Restricted)
-                    query = query.Where(u => !_context.UnitUsers.Any(uu => uu.UserId == user.Id && uu.UnitId == u.Id));
-                else
-                    return [];
-            }
-
-            return query.ToList();
+            // Units loggedUser has but user does NOT
+            return loggedUserUnits.Except(userUnits).ToList();
         }
 
         internal int GetUserUnitsForDepartmentCount(User user, Guid departmentId)
@@ -193,12 +203,18 @@ namespace AccessManager.Services
 
         internal UnitUser AddUnitUser(User user, Unit unit)
         {
-            UnitUser uu = new UnitUser() 
-            { 
+            // Check if it already exists in the database
+            var existing = _context.UnitUsers
+                .FirstOrDefault(uu => uu.UserId == user.Id && uu.UnitId == unit.Id);
+
+            if (existing != null)
+                return existing; // return the already tracked entity
+
+            // If not, create a new one
+            var uu = new UnitUser
+            {
                 UserId = user.Id,
-                User = user,
-                UnitId = unit.Id,
-                Unit = unit
+                UnitId = unit.Id
             };
 
             _context.UnitUsers.Add(uu);
@@ -288,7 +304,8 @@ namespace AccessManager.Services
             {
                 Items = filterDepartment == null ? inaccessibleUnits : inaccessibleUnits.Where(u => u.DepartmentId == filterDepartment.Id).ToList(),
                 TotalCount = totalInaccessible,
-                Page = page
+                Page = page,
+                PageParam = "page2"
             };
         }
 
@@ -315,9 +332,9 @@ namespace AccessManager.Services
             {
                 Items = filterDepartment == null ? accessibleUnits : accessibleUnits.Where(u => u.DepartmentId == filterDepartment.Id).ToList(),
                 TotalCount = totalAccessible,
-                Page = page
+                Page = page,
+                PageParam = "page1"
             };
-
         }
     }
 }
