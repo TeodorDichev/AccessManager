@@ -143,75 +143,59 @@ namespace AccessManager.Services
             if (page < 1) page = 1;
             int pageSize = Constants.ItemsPerPage;
 
+            List<UnitDepartmentViewModel> departmentItems = new();
+            if (filterUnit == null)
+            {
+                var departmentsQuery = filterDepartment == null
+                    ? GetDepartmentsByUserAuthority(loggedUser, loggedUser.ReadingAccess)
+                        .OrderBy(d => d.Description).ToList()
+                    : new List<Department> { filterDepartment };
 
-            var departmentsQuery = Enumerable.Empty<Department>().AsQueryable();
-            if (filterDepartment == null)
-                departmentsQuery = GetDepartmentsByUserAuthority(loggedUser, loggedUser.ReadingAccess).OrderBy(d => d.Description).AsQueryable();
-            else
-                departmentsQuery = new List<Department> { filterDepartment }.AsQueryable();
-
-            int departmentsCount = departmentsQuery.Count();
-            int startRow = (page - 1) * pageSize;
-
-            int deptRows = Math.Max(0, Math.Min(departmentsCount - startRow, pageSize));
-            var departments = Enumerable.Empty<UnitDepartmentViewModel>();
-            if (deptRows > 0)
-                departments = departmentsQuery
-                    .Skip(startRow)
-                    .Take(deptRows)
+                departmentItems = departmentsQuery
                     .Select(d => new UnitDepartmentViewModel
                     {
                         DepartmentId = d.Id,
                         DepartmentName = d.Description,
                         UnitName = "-"
-                    });
-
-            int unitRows = pageSize - deptRows;
-            var units = Enumerable.Empty<UnitDepartmentViewModel>();
-            if (unitRows > 0)
-            {
-                var remainingDepartments = departmentsQuery
-                    .Skip(startRow + deptRows)
-                    .Take(int.MaxValue)
-                    .Select(d => d.Id)
+                    })
                     .ToList();
-
-                if(filterDepartment == null)
-                {
-                    units = _context.Units
-                        .Take(unitRows)
-                        .Where(u => filterUnit == null || u.Description == filterUnit.Description)
-                        .Select(u => new UnitDepartmentViewModel
-                        {
-                            DepartmentId = u.Department.Id,
-                            DepartmentName = u.Department.Description,
-                            UnitName = u.Description,
-                            UnitId = u.Id
-                        });
-                }
-                else
-                {
-                    units = filterDepartment.Units
-                        .Take(unitRows)
-                        .Where(u => filterUnit == null || u.Description == filterUnit.Description)
-                        .Select(u => new UnitDepartmentViewModel
-                        {
-                            DepartmentId = u.Department.Id,
-                            DepartmentName = u.Department.Description,
-                            UnitName = u.Description,
-                            UnitId = u.Id
-                        });
-                }
             }
 
-            var result = (filterUnit != null) ? units.ToList() : departments.Concat(units).ToList();
+            IQueryable<Unit> unitsQuery = _context.Units;
+
+            if (filterDepartment != null)
+                unitsQuery = unitsQuery.Where(u => u.Department.Id == filterDepartment.Id);
+
+            if (filterUnit != null)
+                unitsQuery = unitsQuery.Where(u => u.Description == filterUnit.Description);
+
+            var unitItems = unitsQuery
+                .OrderBy(u => u.Description)
+                .Select(u => new UnitDepartmentViewModel
+                {
+                    DepartmentId = u.Department.Id,
+                    DepartmentName = u.Department.Description,
+                    UnitName = u.Description,
+                    UnitId = u.Id
+                })
+                .ToList();
+            var allItems = departmentItems.Concat(unitItems).ToList();
+
+            int totalCount = allItems.Count;
+
+            var pagedItems = allItems
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
             return new PagedResult<UnitDepartmentViewModel>
             {
-                Items = result,
-                TotalCount = result.Count,
+                Items = pagedItems,
+                TotalCount = totalCount,
                 Page = page
             };
         }
+
 
         internal PagedResult<UnitDepartmentViewModel> GetDeletedUnitDepartmentsPaged(int page)
         {

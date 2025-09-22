@@ -28,11 +28,10 @@
     <tbody>
         <form asp-controller="Directive" asp-action="CreateDirective" method="post">
         <tr>
-            @Html.AntiForgeryToken()
             <td>
                 <input type="text" name="Name" class="form-control" placeholder="Въведи нова заповед" required auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
             </td>
-            <td colspan="2">
+            <td>
                 <button type="submit" class="btn btn-success" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">Добави</button>
             </td>
         </tr>
@@ -41,7 +40,7 @@
         @foreach (var dir in Model.Directives.Items)
         {
             <tr data-id="@dir.Id">
-                <td>
+                <td title="@dir.Name">
                     <input type="text" class="form-control directive-name" value="@dir.Name" />
                 </td>
                 <td>

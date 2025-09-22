@@ -124,8 +124,8 @@
             <div class="mb-3">
                 <label class="form-label">Нова парола</label>
                 <input type="password" name="NewPassword" class="form-control" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full && Model.LoggedUserWriteAuthority > Model.WritingAccess" />
+                <span asp-validation-for="NewPassword" class="text-danger"></span>
             </div>
-
         </div>
     </div>
 

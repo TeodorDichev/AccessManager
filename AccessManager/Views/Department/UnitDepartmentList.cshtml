@@ -5,10 +5,6 @@
     ViewData["Title"] = "Дирекции";
 }
 
-<form style="display:none;">
-    @Html.AntiForgeryToken()
-</form>
-
 <h2>Дирекции и отдели</h2>
 
 @if (TempData["Error"] != null)
@@ -70,8 +66,8 @@
         @foreach (var ud in Model.UnitDepartments.Items)
         {
             <tr>
-                <td>@ud.DepartmentName</td>
-                <td>@ud.UnitName</td>
+                <td title="@ud.DepartmentName">@ud.DepartmentName</td>
+                <td title="@ud.UnitName">@ud.UnitName</td>
                 @if (ud.UnitId == null)
                 {
                     <td>

@@ -42,7 +42,8 @@ namespace AccessManager.Controllers
             if (_userService.GetUser(HttpContext.Session.GetString("Username")) != null) ModelState.AddModelError("", ExceptionMessages.LoggedInLogInAttempt);
 
             User? user = _userService.GetUser(model.Username);
-            if (user != null && user.Password != null && _passwordService.VerifyPassword(user, model.Password, user.Password))
+            if (user != null && user.Password != null && _passwordService.VerifyPassword(user, model.Password, user.Password) 
+                && (user.ReadingAccess > Data.Enums.AuthorityType.None || user.WritingAccess > Data.Enums.AuthorityType.None))
             {
                 HttpContext.Session.SetString("Username", model.Username);
                 return RedirectToAction("Index", "Home");

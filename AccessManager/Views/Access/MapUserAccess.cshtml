@@ -34,6 +34,17 @@
                         submit-on-select="false">
                 </filter>
 
+                <filter form-id="AccessFilterForm1"
+                        label="Филтър по достъп"
+                        controller="Access"
+                        action="SearchAccesses"
+                        hidden-input-id="filterAccess1"
+                        hidden-name="filterAccessId1"
+                        filter-id="@Model.FilterAccessId1"
+                        filter-description="@Model.FilterAccessDescription1"
+                        submit-on-select="false">
+                </filter>
+
                 <button type="submit" name="action1" value="Filter1" class="btn btn-secondary mt-2">
                     Приложи
                 </button>
@@ -65,7 +76,7 @@
                                 <input type="checkbox" name="SelectedAccessibleSystemIds" value="@acc.AccessId"
                                        @(Model.SelectedAccessibleSystemIds.Contains(acc.AccessId) ? "checked" : "") />
                             </td>
-                            <td>@acc.Description</td>
+                            <td title="@acc.Description">@acc.Description</td>
                             <td>
                                 <div class="position-relative">
                                     <input type="text" class="form-control directive-search"
@@ -105,6 +116,18 @@
                         filter-description="@Model.FilterDirectiveDescription2"
                     submit-on-select="false">
                 </filter>
+
+                <filter form-id="AccessFilterForm2"
+                        label="Филтър по достъп"
+                        controller="Access"
+                        action="SearchAccesses"
+                        hidden-input-id="filterAccess2"
+                        hidden-name="filterAccessId2"
+                        filter-id="@Model.FilterAccessId2"
+                        filter-description="@Model.FilterAccessDescription2"
+                        submit-on-select="false">
+                </filter>
+
                 <button type="submit" name="action1" value="Filter2" class="btn btn-secondary mt-2">
                     Приложи
                 </button>
@@ -138,7 +161,7 @@
                                 <input type="checkbox" name="SelectedInaccessibleSystemIds" value="@acc.AccessId"
                                        @(Model.SelectedInaccessibleSystemIds.Contains(acc.AccessId) ? "checked" : "") />
                             </td>
-                            <td>@acc.Description</td>
+                            <td title="@acc.Description">@acc.Description</td>
                             <td>
                                 <div class="position-relative">
                                     <input type="text" class="form-control directive-search"

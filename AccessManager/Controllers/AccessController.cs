@@ -226,8 +226,8 @@ namespace AccessManager.Controllers
                 Unit = user.Unit.Description,
                 FilterDirectiveDescription1 = "",
                 FilterDirectiveDescription2 = "",
-                AccessibleSystems = _accessService.GetAccessesGrantedToUserPaged(user, null, 1),
-                InaccessibleSystems = _accessService.GetAccessesNotGrantedToUserPaged(user, null, 1),
+                AccessibleSystems = _accessService.GetAccessesGrantedToUserPaged(user, null, null, 1),
+                InaccessibleSystems = _accessService.GetAccessesNotGrantedToUserPaged(user, null, null, 1),
                 LoggedUserReadAuthority = loggedUser.ReadingAccess,
                 LoggedUserWriteAuthority = loggedUser.WritingAccess
             };
@@ -235,6 +235,7 @@ namespace AccessManager.Controllers
             return View(vm);
 
         }
+
         [HttpPost]
         public IActionResult MapUserAccess(MapUserAccessViewModel model, [FromQuery(Name = "action1")] string action1, int page1 = 1, int page2 = 1)
         {
@@ -304,6 +305,9 @@ namespace AccessManager.Controllers
             var filterDirective1 = _directiveService.GetDirective(model.FilterDirectiveId1);
             var filterDirective2 = _directiveService.GetDirective(model.FilterDirectiveId2);
 
+            var filterAccess1 = _accessService.GetAccess(model.FilterAccessId1);
+            var filterAccess2 = _accessService.GetAccess(model.FilterAccessId2);
+
             var vm = new MapUserAccessViewModel
             {
                 UserId = user.Id,
@@ -316,8 +320,12 @@ namespace AccessManager.Controllers
                 FilterDirectiveDescription2 = filterDirective2?.Name ?? "",
                 FilterDirectiveId1 = model.FilterDirectiveId1,
                 FilterDirectiveId2 = model.FilterDirectiveId2,
-                AccessibleSystems = _accessService.GetAccessesGrantedToUserPaged(user, filterDirective1, page1),
-                InaccessibleSystems = _accessService.GetAccessesNotGrantedToUserPaged(user, filterDirective2, page2),
+                FilterAccessDescription1 = filterAccess1?.Description ?? "",
+                FilterAccessDescription2 = filterAccess2?.Description ?? "",
+                FilterAccessId1 = model.FilterAccessId1,
+                FilterAccessId2 = model.FilterAccessId2,
+                AccessibleSystems = _accessService.GetAccessesGrantedToUserPaged(user, filterDirective1, filterAccess1, page1),
+                InaccessibleSystems = _accessService.GetAccessesNotGrantedToUserPaged(user, filterDirective2, filterAccess2, page2),
                 SelectedAccessibleSystemIds = model.SelectedAccessibleSystemIds,
                 SelectedInaccessibleSystemIds = model.SelectedInaccessibleSystemIds,
                 LoggedUserReadAuthority = loggedUser.ReadingAccess,

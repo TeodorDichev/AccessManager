@@ -52,8 +52,8 @@
                                 <input type="checkbox" name="SelectedAccessibleUnitIds" value="@unit.UnitId"
                                        @(Model.SelectedAccessibleUnitIds.Contains(unit.UnitId ?? Guid.Empty) ? "checked" : "") />
                             </td>
-                            <td>@unit.UnitName</td>
-                            <td>@unit.DepartmentName</td>
+                            <td title="@unit.UnitName">@unit.UnitName</td>
+                            <td title="@unit.DepartmentName">@unit.DepartmentName</td>
                         </tr>
                     }
                 </tbody>
@@ -69,7 +69,14 @@
 
         <!-- Inaccessible Units -->
         <div class="col-md-6">
-            <h4>Недостъпни отдели</h4>
+            <h4 class="d-flex align-items-center">
+                Недостъпни отдели
+                <span data-bs-toggle="tooltip"
+                      title="Ако имате пълни права, но тук не виждате недостъпни отдели за добавяне, то проверете нивото на правата на дадения потребител. Ако той няма права за четене и писане, то вие трябва да му дадете минимални такива, за да можете да добавите видими отдели за него."
+                      style="cursor: help; margin-left: 0.5rem;">
+                    <i class="bi bi-info-circle"></i>
+                </span>
+            </h4>
 
             <div class="d-flex align-items-end mb-2 gap-2">
                 <filter form-id="DepartmentFilterForm2"
@@ -101,8 +108,8 @@
                                 <input type="checkbox" name="SelectedInaccessibleUnitIds" value="@unit.UnitId"
                                        @(Model.SelectedInaccessibleUnitIds.Contains(unit.UnitId ?? Guid.Empty) ? "checked" : "") />
                             </td>
-                            <td>@unit.UnitName</td>
-                            <td>@unit.DepartmentName</td>
+                            <td title="@unit.UnitName">@unit.UnitName</td>
+                            <td title="@unit.DepartmentName">@unit.DepartmentName</td>
                         </tr>
                     }
                 </tbody>

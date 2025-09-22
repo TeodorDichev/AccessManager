@@ -284,9 +284,8 @@ namespace AccessManager.Services
 
         internal PagedResult<UnitDepartmentViewModel> GetInaccessibleUnitsPaged(User loggedUser, User user, Department? filterDepartment, int page)
         {
-            var inaccessibleUnitsQuery = GetMutualInaccessibleUserUnits(user, loggedUser);
-            var totalInaccessible = inaccessibleUnitsQuery.Count();
-
+            var inaccessibleUnitsQuery = GetMutualInaccessibleUserUnits(user, loggedUser).Where(u => filterDepartment == null ? true : u.DepartmentId == filterDepartment.Id);
+            
             var inaccessibleUnits = inaccessibleUnitsQuery
                 .OrderBy(u => u.Description)
                 .Skip((page - 1) * Constants.ItemsPerPage)
@@ -302,8 +301,8 @@ namespace AccessManager.Services
 
             return new PagedResult<UnitDepartmentViewModel>
             {
-                Items = filterDepartment == null ? inaccessibleUnits : inaccessibleUnits.Where(u => u.DepartmentId == filterDepartment.Id).ToList(),
-                TotalCount = totalInaccessible,
+                Items = inaccessibleUnits,
+                TotalCount = inaccessibleUnitsQuery.Count(),
                 Page = page,
                 PageParam = "page2"
             };

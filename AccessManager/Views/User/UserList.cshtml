@@ -10,10 +10,6 @@
 
 <h2>Потребители</h2>
 
-<form style="display:none;">
-    @Html.AntiForgeryToken()
-</form>
-
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger">@TempData["Error"]</div>
@@ -23,7 +19,8 @@
     <div class="text-success">@TempData["Success"]</div>
 }
 
-<form id="usersFilterForm" action="/User/UserList" method="get" class="mb-3 d-flex align-items-end gap-3" >
+<form id="usersFilterForm" action="/User/UserList" method="get"  >
+    <div class="mb-3 d-flex align-items-end gap-3">
     <div>
         <label asp-for="SelectedSortOption" class="form-label">Сортиране</label>
         <select asp-for="SelectedSortOption" class="form-select" id="selectedSortOption" onchange="this.form.submit()">
@@ -63,8 +60,7 @@
             filter-id="@Model.FilterPositionId"
             filter-description="@Model.FilterPositionDescription">
     </filter>
-</form>
-
+    </div>
 <table class="table table-bordered table-striped">
     <thead class="table-light">
         <tr>
@@ -84,13 +80,13 @@
         @foreach(var user in Model.Users.Items)
         {
             <tr>
-                <td>@user.UserName</td>
-                <td>@user.FirstName</td>
-                <td>@user.LastName</td>
-                <td>@user.Position</td>
-                <td>@user.Department</td>
-                <td>@user.Unit</td>
-                <td title="@BulgarianLocalization.GetBulgarianAuthorityType(user.WriteAccess)">@BulgarianLocalization.GetBulgarianAuthorityType(user.WriteAccess)</td>
+                    <td title="@user.UserName">@user.UserName</td>
+                    <td title="@user.FirstName">@user.FirstName</td>
+                    <td title="@user.LastName">@user.LastName</td>
+                    <td title="@user.Position">@user.Position</td>
+                    <td title="@user.Department">@user.Department</td>
+                    <td title="@user.Unit">@user.Unit</td>
+                    <td title="@BulgarianLocalization.GetBulgarianAuthorityType(user.WriteAccess)">@BulgarianLocalization.GetBulgarianAuthorityType(user.WriteAccess)</td>
                 <td title="@BulgarianLocalization.GetBulgarianAuthorityType(user.ReadAccess)">@BulgarianLocalization.GetBulgarianAuthorityType(user.ReadAccess)</td>
                 <td>
                     <a asp-controller="User" asp-action="EditUser" asp-route-userid="@user.Id" class="btn btn-sm btn-info" auth="@Model.LoggedUserReadAuthority >= AuthorityType.Restricted">
@@ -125,6 +121,7 @@
         Експортирай CSV с достъпните отдели за потребители
     </a>
 </div>
+</form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -4,10 +4,6 @@
     ViewData["Title"] = "Достъпи";
 }
 
-<form style="display:none;">
-    @Html.AntiForgeryToken()
-</form>
-
 <h2>Достъпи</h2>
 
 @if (TempData["Error"] != null)
@@ -55,7 +51,7 @@
         @foreach (var access in Model.Accesses.Items)
         {
             <tr>
-                <td>@access.Description</td>
+                <td title="@access.Description">@access.Description</td>
                 <td>
                     <a asp-controller="Access" asp-action="EditAccess" asp-route-accessid="@access.AccessId" class="btn btn-sm btn-info" auth="@Model.LoggedUserReadAuthority >= AuthorityType.Restricted">
                         Редактирай

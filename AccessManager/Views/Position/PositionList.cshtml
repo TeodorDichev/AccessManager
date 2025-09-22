@@ -32,7 +32,7 @@
             <td>
                 <input type="text" name="Name" class="form-control" placeholder="Въведи нова служба" required auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
             </td>
-            <td colspan="2">
+            <td>
                 <button type="submit" class="btn btn-success" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">Добави</button>
             </td>
         </tr>
@@ -41,7 +41,7 @@
         @foreach (var dir in Model.Positions.Items)
         {
             <tr data-id="@dir.Id">
-                <td>
+                <td title="@dir.Description">
                     <input type="text" class="form-control directive-name" value="@dir.Description" />
                 </td>
                 <td>

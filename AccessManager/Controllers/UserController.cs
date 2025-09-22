@@ -119,7 +119,7 @@ namespace AccessManager.Controllers
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
 
-            var result = _accessService.GetAccessesGrantedToUserPaged(loggedUser, null, page);
+            var result = _accessService.GetAccessesGrantedToUserPaged(loggedUser, null, null, page);
 
             return PartialView("_UserAccessesTable", result);
         }
@@ -299,6 +299,9 @@ namespace AccessManager.Controllers
             if (model.SelectedUnitId == null) model.SelectedUnitDescription = "";
             if (model.SelectedPositionId == null) model.SelectedPositionDescription = "";
 
+            if((model.WritingAccess > AuthorityType.None || model.ReadingAccess > AuthorityType.None) && string.IsNullOrEmpty(model.NewPassword) && string.IsNullOrEmpty(user.Password))
+                ModelState.AddModelError("NewPassword", ExceptionMessages.RequiredField);
+
             if (!ModelState.IsValid) return View(model);
 
             if (!string.IsNullOrWhiteSpace(model.NewPassword))
@@ -307,6 +310,7 @@ namespace AccessManager.Controllers
             _userService.UpdateUser(model, user);
             _logService.AddLog(loggedUser, LogAction.Edit, user);
 
+            TempData["Success"] = "Промените бяха запазени успешно!";
             return RedirectToAction("EditUser", new { userId = model.UserId });
         }
 

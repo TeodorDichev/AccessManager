@@ -113,7 +113,7 @@ namespace AccessManager.Services
             };
         }
 
-        internal PagedResult<AccessViewModel> GetAccessesGrantedToUserPaged(User user, Directive? filterDirective, int page)
+        internal PagedResult<AccessViewModel> GetAccessesGrantedToUserPaged(User user, Directive? filterDirective, Access? filterAccess, int page)
         {
             int itemsPerPage = Constants.ItemsPerPage;
 
@@ -122,10 +122,13 @@ namespace AccessManager.Services
                     .ThenInclude(u => u.Unit)
                         .ThenInclude(unit => unit.Department)
                 .Include(ua => ua.GrantedByDirective)
+                .Include(ua => ua.Access)
                 .Where(ua => ua.UserId == user.Id && ua.RevokedOn == null);
 
             if (filterDirective != null)
                 query = query.Where(ua => ua.GrantedByDirectiveId == filterDirective.Id);
+            if( filterAccess != null)
+                query = query.Where(ua => ua.Access.FullDescription.Contains(filterAccess.Description));
 
             var totalCount = query.Count();
 
@@ -150,7 +153,8 @@ namespace AccessManager.Services
                 PageParam = "page1",
             };
         }
-        internal PagedResult<AccessViewModel> GetAccessesNotGrantedToUserPaged(User user, Directive? filterDirective, int page)
+
+        internal PagedResult<AccessViewModel> GetAccessesNotGrantedToUserPaged(User user, Directive? filterDirective, Access? filterAccess, int page)
         {
             var revoked = _context.UserAccesses
                 .Where(ua => ua.UserId == user.Id && ua.RevokedOn != null)
@@ -174,7 +178,7 @@ namespace AccessManager.Services
                     DirectiveDescription = ""
                 }).ToList();
 
-            var allWithoutAccess = revoked.Concat(notGranted).ToList();
+            var allWithoutAccess = revoked.Concat(notGranted).Where(ua => filterAccess == null ? true : ua.Description.Contains(filterAccess.Description)).ToList();
 
             var totalCount = allWithoutAccess.Count;
             var items = allWithoutAccess

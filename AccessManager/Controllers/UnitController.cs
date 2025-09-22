@@ -299,7 +299,7 @@ namespace AccessManager.Controllers
                 Department = user.Unit.Department.Description,
                 Unit = user.Unit.Description,
                 FilterDepartmentDescription1 = filterDepartment1?.Description ?? "",
-                FilterDepartmentDescription2 = filterDepartment1?.Description ?? "",
+                FilterDepartmentDescription2 = filterDepartment2?.Description ?? "",
                 FilterDepartmentId1 = model.FilterDepartmentId1,
                 FilterDepartmentId2 = model.FilterDepartmentId2,
                 AccessibleUnits = _unitService.GetAccessibleUnitsPaged(loggedUser, user, filterDepartment1, page1),

@@ -17,6 +17,11 @@ namespace AccessManager.ViewModels.Access
 
         public Guid? FilterDirectiveId2 { get; set; }
         public string? FilterDirectiveDescription2 { get; set; }
+        public Guid? FilterAccessId1 { get; set; }
+        public string? FilterAccessDescription1 { get; set; }
+
+        public Guid? FilterAccessId2 { get; set; }
+        public string? FilterAccessDescription2 { get; set; }
 
         public PagedResult<AccessViewModel> AccessibleSystems { get; set; } = new();
         public PagedResult<AccessViewModel> InaccessibleSystems { get; set; } = new();
