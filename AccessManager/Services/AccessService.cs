@@ -62,13 +62,14 @@ namespace AccessManager.Services
 
         internal List<Access> GetAccesses()
         {
-            return _context.Accesses.ToList();
+            return _context.Accesses.OrderBy(a => a.FullDescription).ToList();
         }
 
         internal List<Access> GetNotGrantedAccesses(User user)
         {
             return _context.Accesses
                 .Where(a => !_context.UserAccesses.Any(ua => ua.UserId == user.Id && ua.AccessId == a.Id))
+                .OrderBy(a => a.FullDescription)
                 .ToList();
         }
 
@@ -85,7 +86,7 @@ namespace AccessManager.Services
         internal PagedResult<AccessListItemViewModel> GetAccessesPaged(Access? filterAccess, int page)
         {
             var allItems = _context.Accesses
-                .OrderBy(a => a.Description)
+                .OrderBy(a => a.FullDescription)
                 .AsEnumerable()
                 .Select(a => new AccessListItemViewModel
                 {
@@ -104,7 +105,7 @@ namespace AccessManager.Services
                 .Skip((page - 1) * Constants.ItemsPerPage)
                 .Take(Constants.ItemsPerPage)
                 .ToList();
-
+                
             return new PagedResult<AccessListItemViewModel>
             {
                 Items = pageItems,

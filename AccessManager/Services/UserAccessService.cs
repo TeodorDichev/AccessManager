@@ -145,13 +145,15 @@ namespace AccessManager.Services
                     DirectiveId = ua.GrantedByDirectiveId,
                     DirectiveDescription = ua.GrantedByDirective.Name
                 })
+                .OrderBy(u => u.UserName)
                 .ToList();
 
             return new PagedResult<UserAccessViewModel>
             {
                 Items = items,
                 TotalCount = totalCount,
-                Page = page
+                Page = page,
+                PageParam = "page1",
             };
         }
 
@@ -204,7 +206,8 @@ namespace AccessManager.Services
             {
                 Items = items,
                 TotalCount = totalCount,
-                Page = page
+                Page = page,
+                PageParam = "page2",
             };
         }
 

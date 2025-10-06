@@ -13,37 +13,47 @@
 }
 
 <div class="mb-2 d-flex align-items-end gap-2">
-    <form method="post" asp-action="EditAccessName" class="mb-0 flex-grow-1">
-        <input type="hidden" name="accessId" value="@Model.AccessId" />
-        <label asp-for="Name" class="form-label">Ново име</label>
-        <input asp-for="Name" class="form-control"
-               onchange="this.form.submit()"
+    <div class="flex-grow-1">
+        <label for="accessNameInput" class="form-label">Ново име</label>
+        <input type="text"
+               id="accessNameInput"
+               class="form-control"
+               value="@Model.Name"
+               data-access-id="@Model.AccessId"
                auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full" />
-    </form>
+    </div>
 
-    <a asp-action="CreateAccess" asp-route-parentAccessId="@Model.AccessId"
+    <a asp-action="CreateAccess"
+       asp-route-parentAccessId="@Model.AccessId"
        class="btn btn-primary mb-0 align-self-end">
         Създай поддостъп
     </a>
 </div>
 
-<div class="row mt-5">
-    <div class="col-md-6">
-        <h4>Потребители с достъп</h4>
-        <form method="get" asp-action="EditAccess">
-            <input type="hidden" name="accessId" value="@Model.AccessId" />
-            <filter form-id="DirectiveFilterForm1"
-                    label="Филтър по заповед"
-                    controller="Directive"
-                    action="SearchDirectives"
-                    hidden-input-id="filterDirective1"
-                    hidden-name="filterDirectiveId1"
-                    filter-id="@Model.FilterDirectiveId1"
-                    filter-description="@Model.FilterDirectiveDescription1">
-            </filter>
-        </form>
+<form method="post" asp-action="EditAccess">
+    <input type="hidden" name="AccessId" value="@Model.AccessId" />
 
-        <form asp-action="RevokeUserAccess" method="post">
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <h4>Потребители с достъп</h4>
+        
+            <div class="d-flex align-items-end mb-2 gap-2">
+                <filter form-id="DirectiveFilterForm1"
+                        label="Филтър по заповед"
+                        controller="Directive"
+                        action="SearchDirectives"
+                        hidden-input-id="filterDirective1"
+                        hidden-name="FilterDirectiveId1"
+                        filter-id="@Model.FilterDirectiveId1"
+                        filter-description="@Model.FilterDirectiveDescription1"
+                        submit-on-select="false">
+                </filter>
+
+                <button type="submit" name="action1" value="Filter1" class="btn btn-secondary mt-2">
+                    Приложи
+                </button>
+            </div>
+
             <div class="mb-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
                 <filter form-id="DirectiveToRevokeAccessForm"
                         label="Заповед за спиране на достъп"
@@ -56,6 +66,7 @@
                         submit-on-select="false">
                 </filter>
             </div>
+
             <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
@@ -70,7 +81,10 @@
                     @foreach (var user in Model.UsersWithAccess.Items)
                     {
                         <tr>
-                            <td> <input type="checkbox" name="SelectedUsersWithAccessIds" value="@user.UserId" /> </td>
+                            <td>
+                                <input type="checkbox" name="SelectedUsersWithAccessIds" value="@user.UserId"
+                                       @(Model.SelectedUsersWithAccessIds.Contains(user.UserId) ? "checked" : "") />
+                            </td>
                             <td>@user.FirstName @user.LastName (@user.UserName)</td>
                             <td>@user.Position</td>
                             <td>@user.Department - @user.Unit</td>
@@ -93,30 +107,32 @@
 
             @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.UsersWithAccess)
 
-            <input type="hidden" name="accessId" value="@Model.AccessId" /> 
-            <button type="submit" class="btn btn-danger mt-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">Премахни избраните</button>
+            <button type="submit" class="btn btn-danger mt-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted" name="action1" value="Revoke">
+                Премахни избраните
+            </button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllWithAccessBtn">Избери всички</button>
-        </form>
-    </div>
+        </div>
 
-    <div class="col-md-6">
+        <div class="col-md-6">
         <h4>Потребители без достъп</h4>
-        <form method="get" asp-action="EditAccess">
-            <input type="hidden" name="accessId" value="@Model.AccessId" />
 
-            <filter form-id="DirectiveFilterForm2"
-                    label="Филтър по заповед"
-                    controller="Directive"
-                    action="SearchDirectives"
-                    hidden-input-id="filterDirective2"
-                    hidden-name="filterDirectiveId2"
-                    filter-id="@Model.FilterDirectiveId2"
-                    filter-description="@Model.FilterDirectiveDescription2">
-            </filter>
-        </form>
+            <div class="d-flex align-items-end mb-2 gap-2">
+                <filter form-id="DirectiveFilterForm2"
+                        label="Филтър по заповед"
+                        controller="Directive"
+                        action="SearchDirectives"
+                        hidden-input-id="filterDirective2"
+                        hidden-name="FilterDirectiveId2"
+                        filter-id="@Model.FilterDirectiveId1"
+                        filter-description="@Model.FilterDirectiveDescription2"
+                        submit-on-select="false">
+                </filter>
 
-        <form asp-controller="Access" asp-action="GrantUserAccess" method="post">
-            <input type="hidden" name="accessId" value="@Model.AccessId" />
+                <button type="submit" name="action1" value="Filter2" class="btn btn-secondary mt-2">
+                    Приложи
+                </button>
+            </div> 
+
             <div class="mb-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Full">
                 <filter 
                     form-id="DirectiveToGrantAccessForm"
@@ -145,7 +161,10 @@
                     @foreach (var user in Model.UsersWithoutAccess.Items)
                     {
                         <tr>
-                            <td> <input type="checkbox" name="SelectedUsersWithoutAccessIds" value="@user.UserId" /> </td>
+                            <td>
+                                <input type="checkbox" name="SelectedUsersWithoutAccessIds" value="@user.UserId"
+                                       @(Model.SelectedUsersWithoutAccessIds.Contains(user.UserId) ? "checked" : "") />
+                            </td>
                             <td title="@user.FirstName @user.LastName (@user.UserName)">@user.FirstName @user.LastName (@user.UserName)</td>
                             <td title="@user.Position">@user.Position</td>
                             <td title="@user.Department - @user.Unit">@user.Department - @user.Unit</td>
@@ -168,14 +187,51 @@
 
             @await Html.PartialAsync("~/Views/Shared/_Pager.cshtml", Model.UsersWithoutAccess)
 
-            <input type="hidden" name="accessId" value="@Model.AccessId" /> 
-            <button type="submit" class="btn btn-success mt-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted">Добави избраните</button>
+            <button type="submit" class="btn btn-success mt-2" auth="@Model.LoggedUserWriteAuthority >= AuthorityType.Restricted" name="action1" value="Grant">
+                Добави избраните
+            </button>
             <button type="button" class="btn btn-secondary mt-2" id="selectAllWithoutAccessBtn">Избери всички</button>
-        </form>
+        </div>
     </div>
-</div>
+</form>
 
 @section Scripts {
     <script src="~/js/edit-access.js" asp-append-version="true"></script>
     <script src="~/js/filter.js" asp-append-version="true"></script>
+    <script>
+        // preserve selection state
+        window.SelectedUsersWithAccessIds = @Html.Raw(Json.Serialize(Model.SelectedUsersWithAccessIds));
+        window.SelectedUsersWithoutAccessIds = @Html.Raw(Json.Serialize(Model.SelectedUsersWithoutAccessIds));
+
+        // handle rename via AJAX
+        const accessNameInput = document.getElementById('accessNameInput');
+        if (accessNameInput) {
+            accessNameInput.addEventListener('change', async function () {
+                const newName = this.value.trim();
+                const accessId = this.dataset.accessId;
+
+                if (!newName) return;
+
+                try {
+                    const response = await fetch('@Url.Action("EditAccessName", "Access")', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({
+                            accessId: accessId,
+                            name: newName
+                        })
+                    });
+
+                    if (response.ok) {
+                        console.log('Access name updated successfully.');
+                    } else {
+                        alert('Грешка при промяна на името.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Грешка при комуникация със сървъра.');
+                }
+            });
+        }
+    </script>
 }

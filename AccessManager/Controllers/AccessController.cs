@@ -122,12 +122,6 @@ namespace AccessManager.Controllers
                     }
                     parentDepth++;
                 }
-
-                if (parentDepth != model.Level - 1)
-                {
-                    ModelState.AddModelError(nameof(model.ParentAccessId), ExceptionMessages.AccessNotFound);
-                    return View("CreateAccess", model);
-                }
             }
 
             var access = new Access
@@ -233,7 +227,6 @@ namespace AccessManager.Controllers
             };
 
             return View(vm);
-
         }
 
         [HttpPost]
@@ -336,7 +329,37 @@ namespace AccessManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult EditAccess(EditAccessViewModel model, int page1 = 1, int page2 = 1)
+        public IActionResult EditAccess(Guid? accessId)
+        {
+            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
+            if (loggedUser == null) return RedirectToAction("Login", "Home");
+
+            var access = _accessService.GetAccess(accessId);
+            if (access == null)
+            {
+                TempData["Error"] = ExceptionMessages.AccessNotFound;
+                return RedirectToAction("AccessList");
+            }
+
+            var vm = new EditAccessViewModel
+            {
+                AccessId = access.Id,
+                Name = access.Description,
+                Description = access.FullDescription,
+                FilterDirectiveDescription1 = "",
+                FilterDirectiveDescription2 = "",
+                UsersWithAccess = _userAccessService.GetUsersWithAccessPaged(loggedUser, access, null, 1),
+                UsersWithoutAccess = _userAccessService.GetUsersWithoutAccessPaged(loggedUser, access, null, 1),
+                LoggedUserReadAuthority = loggedUser.ReadingAccess,
+                LoggedUserWriteAuthority = loggedUser.WritingAccess
+            };
+
+            return View(vm);
+
+        }
+
+        [HttpPost]
+        public IActionResult EditAccess(EditAccessViewModel model, [FromQuery(Name = "action1")] string action1, int page1 = 1, int page2 = 1)
         {
             var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
             if (loggedUser == null) return RedirectToAction("Login", "Home");
@@ -346,6 +369,56 @@ namespace AccessManager.Controllers
             {
                 TempData["Error"] = ExceptionMessages.AccessNotFound;
                 return RedirectToAction("AccessList");
+            }
+
+            switch (action1)
+            {
+                case "Grant":
+                    if (access == null || !model.DirectiveToGrantAccessId.HasValue)
+                    {
+                        TempData["Error"] = ExceptionMessages.MissingDirective;
+                        return RedirectToAction("EditAccess", new { accessId = model.AccessId });
+                    }
+
+                    foreach (var userId in model.SelectedUsersWithoutAccessIds)
+                    {
+                        var directive = _directiveService.GetDirective(model.DirectiveToGrantAccessId.Value);
+                        var user = _userService.GetUser(userId);
+                        if (user == null || directive == null)
+                        {
+                            TempData["Error"] = ExceptionMessages.GrantingAccessFailed;
+                            continue;
+                        }
+
+                        UserAccess ua = _userAccessService.AddUserAccess(user, access, directive);
+                        _logService.AddLog(loggedUser, LogAction.Add, ua);
+                    }
+
+                    model.SelectedUsersWithoutAccessIds = new();
+                    break;
+                case "Revoke":
+                    if (access == null || !model.DirectiveToRevokeAccessId.HasValue)
+                    {
+                        TempData["Error"] = ExceptionMessages.MissingDirective;
+                        return RedirectToAction("EditAccess", new { accessId = model.AccessId });
+                    }
+
+                    foreach (var userId in model.SelectedUsersWithAccessIds)
+                    {
+                        var directive = _directiveService.GetDirective(model.DirectiveToRevokeAccessId.Value);
+                        UserAccess? userAccess = _userAccessService.GetUserAccess(userId, access.Id);
+                        if (userAccess == null || directive == null)
+                        {
+                            TempData["Error"] = ExceptionMessages.RevokingAccessFailed;
+                            continue;
+                        }
+                        _userAccessService.RevokeUserAccess(userAccess, directive);
+                        _logService.AddLog(loggedUser, LogAction.Edit, userAccess);
+                    }
+
+                    model.SelectedUsersWithAccessIds = new();
+                    break;
+
             }
 
             var filterDirective1 = _directiveService.GetDirective(model.FilterDirectiveId1);
@@ -360,6 +433,8 @@ namespace AccessManager.Controllers
                 FilterDirectiveDescription2 = filterDirective2?.Name ?? "",
                 FilterDirectiveId1 = model.FilterDirectiveId1,
                 FilterDirectiveId2 = model.FilterDirectiveId2,
+                SelectedUsersWithAccessIds = model.SelectedUsersWithAccessIds,
+                SelectedUsersWithoutAccessIds = model.SelectedUsersWithoutAccessIds,
                 UsersWithAccess = _userAccessService.GetUsersWithAccessPaged(loggedUser, access, filterDirective1, page1),
                 UsersWithoutAccess = _userAccessService.GetUsersWithoutAccessPaged(loggedUser, access, filterDirective2, page2),
                 LoggedUserReadAuthority = loggedUser.ReadingAccess,
@@ -367,65 +442,6 @@ namespace AccessManager.Controllers
             };
 
             return View(vm);
-        }
-
-        [HttpPost]
-        public IActionResult GrantUserAccess(EditAccessViewModel model)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var access = _accessService.GetAccess(model.AccessId);
-            if (access == null || !model.DirectiveToGrantAccessId.HasValue)
-            {
-                TempData["Error"] = ExceptionMessages.MissingDirective;
-                return RedirectToAction("EditAccess", new { accessId = model.AccessId });
-            }
-
-            foreach (var userId in model.SelectedUsersWithoutAccessIds)
-            {
-                var directive = _directiveService.GetDirective(model.DirectiveToGrantAccessId.Value);
-                var user = _userService.GetUser(userId);
-                if (user == null || directive == null)
-                {
-                    TempData["Error"] = ExceptionMessages.GrantingAccessFailed;
-                    continue;
-                }
-
-                UserAccess ua = _userAccessService.AddUserAccess(user, access, directive);
-                _logService.AddLog(loggedUser, LogAction.Add, ua);
-            }
-
-            return RedirectToAction("EditAccess", new { accessId = model.AccessId });
-        }
-
-        [HttpPost]
-        public IActionResult RevokeUserAccess(EditAccessViewModel model)
-        {
-            var loggedUser = _userService.GetUser(HttpContext.Session.GetString("Username"));
-            if (loggedUser == null) return RedirectToAction("Login", "Home");
-
-            var access = _accessService.GetAccess(model.AccessId);
-            if (access == null || !model.DirectiveToRevokeAccessId.HasValue)
-            {
-                TempData["Error"] = ExceptionMessages.MissingDirective;
-                return RedirectToAction("EditAccess", new { accessId = model.AccessId });
-            }
-
-            foreach (var userId in model.SelectedUsersWithAccessIds)
-            {
-                var directive = _directiveService.GetDirective(model.DirectiveToRevokeAccessId.Value);
-                UserAccess? userAccess = _userAccessService.GetUserAccess(userId, access.Id);
-                if (userAccess == null || directive == null)
-                {
-                    TempData["Error"] = ExceptionMessages.RevokingAccessFailed;
-                    continue;
-                }
-                _userAccessService.RevokeUserAccess(userAccess, directive);
-                _logService.AddLog(loggedUser, LogAction.Edit, userAccess);
-            }
-
-            return RedirectToAction("EditAccess", new { accessId = model.AccessId });
         }
 
         [HttpPost]
