@@ -9,10 +9,21 @@ namespace AccessManager
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            // possible fix for NAS server error
+            string basedir = AppDomain.CurrentDomain.BaseDirectory;
 
+            WebApplicationOptions options = new()
+            {
+                ContentRootPath = basedir,
+                Args = args,
+                WebRootPath = Path.Combine(basedir, "wwwroot")
+            };
+
+            var builder = WebApplication.CreateBuilder(options);
+
+            string connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"] ?? throw new ArgumentException("Connection string not found");
             builder.Services.AddDbContext<Context>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(connectionString));
 
             builder.Services.AddScoped<LogService>();
             builder.Services.AddScoped<UnitService>();
@@ -30,11 +41,11 @@ namespace AccessManager
             builder.Services.AddSession();
             builder.Services.AddControllersWithViews();
 
-            // Add before deploying
-            //builder.WebHost.ConfigureKestrel(options =>
-            //{
-            //    options.Listen(IPAddress.Any, 5000);
-            //});
+            //Add before deploying
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.Listen(IPAddress.Any, 5000);
+            });
 
             var app = builder.Build();
             using (var scope = app.Services.CreateScope())

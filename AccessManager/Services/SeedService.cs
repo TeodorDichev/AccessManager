@@ -71,7 +71,8 @@ namespace AccessManager.Services
                 .ToList();
 
             // Set password
-            user.Password = _passwordService.HashPassword(user, _config["SuperAdmin:Password"]);
+            string password = _config["SuperAdmin:Password"] ?? throw new ArgumentException("Password string not found");
+            user.Password = _passwordService.HashPassword(user, password);
 
             _context.Users.Add(user);
             _context.SaveChanges();
